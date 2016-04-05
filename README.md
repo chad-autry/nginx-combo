@@ -6,6 +6,7 @@ Documentation for my dockerized nginx and supporting containers. Boilerplate con
 * CoreOS is the chosen host operating system
   * fleet comes for free for orchestration
   * etcd comes for free for a key value store
+
 ### Requirements and Features
 * Forward's nginx logs to the docker service [loggly](https://www.loggly.com/blog/top-5-docker-logging-methods-to-fit-your-container-deployment-strategy/)
 * Automatically reconfigures and refreshes based on routing configuration provided through etcd
