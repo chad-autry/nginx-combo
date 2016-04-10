@@ -25,3 +25,20 @@ Documentation and copy-pasteable boilerplate for running a full web application 
   * Boilerplate to publish to etcd
 
 ### Architecture
+
+### Deployment
+
+## Nginx
+At this point [nginx:alpine-stable](https://github.com/docker-library/docs/tree/master/nginx) seems suitable for my needs. I started [wac-nginx](https://github.com/chad-autry/wac-nginx), but there is no need to re-invent containers if suitable ones already exist. If/when I want different 3rd party modules compiled in I'll take the official image as a starting point.
+
+To deploy I like to copy the static files into a directory on the host instead of building a new docker image (with a private docker registry that preference could easily change). /var/www is a good location.
+
+Use a temporary ftp container (such as atmoz/sftp) to easily copy the files over. Don't forget to change file permissions and open the port for sftp. Stop and delete the container when done.
+```shell
+sudo docker run -d --name sftp_server -v /var/www:/home/sftpuser/www -p 2222:22 atmoz/sftp sftpuser:sftppassword:1001
+```
+
+Once your files are copied over, you can run the tagged release of the Nginx container.
+```shell
+docker run --name nginx -p 80:80 -v /var/www:/usr/share/nginx/html:ro -d nginx:stable-alpine
+```
