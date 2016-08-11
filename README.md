@@ -35,6 +35,27 @@ Documentation and copy-pasteable boilerplate for running a full web application 
 
 ## Frontend
 ### nginx unit
+The main unti for the front end, nginx is the static file server and reverse proxy. Can have redundant instances.
+
+```yaml
+[Unit]
+Description=NGINX
+After=docker.service
+Requires=docker.service
+Before=nginx-certificate-update.service nginx-site-update.service
+Wants=nginx-certificate-update.service nginx-site-update.service
+
+[Service]
+ExecStartPre=-/usr/bin/docker pull chadautry/wac-nginx
+ExecStartPre=-/usr/bin/docker rm nginx
+ExecStart=/usr/bin/docker run --name nginx -p 80:80 -p 443:443 \
+-v /var/www:/usr/share/nginx/html:ro -v /etc/ssl:/etc/nginx/ssl:ro \
+-d chadautry/wac-nginx
+
+[X-Fleet]
+Global=true
+MachineMetadata=frontend=true
+```
 requires docker
 wants cert update
 wants app update
