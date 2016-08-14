@@ -1,0 +1,27 @@
+{
+  "name": "wac-bp",
+  "version": "0.0.0",
+  "description": "Boilerplate for a web application cluster",
+  "main": " ",
+  "scripts": {
+    "test": " ",
+    "build": "node ./node_modules/markdown-code-extractor/index.js < README.md"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/chad-autry/wac-bp.git"
+  },
+  "keywords": [
+    "cluster",
+    "boilerplate"
+  ],
+  "author": "Chad Autry",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/chad-autry/wac-bp/issues"
+  },
+  "homepage": "https://github.com/chad-autry/wac-bp#readme",
+  "devDependencies": {
+    "markdown-code-extractor": "^1.1.1"
+  }
+}

@@ -37,6 +37,7 @@ Documentation and copy-pasteable boilerplate for running a full web application 
 ### nginx unit
 The main unti for the front end, nginx is the static file server and reverse proxy. Can have redundant instances.
 
+[nginx.service](units/nginx.service)
 ```yaml
 [Unit]
 Description=NGINX
