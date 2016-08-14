@@ -1,6 +1,5 @@
 #!/bin/bash
 set -ev;
-cd target/gh-pages
 git init
 git config user.name ${GH_NAME}
 git config user.email ${GH_EMAIL}
