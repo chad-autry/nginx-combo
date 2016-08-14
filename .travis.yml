@@ -8,6 +8,7 @@ before_install:
 - export DISPLAY=:99.0
 - sh -e /etc/init.d/xvfb start
 script:
+- npm run clean
 - npm run build
 after_success:
 - chmod ugo+x ./push-units.sh
