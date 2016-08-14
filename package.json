@@ -5,7 +5,8 @@
   "main": " ",
   "scripts": {
     "test": " ",
-    "clean": "rimraf units",
+    "clean:units": "rimraf units && mkdir units",
+    "clean": "npm run clean:units",
     "build": "node ./node_modules/markdown-code-extractor/index.js < README.md"
   },
   "repository": {
