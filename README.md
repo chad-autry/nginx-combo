@@ -35,7 +35,7 @@ Documentation and copy-pasteable boilerplate for running a full web application 
 
 ## Frontend
 ### nginx unit
-The main unti for the front end, nginx is the static file server and reverse proxy. Can have redundant instances.
+The main unit for the front end, nginx is the static file server and reverse proxy. Can have redundant instances.
 
 [nginx.service](units/nginx.service)
 ```yaml
@@ -57,14 +57,14 @@ ExecStart=/usr/bin/docker run --name nginx -p 80:80 -p 443:443 \
 Global=true
 MachineMetadata=frontend=true
 ```
-requires docker
-wants cert update
-wants app update
-Starts an nginx docker container
-    configured to route http --> https (except letsencrypt requests)
-    Takes html from local drive
-    Takes certs from local drive
-runs on front end tagged instances
+* requires docker
+* wants cert update
+* wants app update
+* Starts an nginx docker container
+    * configured to route http --> https (except letsencrypt requests)
+    * Takes html from local drive
+    * Takes certs from local drive
+* runs on frontend tagged instances
 
 ### letsencrypt renewal unit
 requires san disk
@@ -81,6 +81,11 @@ requires san disk
 ### nodejs code update unit
 ### api endpoint publishing unit
 ### RethinkDB unit
+
+## Unit Files
+[![Build Status](https://travis-ci.org/chad-autry/wac-bp.svg?branch=master)](https://travis-ci.org/chad-autry/wac-bp)
+The unit files under the units directory have been extracted from this document and pushed back to the repo. If the latest commit is not "Automated push of generated files" then they are not in sync.
+
 ## Addendum
 ### SAN replacement possibilities
 * Baked in Docker
