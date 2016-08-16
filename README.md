@@ -84,7 +84,8 @@ requires san disk
 
 ## Unit Files
 [![Build Status](https://travis-ci.org/chad-autry/wac-bp.svg?branch=master)](https://travis-ci.org/chad-autry/wac-bp)
-The unit files under the units directory have been extracted from this document and pushed back to the repo. If the latest commit is not "Automated push of generated files" then they are not in sync.
+
+The unit files under the units directory have been extracted from this document and pushed back to the repo.
 
 ## Addendum
 ### SAN replacement possibilities
