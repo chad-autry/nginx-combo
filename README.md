@@ -60,11 +60,45 @@ MachineMetadata=frontend=true
 * requires docker
 * wants cert update
 * wants app update
-* Starts an nginx docker container
+* Starts a customized nginx docker container
     * configured to route http --> https (except letsencrypt requests)
     * Takes html from local drive
     * Takes certs from local drive
-* runs on frontend tagged instances
+    * Takes acme challenge response from local drive
+    * Takes config from local drive
+* runs on all frontend tagged instances
+
+### nginx reloading units
+A pair of units are responsible for reloading nginx instances on file changes
+
+[nginx-reload.service](units/nginx-restart.service)
+```yaml
+[Unit]
+Description=NGINX reload service
+
+[Service]
+ExecStart=-/usr/bin/docker kill -s HUP nginx
+```
+* Restarts the named nginx container
+* Ignores errors
+* Expects to be started locally, so doesn't have any machine metadata
+
+[nginx-reload.path](units/nginx-reload.path)
+```yaml
+[Unit]
+Description=NGINX reload path
+
+[Path]
+PathChanged=/var/www
+PathChanged=/etc/ssl
+
+[X-Fleet]
+Global=true
+MachineOf=nginx.service
+```
+* Watches config, certs, acme response, and webapp files
+* Defaults to calling nginx-reload.service on change (because of matching unit name)
+* Scheduled to run on all nginx service machines
 
 ### letsencrypt renewal unit
 requires san disk
