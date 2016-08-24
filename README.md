@@ -26,7 +26,6 @@ Documentation and copy-pasteable boilerplate for running a full web application 
 
 ## Externalities
 * Configure DNS
-* Configure SAN disks
 * Create machine instances
 * Firewall
 * Create fleet cluster
@@ -35,7 +34,7 @@ Documentation and copy-pasteable boilerplate for running a full web application 
 
 ## Frontend
 ### nginx unit
-The main unit for the front end, nginx is the static file server and reverse proxy. Can have redundant instances.
+The main unit for the front end, nginx is the static file server and reverse proxy. Can have redundant identical instances.
 
 [nginx.service](units/nginx.service)
 ```yaml
@@ -98,17 +97,18 @@ MachineOf=nginx.service
 ```
 * Watches config and certs
     * Static files (acme response and html) don't need to be watched
-* Defaults to calling nginx-reload.service on change (because of matching unit name)
+* Automatically calls nginx-reload.service on change (because of matching unit name)
 * Scheduled to run on all nginx service machines
 
 ### letsencrypt renewal unit
-requires san disk
-
-### nginx certificate update unit
-requires san disk
+* Scheduled to run once a month
+* Writes acme challenge response to etcd (< 1 MB)
+    * Each nginx machine has watcher unit to write locally
+* Writes certificate to etcd (< 1 MB)
+    * Each nginx machine has watcher unit to write locally 
 
 ### nginx static app update unit
-requires san disk
+Want to load app once, and have it distribute automatically
 
 ### api endpoint discovery unit
 ## Backend
@@ -123,9 +123,6 @@ requires san disk
 The unit files under the units directory have been extracted from this document and pushed back to the repo.
 
 ## Addendum
-### SAN replacement possibilities
-* Baked in Docker
-* Shared read only disks
 
 ### Tips and Tools
 * Pre-create/retrieve Unit files externally
