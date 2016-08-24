@@ -79,7 +79,7 @@ Description=NGINX reload service
 [Service]
 ExecStart=-/usr/bin/docker kill -s HUP nginx
 ```
-* Restarts the named nginx container
+* Sends a signal to the named nginx container to reload
 * Ignores errors
 * Expects to be started locally, so doesn't have any machine metadata
 
@@ -96,7 +96,8 @@ PathChanged=/etc/ssl
 Global=true
 MachineOf=nginx.service
 ```
-* Watches config, certs, acme response, and webapp files
+* Watches config and certs
+    * Static files (acme response and html) don't need to be watched
 * Defaults to calling nginx-reload.service on change (because of matching unit name)
 * Scheduled to run on all nginx service machines
 
