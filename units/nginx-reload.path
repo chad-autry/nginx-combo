@@ -1,0 +1,10 @@
+[Unit]
+Description=NGINX reload path
+
+[Path]
+PathChanged=/var/www
+PathChanged=/etc/ssl
+
+[X-Fleet]
+Global=true
+MachineOf=nginx.service

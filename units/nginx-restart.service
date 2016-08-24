@@ -1,0 +1,5 @@
+[Unit]
+Description=NGINX reload service
+
+[Service]
+ExecStart=-/usr/bin/docker kill -s HUP nginx
