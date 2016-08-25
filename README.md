@@ -40,10 +40,17 @@ The main unit for the front end, nginx is the static file server and reverse pro
 ```yaml
 [Unit]
 Description=NGINX
-After=docker.service
+# Dependencies
 Requires=docker.service
-Before=nginx-certificate-update.service nginx-site-update.service
-Wants=nginx-certificate-update.service nginx-site-update.service
+Wants=certificate-copy.service
+Wants=nginx-config-copy.service
+Wants=acme-response-copy.service
+
+# Ordering
+After=docker.service
+After=certificate-copy.service
+After=nginx-config-copy.service
+After=acme-response-copy.service
 
 [Service]
 ExecStartPre=-/usr/bin/docker pull chadautry/wac-nginx
@@ -57,8 +64,7 @@ Global=true
 MachineMetadata=frontend=true
 ```
 * requires docker
-* wants cert update
-* wants app update
+* wants all files to be copied before startup
 * Starts a customized nginx docker container
     * configured to route http --> https (except letsencrypt requests)
     * Takes html from local drive
@@ -77,10 +83,13 @@ Description=NGINX reload service
 
 [Service]
 ExecStart=-/usr/bin/docker kill -s HUP nginx
+Type=oneshot
 ```
 * Sends a signal to the named nginx container to reload
 * Ignores errors
+* It is not a oneshot and not a persistent service
 * Expects to be started locally, so doesn't have any machine metadata
+    * Make sure to load the unit so it is available 
 
 [nginx-reload.path](units/nginx-reload.path)
 ```yaml
@@ -88,8 +97,8 @@ ExecStart=-/usr/bin/docker kill -s HUP nginx
 Description=NGINX reload path
 
 [Path]
-PathChanged=/var/www
 PathChanged=/etc/ssl
+#TODO Add Local Config Path
 
 [X-Fleet]
 Global=true
@@ -98,14 +107,24 @@ MachineOf=nginx.service
 * Watches config and certs
     * Static files (acme response and html) don't need to be watched
 * Automatically calls nginx-reload.service on change (because of matching unit name)
-* Scheduled to run on all nginx service machines
+* Scheduled to run on all nginx service machines, don't fiddle with binding
+
+### nginx config watcher and copier
+* Watches value in etcd
+* Metadata driven, don't bother with binding
+
+### acme response watcher and copier
+* Watches value in etcd
+* Metadata driven, don't bother with binding
+
+### ssl cert watcher and copier
+* Watches value in etcd
+* Metadata driven, don't bother with binding
 
 ### letsencrypt renewal unit
 * Scheduled to run once a month
 * Writes acme challenge response to etcd (< 1 MB)
-    * Each nginx machine has watcher unit to write locally
 * Writes certificate to etcd (< 1 MB)
-    * Each nginx machine has watcher unit to write locally 
 
 ### nginx static app update unit
 Want to load app once, and have it distribute automatically
