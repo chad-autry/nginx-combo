@@ -1,9 +1,16 @@
 [Unit]
 Description=NGINX
-After=docker.service
+# Dependencies
 Requires=docker.service
-Before=nginx-certificate-update.service nginx-site-update.service
-Wants=nginx-certificate-update.service nginx-site-update.service
+Wants=certificate-copy.service
+Wants=nginx-config-copy.service
+Wants=acme-response-copy.service
+
+# Ordering
+After=docker.service
+After=certificate-copy.service
+After=nginx-config-copy.service
+After=acme-response-copy.service
 
 [Service]
 ExecStartPre=-/usr/bin/docker pull chadautry/wac-nginx

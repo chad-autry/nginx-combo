@@ -2,8 +2,8 @@
 Description=NGINX reload path
 
 [Path]
-PathChanged=/var/www
 PathChanged=/etc/ssl
+#TODO Add Local Config Path
 
 [X-Fleet]
 Global=true
