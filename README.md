@@ -42,15 +42,15 @@ The main unit for the front end, nginx is the static file server and reverse pro
 Description=NGINX
 # Dependencies
 Requires=docker.service
-Wants=certificate-copy.service
-Wants=nginx-config-copy.service
-Wants=acme-response-copy.service
+Requires=certificate-sync.service
+Requires=nginx-config-sync.service
+Requires=acme-response-sync.service
 
 # Ordering
 After=docker.service
-After=certificate-copy.service
-After=nginx-config-copy.service
-After=acme-response-copy.service
+After=certificate-sync.service
+After=nginx-config-sync.service
+After=acme-response-sync.service
 
 [Service]
 ExecStartPre=-/usr/bin/docker pull chadautry/wac-nginx
@@ -117,9 +117,29 @@ MachineOf=nginx.service
 * Watches value in etcd
 * Metadata driven, don't bother with binding
 
-### ssl cert watcher and copier
-* Watches value in etcd
+### SSL Certification Syncronization
+[certificate-sync.service](units/certificate-sync.service)
+```yaml
+[Unit]
+Description=SSL Certificate Syncronization
+# Dependencies
+Requires=etcd.service
+
+# Ordering
+After=etcd.service
+
+[Service]
+ExecStartPre=etcdctl get /config/ssl > /etc/ssl/cert.crt
+ExecStart=/bin/sh -c "while true; do etcdctl exec-watch  /config/ssl -- etcdctl get /config/ssl > /etc/ssl/cert.crt;done"
+
+[X-Fleet]
+Global=true
+MachineOf=nginx.service
+```
+* Precopies cert from etcd
+* Watches for updates to sync
 * Metadata driven, don't bother with binding
+* TODO: This is naieve. There are periods of not watching, where updates could be missed.
 
 ### letsencrypt renewal unit
 * Scheduled to run once a month
