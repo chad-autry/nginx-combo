@@ -2,15 +2,15 @@
 Description=NGINX
 # Dependencies
 Requires=docker.service
-Wants=certificate-copy.service
-Wants=nginx-config-copy.service
-Wants=acme-response-copy.service
+Requires=certificate-sync.service
+Requires=nginx-config-sync.service
+Requires=acme-response-sync.service
 
 # Ordering
 After=docker.service
-After=certificate-copy.service
-After=nginx-config-copy.service
-After=acme-response-copy.service
+After=certificate-sync.service
+After=nginx-config-sync.service
+After=acme-response-sync.service
 
 [Service]
 ExecStartPre=-/usr/bin/docker pull chadautry/wac-nginx
