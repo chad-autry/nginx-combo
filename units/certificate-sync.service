@@ -7,8 +7,8 @@ Requires=etcd.service
 After=etcd.service
 
 [Service]
-ExecStartPre=etcdctl get /config/ssl > /etc/ssl/cert.crt
-ExecStart=/bin/sh -c "while true; do etcdctl exec-watch  /config/ssl -- etcdctl get /config/ssl > /etc/ssl/cert.crt;done"
+ExecStart=etcdctl watch  /config/ssl
+ExectStartPost=etcdctl get /config/ssl > /etc/ssl/cert.crt
 
 [X-Fleet]
 Global=true
