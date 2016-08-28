@@ -129,17 +129,18 @@ Requires=etcd.service
 After=etcd.service
 
 [Service]
-ExecStartPre=etcdctl get /config/ssl > /etc/ssl/cert.crt
-ExecStart=/bin/sh -c "while true; do etcdctl exec-watch  /config/ssl -- etcdctl get /config/ssl > /etc/ssl/cert.crt;done"
+ExecStart=etcdctl watch  /config/ssl
+ExectStartPost=etcdctl get /config/ssl > /etc/ssl/cert.crt
 
 [X-Fleet]
 Global=true
 MachineOf=nginx.service
 ```
-* Precopies cert from etcd
-* Watches for updates to sync
+* Starts a watch for SSL cert changes to copy
+* Once the watch starts, copy the current certs
+* If the watch is ever satisfied, the unit will exit and be restarted so no updates are missed
 * Metadata driven, don't bother with binding
-* TODO: This is naieve. There are periods of not watching, where updates could be missed.
+* TODO There could be multiple valid certs at once (for JWT) copy all of them
 
 ### letsencrypt renewal unit
 * Scheduled to run once a month
