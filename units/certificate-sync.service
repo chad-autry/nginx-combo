@@ -9,6 +9,7 @@ After=etcd.service
 [Service]
 ExecStart=etcdctl watch  /config/ssl
 ExectStartPost=etcdctl get /config/ssl > /etc/ssl/cert.crt
+Restart=always
 
 [X-Fleet]
 Global=true
