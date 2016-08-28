@@ -58,6 +58,7 @@ ExecStartPre=-/usr/bin/docker rm nginx
 ExecStart=/usr/bin/docker run --name nginx -p 80:80 -p 443:443 \
 -v /var/www:/usr/share/nginx/html:ro -v /etc/ssl:/etc/nginx/ssl:ro \
 -d chadautry/wac-nginx
+Restart=on-failure
 
 [X-Fleet]
 Global=true
@@ -131,6 +132,7 @@ After=etcd.service
 [Service]
 ExecStart=etcdctl watch  /config/ssl
 ExectStartPost=etcdctl get /config/ssl > /etc/ssl/cert.crt
+Restart=always
 
 [X-Fleet]
 Global=true
@@ -138,7 +140,8 @@ MachineOf=nginx.service
 ```
 * Starts a watch for SSL cert changes to copy
 * Once the watch starts, copy the current certs
-* If the watch is ever satisfied, the unit will exit and be restarted so no updates are missed
+* If the watch is ever satisfied, the unit will exit
+* Automatically restarted, causing a new watch and copy
 * Metadata driven, don't bother with binding
 * TODO There could be multiple valid certs at once (for JWT) copy all of them
 
