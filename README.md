@@ -143,7 +143,6 @@ MachineOf=nginx.service
 * If the watch is ever satisfied, the unit will exit
 * Automatically restarted, causing a new watch and copy
 * Metadata driven, don't bother with binding
-* TODO There could be multiple valid certs at once (for JWT) copy all of them
 
 ### letsencrypt renewal unit
 * Scheduled to run once a month
