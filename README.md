@@ -118,7 +118,7 @@ MachineOf=nginx.service
 * Watches value in etcd
 * Metadata driven, don't bother with binding
 
-### SSL Certification Syncronization
+### SSL Certificate Syncronization
 [certificate-sync.service](units/certificate-sync.service)
 ```yaml
 [Unit]
