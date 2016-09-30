@@ -33,6 +33,27 @@ Documentation and copy-pasteable boilerplate for running a full web application 
 * Machine instance monitoring
 
 ## Frontend
+### Basic Cloud Config
+Just an example. Starts fleet, bootstraps a single static etcd cluster with only the single instance
+```
+#cloud-config
+
+coreos:
+  etcd2:
+    initial-cluster: etcdserver=http://$private_ipv4:2380
+    initial-advertise-peer-urls: http://$private_ipv4:2380
+    advertise-client-urls: http://$private_ipv4:2379
+    listen-client-urls: http://0.0.0.0:2379
+    listen-peer-urls: http://$private_ipv4:2380
+  fleet:
+      public-ip: $private_ipv4
+      metadata: "frontend=true"
+  units:
+    - name: etcd2.service
+      command: start
+    - name: fleet.service
+      command: start
+```
 ### nginx unit
 The main unit for the front end, nginx is the static file server and reverse proxy. Can have redundant identical instances.
 
