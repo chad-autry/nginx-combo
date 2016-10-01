@@ -37,6 +37,8 @@ Documentation and copy-pasteable boilerplate for running a full web application 
 Just an example. Starts fleet, bootstraps a single static etcd cluster with only the single instance
 The way I finally loaded it was using the command
 sudo coreos-cloudinit --from-file=/home/chad_autry/cloud-config.yaml
+
+
 ```
 #cloud-config
 
@@ -109,6 +111,10 @@ Description=NGINX reload service
 [Service]
 ExecStart=-/usr/bin/docker kill -s HUP nginx
 Type=oneshot
+
+[X-Fleet]
+Global=true
+MachineOf=nginx.service
 ```
 * Sends a signal to the named nginx container to reload
 * Ignores errors
@@ -123,23 +129,66 @@ Description=NGINX reload path
 
 [Path]
 PathChanged=/etc/ssl
-#TODO Add Local Config Path
+PathChanged=/var/nginx/nginx.conf
 
 [X-Fleet]
 Global=true
 MachineOf=nginx.service
 ```
 * Watches config and certs
-    * Static files (acme response and html) don't need to be watched
+    * Static files (html, javascript, images) don't need to be watched
 * Automatically calls nginx-reload.service on change (because of matching unit name)
 * Scheduled to run on all nginx service machines, don't fiddle with binding
 
-### nginx config watcher and copier
-* Watches value in etcd
-* Metadata driven, don't bother with binding
+### nginx config templating service
+A one shot unit which templates out the nginx vonfig based on values in etcd
 
-### acme response watcher and copier
-* Watches value in etcd
+[nginx-config-templater.service](units/nginx-config-templater.service)
+```yaml
+[Unit]
+Description=NGINX config template service
+# Dependencies
+Requires=etcd.service
+
+[Service]
+ExecStartPre=-/usr/bin/docker pull chadautry/wac-nginx-templater
+ExecStartPre=-/usr/bin/docker rm nginx-templater
+ExecStart=/usr/bin/docker run --name nginx-templater --net host \
+-v /var/nginx/nginx.conf:/etc/nginx/nginx.conf chadautry/wac-nginx-templater
+Type=oneshot
+
+[X-Fleet]
+Global=true
+MachineOf=nginx.service
+```
+* One shot unit
+* Should be scheduled to all nginx boxes
+* Started locally with systemctl when required
+
+### acme challenge response watcher
+[acme-response-watcher.service](units/acme-response-watcher.service)
+```yaml
+[Unit]
+Description=SSL Certificate Syncronization
+# Dependencies
+Requires=etcd.service
+
+# Ordering
+After=etcd.service
+
+[Service]
+ExecStart=etcdctl watch  /acme
+ExectStartPost=systemctl start nginx-config-templater
+Restart=always
+
+[X-Fleet]
+Global=true
+MachineOf=nginx.service
+```
+* Starts a watch for changes in the acme challenge response
+* Once the watch starts, uses systemctl to run the nginx-config-template oneshot
+* If the watch is ever satisfied, the unit will exit
+* Automatically restarted, causing a new watch and oneshot execution
 * Metadata driven, don't bother with binding
 
 ### SSL Certificate Syncronization
