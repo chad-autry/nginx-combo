@@ -13,4 +13,4 @@ Restart=always
 
 [X-Fleet]
 Global=true
-MachineOf=nginx.service
+MachineMetadata=frontend=true

@@ -3,8 +3,8 @@ Description=NGINX reload path
 
 [Path]
 PathChanged=/etc/ssl
-PathChanged=/var/nginx/nginx.conf
+PathChanged=/usr/var/nginx.conf
 
 [X-Fleet]
 Global=true
-MachineOf=nginx.service
+MachineMetadata=frontend=true

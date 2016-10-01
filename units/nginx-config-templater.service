@@ -7,9 +7,9 @@ Requires=etcd.service
 ExecStartPre=-/usr/bin/docker pull chadautry/wac-nginx-templater
 ExecStartPre=-/usr/bin/docker rm nginx-templater
 ExecStart=/usr/bin/docker run --name nginx-templater --net host \
--v /var/nginx/nginx.conf:/etc/nginx/nginx.conf chadautry/wac-nginx-templater
+-v /usr/var/nginx.conf:/usr/var/nginx.conf chadautry/wac-nginx-templater
 Type=oneshot
 
 [X-Fleet]
 Global=true
-MachineOf=nginx.service
+MachineMetadata=frontend=true
