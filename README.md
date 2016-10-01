@@ -176,8 +176,8 @@ Requires=etcd.service
 After=etcd.service
 
 [Service]
-ExecStart=etcdctl watch  /acme
-ExectStartPost=systemctl start nginx-config-templater
+ExecStart=/usr/bin/etcdctl watch  /acme
+ExecStartPost=/usr/bin/systemctl start nginx-config-templater
 Restart=always
 
 [X-Fleet]
@@ -202,8 +202,8 @@ Requires=etcd.service
 After=etcd.service
 
 [Service]
-ExecStart=etcdctl watch  /config/ssl
-ExectStartPost=etcdctl get /config/ssl > /etc/ssl/cert.crt
+ExecStart=/usr/bin/etcdctl watch  /config/ssl
+ExecStartPost=/usr/bin/etcdctl get /config/ssl > /etc/ssl/cert.crt
 Restart=always
 
 [X-Fleet]
