@@ -1,5 +1,5 @@
 [Unit]
-Description=SSL Certificate Syncronization
+Description=Watches for distributed acme challenge responses
 # Dependencies
 Requires=etcd.service
 
@@ -7,8 +7,11 @@ Requires=etcd.service
 After=etcd.service
 
 [Service]
-ExecStart=/usr/bin/etcdctl watch  /acme
-ExecStartPost=/usr/bin/systemctl start nginx-config-templater
+ExecStartPre=-/usr/bin/docker pull chadautry/wac-nginx-templater
+ExecStartPre=-/usr/bin/docker rm nginx-templater
+ExecStart=/usr/bin/etcdctl watch /acme/watched
+ExecStartPost=/usr/bin/docker run --name nginx-templater --net host \
+-v /usr/var/nginx.conf:/usr/var/nginx.conf chadautry/wac-nginx-templater
 Restart=always
 
 [X-Fleet]
