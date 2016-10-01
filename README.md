@@ -68,14 +68,12 @@ The main unit for the front end, nginx is the static file server and reverse pro
 Description=NGINX
 # Dependencies
 Requires=docker.service
-Requires=certificate-sync.service
-Requires=nginx-config-sync.service
+Requires=nginx-reload.path
 Requires=acme-response-sync.service
 
 # Ordering
 After=docker.service
-After=certificate-sync.service
-After=nginx-config-sync.service
+After=nginx-reload.path
 After=acme-response-sync.service
 
 [Service]
@@ -83,6 +81,7 @@ ExecStartPre=-/usr/bin/docker pull chadautry/wac-nginx
 ExecStartPre=-/usr/bin/docker rm nginx
 ExecStart=/usr/bin/docker run --name nginx -p 80:80 -p 443:443 \
 -v /var/www:/usr/share/nginx/html:ro -v /etc/ssl:/etc/nginx/ssl:ro \
+-v /usr/var/nginx.conf/usr/var/nginx.conf:ro
 -d chadautry/wac-nginx
 Restart=on-failure
 
@@ -114,7 +113,7 @@ Type=oneshot
 
 [X-Fleet]
 Global=true
-MachineOf=nginx.service
+MachineMetadata=frontend=true
 ```
 * Sends a signal to the named nginx container to reload
 * Ignores errors
@@ -129,11 +128,11 @@ Description=NGINX reload path
 
 [Path]
 PathChanged=/etc/ssl
-PathChanged=/var/nginx/nginx.conf
+PathChanged=/usr/var/nginx.conf
 
 [X-Fleet]
 Global=true
-MachineOf=nginx.service
+MachineMetadata=frontend=true
 ```
 * Watches config and certs
     * Static files (html, javascript, images) don't need to be watched
@@ -154,12 +153,12 @@ Requires=etcd.service
 ExecStartPre=-/usr/bin/docker pull chadautry/wac-nginx-templater
 ExecStartPre=-/usr/bin/docker rm nginx-templater
 ExecStart=/usr/bin/docker run --name nginx-templater --net host \
--v /var/nginx/nginx.conf:/etc/nginx/nginx.conf chadautry/wac-nginx-templater
+-v /usr/var/nginx.conf:/usr/var/nginx.conf chadautry/wac-nginx-templater
 Type=oneshot
 
 [X-Fleet]
 Global=true
-MachineOf=nginx.service
+MachineMetadata=frontend=true
 ```
 * One shot unit
 * Should be scheduled to all nginx boxes
@@ -183,7 +182,7 @@ Restart=always
 
 [X-Fleet]
 Global=true
-MachineOf=nginx.service
+MachineMetadata=frontend=true
 ```
 * Starts a watch for changes in the acme challenge response
 * Once the watch starts, uses systemctl to run the nginx-config-template oneshot
@@ -209,7 +208,7 @@ Restart=always
 
 [X-Fleet]
 Global=true
-MachineOf=nginx.service
+MachineMetadata=frontend=true
 ```
 * Starts a watch for SSL cert changes to copy
 * Once the watch starts, copy the current certs
