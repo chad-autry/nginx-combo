@@ -139,36 +139,11 @@ MachineMetadata=frontend=true
 * Automatically calls nginx-reload.service on change (because of matching unit name)
 * Scheduled to run on all nginx service machines, don't fiddle with binding
 
-### nginx config templating service
-A one shot unit which templates out the nginx vonfig based on values in etcd
-
-[nginx-config-templater.service](units/nginx-config-templater.service)
-```yaml
-[Unit]
-Description=NGINX config template service
-# Dependencies
-Requires=etcd.service
-
-[Service]
-ExecStartPre=-/usr/bin/docker pull chadautry/wac-nginx-templater
-ExecStartPre=-/usr/bin/docker rm nginx-templater
-ExecStart=/usr/bin/docker run --name nginx-templater --net host \
--v /usr/var/nginx.conf:/usr/var/nginx.conf chadautry/wac-nginx-templater
-Type=oneshot
-
-[X-Fleet]
-Global=true
-MachineMetadata=frontend=true
-```
-* One shot unit
-* Should be scheduled to all nginx boxes
-* Started locally with systemctl when required
-
 ### acme challenge response watcher
 [acme-response-watcher.service](units/acme-response-watcher.service)
 ```yaml
 [Unit]
-Description=SSL Certificate Syncronization
+Description=Watches for distributed acme challenge responses
 # Dependencies
 Requires=etcd.service
 
@@ -176,8 +151,11 @@ Requires=etcd.service
 After=etcd.service
 
 [Service]
-ExecStart=/usr/bin/etcdctl watch  /acme
-ExecStartPost=/usr/bin/systemctl start nginx-config-templater
+ExecStartPre=-/usr/bin/docker pull chadautry/wac-nginx-templater
+ExecStartPre=-/usr/bin/docker rm nginx-templater
+ExecStart=/usr/bin/etcdctl watch /acme/watched
+ExecStartPost=/usr/bin/docker run --name nginx-templater --net host \
+-v /usr/var/nginx.conf:/usr/var/nginx.conf chadautry/wac-nginx-templater
 Restart=always
 
 [X-Fleet]
