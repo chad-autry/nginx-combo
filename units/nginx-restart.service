@@ -4,3 +4,7 @@ Description=NGINX reload service
 [Service]
 ExecStart=-/usr/bin/docker kill -s HUP nginx
 Type=oneshot
+
+[X-Fleet]
+Global=true
+MachineOf=nginx.service

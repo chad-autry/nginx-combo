@@ -1,0 +1,16 @@
+[Unit]
+Description=SSL Certificate Syncronization
+# Dependencies
+Requires=etcd.service
+
+# Ordering
+After=etcd.service
+
+[Service]
+ExecStart=etcdctl watch  /acme
+ExectStartPost=systemctl start nginx-config-templater
+Restart=always
+
+[X-Fleet]
+Global=true
+MachineOf=nginx.service
