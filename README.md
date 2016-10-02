@@ -81,7 +81,7 @@ ExecStartPre=-/usr/bin/docker pull chadautry/wac-nginx
 ExecStartPre=-/usr/bin/docker rm nginx
 ExecStart=/usr/bin/docker run --name nginx -p 80:80 -p 443:443 \
 -v /var/www:/usr/share/nginx/html:ro -v /etc/ssl:/etc/nginx/ssl:ro \
--v /usr/var/nginx.conf/usr/var/nginx.conf:ro
+-v /var/nginx:/usr/var/nginx/nginx.conf:ro
 -d chadautry/wac-nginx
 Restart=on-failure
 
@@ -128,7 +128,7 @@ Description=NGINX reload path
 
 [Path]
 PathChanged=/etc/ssl
-PathChanged=/usr/var/nginx.conf
+PathChanged=/var/nginx/nginx.conf
 
 [X-Fleet]
 Global=true
@@ -155,7 +155,7 @@ ExecStartPre=-/usr/bin/docker pull chadautry/wac-nginx-templater
 ExecStartPre=-/usr/bin/docker rm nginx-templater
 ExecStart=/usr/bin/etcdctl watch /acme/watched
 ExecStartPost=/usr/bin/docker run --name nginx-templater --net host \
--v /usr/var/nginx.conf:/usr/var/nginx.conf chadautry/wac-nginx-templater
+-v /var/nginx:/usr/var/nginx chadautry/wac-nginx-templater
 Restart=always
 
 [X-Fleet]
