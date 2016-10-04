@@ -68,20 +68,16 @@ The main unit for the front end, nginx is the static file server and reverse pro
 Description=NGINX
 # Dependencies
 Requires=docker.service
-Requires=nginx-reload.path
-Requires=acme-response-sync.service
 
 # Ordering
 After=docker.service
-After=nginx-reload.path
-After=acme-response-sync.service
 
 [Service]
 ExecStartPre=-/usr/bin/docker pull chadautry/wac-nginx
 ExecStartPre=-/usr/bin/docker rm nginx
 ExecStart=/usr/bin/docker run --name nginx -p 80:80 -p 443:443 \
 -v /var/www:/usr/share/nginx/html:ro -v /etc/ssl:/etc/nginx/ssl:ro \
--v /var/nginx:/usr/var/nginx/nginx.conf:ro
+-v /var/nginx:/usr/var/nginx/nginx.conf:ro \
 -d chadautry/wac-nginx
 Restart=on-failure
 
@@ -92,12 +88,10 @@ MachineMetadata=frontend=true
 * requires docker
 * wants all files to be copied before startup
 * Starts a customized nginx docker container
-    * configured to route http --> https (except letsencrypt requests)
+    * Takes server config from local drive
     * Takes html from local drive
     * Takes certs from local drive
-    * Takes acme challenge response from local drive
-    * Takes config from local drive
-* runs on all frontend tagged instances
+* Blindly runs on all frontend tagged instances
 
 ### nginx reloading units
 A pair of units are responsible for reloading nginx instances on file changes
