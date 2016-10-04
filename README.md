@@ -96,7 +96,7 @@ MachineMetadata=frontend=true
 ### nginx reloading units
 A pair of units are responsible for reloading nginx instances on file changes
 
-[nginx-reload.service](units/nginx-restart.service)
+[nginx-reload.service](units/nginx-reload.service)
 ```yaml
 [Unit]
 Description=NGINX reload service
@@ -111,9 +111,8 @@ MachineMetadata=frontend=true
 ```
 * Sends a signal to the named nginx container to reload
 * Ignores errors
-* It is not a oneshot and not a persistent service
-* Expects to be started locally, so doesn't have any machine metadata
-    * Make sure to load the unit so it is available 
+* It is a one shot which expects to be called by other units
+* Metadata will cause it to be made available on all frontend servers when loaded
 
 [nginx-reload.path](units/nginx-reload.path)
 ```yaml
@@ -121,17 +120,15 @@ MachineMetadata=frontend=true
 Description=NGINX reload path
 
 [Path]
-PathChanged=/etc/ssl
 PathChanged=/var/nginx/nginx.conf
 
 [X-Fleet]
 Global=true
 MachineMetadata=frontend=true
 ```
-* Watches config and certs
-    * Static files (html, javascript, images) don't need to be watched
+* Watches config files
 * Automatically calls nginx-reload.service on change (because of matching unit name)
-* Scheduled to run on all nginx service machines, don't fiddle with binding
+* Blindly runs on all frontend tagged instances
 
 ### acme challenge response watcher
 [acme-response-watcher.service](units/acme-response-watcher.service)
