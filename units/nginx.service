@@ -11,7 +11,7 @@ ExecStartPre=-/usr/bin/docker pull chadautry/wac-nginx
 ExecStartPre=-/usr/bin/docker rm nginx
 ExecStart=/usr/bin/docker run --name nginx -p 80:80 -p 443:443 \
 -v /var/www:/usr/share/nginx/html:ro -v /etc/ssl:/etc/nginx/ssl:ro \
--v /var/nginx:/usr/var/nginx/nginx.conf:ro \
+-v /var/nginx:/usr/var/nginx:ro \
 -d chadautry/wac-nginx
 Restart=on-failure
 
