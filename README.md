@@ -142,11 +142,11 @@ Requires=etcd.service
 After=etcd.service
 
 [Service]
-ExecStartPre=-/usr/bin/docker pull chadautry/wac-nginx-templater
+ExecStartPre=-/usr/bin/docker pull chadautry/wac-nginx-config-templater
 ExecStartPre=-/usr/bin/docker rm nginx-templater
 ExecStart=/usr/bin/etcdctl watch /acme/watched
-ExecStartPost=/usr/bin/docker run --name nginx-templater --net host \
--v /var/nginx:/usr/var/nginx chadautry/wac-nginx-templater
+ExecStartPost=-/usr/bin/docker run --name nginx-templater --net host \
+-v /var/nginx:/usr/var/nginx chadautry/wac-nginx-config-templater
 Restart=always
 
 [X-Fleet]
@@ -154,10 +154,12 @@ Global=true
 MachineMetadata=frontend=true
 ```
 * Starts a watch for changes in the acme challenge response
-* Once the watch starts, uses systemctl to run the nginx-config-template oneshot
+* Once the watch starts, executes the config templating container
+    * Local volume mapped in for the templated config to be written to
+    * Doesn't error out (TODO move to a secondary unit to be safely concurrent)
 * If the watch is ever satisfied, the unit will exit
-* Automatically restarted, causing a new watch and oneshot execution
-* Metadata driven, don't bother with binding
+* Automatically restarted, causing a new watch and templater execution
+* Blindly runs on all frontend tagged instances
 
 ### SSL Certificate Syncronization
 [certificate-sync.service](units/certificate-sync.service)
