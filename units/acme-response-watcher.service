@@ -7,11 +7,11 @@ Requires=etcd.service
 After=etcd.service
 
 [Service]
-ExecStartPre=-/usr/bin/docker pull chadautry/wac-nginx-templater
+ExecStartPre=-/usr/bin/docker pull chadautry/wac-nginx-config-templater
 ExecStartPre=-/usr/bin/docker rm nginx-templater
 ExecStart=/usr/bin/etcdctl watch /acme/watched
-ExecStartPost=/usr/bin/docker run --name nginx-templater --net host \
--v /var/nginx:/usr/var/nginx chadautry/wac-nginx-templater
+ExecStartPost=-/usr/bin/docker run --name nginx-templater --net host \
+-v /var/nginx:/usr/var/nginx chadautry/wac-nginx-config-templater
 Restart=always
 
 [X-Fleet]
