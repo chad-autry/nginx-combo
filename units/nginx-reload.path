@@ -2,7 +2,6 @@
 Description=NGINX reload path
 
 [Path]
-PathChanged=/etc/ssl
 PathChanged=/var/nginx/nginx.conf
 
 [X-Fleet]
