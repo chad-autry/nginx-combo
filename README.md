@@ -174,8 +174,15 @@ Requires=etcd.service
 After=etcd.service
 
 [Service]
-ExecStart=/usr/bin/etcdctl watch  /config/ssl
-ExecStartPost=/usr/bin/etcdctl get /config/ssl > /etc/ssl/cert.crt
+ExecStartPre=-/usr/bin/docker pull chadautry/wac-nginx-config-templater
+ExecStartPre=-/usr/bin/docker rm nginx-templater
+ExecStart=/usr/bin/etcdctl watch /ssl/watched
+ExecStartPost=/usr/bin/etcdctl get /ssl/server_chain > /etc/ssl/fullchain.pem
+ExecStartPost=/usr/bin/etcdctl get /ssl/key > /etc/ssl/privkey.pem
+ExecStartPost=/usr/bin/etcdctl get /ssl/server_pem > /etc/ssl/chain.pem
+ExecStartPost=-/usr/bin/docker run --name nginx-templater --net host \
+-v /var/nginx:/usr/var/nginx -v /etc/ssl:/etc/nginx/ssl:ro \
+chadautry/wac-nginx-config-templater
 Restart=always
 
 [X-Fleet]
