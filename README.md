@@ -76,9 +76,9 @@ After=docker.service
 ExecStartPre=-/usr/bin/docker pull chadautry/wac-nginx
 ExecStartPre=-/usr/bin/docker rm nginx
 ExecStart=/usr/bin/docker run --name nginx -p 80:80 -p 443:443 \
--v /var/www:/usr/share/nginx/html:ro -v /etc/ssl:/etc/nginx/ssl:ro \
+-v /var/www:/usr/share/nginx/html:ro -v /var/ssl:/etc/nginx/ssl:ro \
 -v /var/nginx:/usr/var/nginx:ro \
--d chadautry/wac-nginx
+chadautry/wac-nginx
 Restart=on-failure
 
 [X-Fleet]
@@ -146,7 +146,7 @@ ExecStartPre=-/usr/bin/docker pull chadautry/wac-nginx-config-templater
 ExecStartPre=-/usr/bin/docker rm nginx-templater
 ExecStart=/usr/bin/etcdctl watch /acme/watched
 ExecStartPost=-/usr/bin/docker run --name nginx-templater --net host \
--v /var/nginx:/usr/var/nginx -v /etc/ssl:/etc/nginx/ssl:ro \
+-v /var/nginx:/usr/var/nginx -v /var/ssl:/etc/nginx/ssl:ro \
 chadautry/wac-nginx-config-templater
 Restart=always
 
@@ -176,12 +176,13 @@ After=etcd.service
 [Service]
 ExecStartPre=-/usr/bin/docker pull chadautry/wac-nginx-config-templater
 ExecStartPre=-/usr/bin/docker rm nginx-templater
+ExecStartPre=-mkdir /etc/ssl
 ExecStart=/usr/bin/etcdctl watch /ssl/watched
-ExecStartPost=/usr/bin/etcdctl get /ssl/server_chain > /etc/ssl/fullchain.pem
-ExecStartPost=/usr/bin/etcdctl get /ssl/key > /etc/ssl/privkey.pem
-ExecStartPost=/usr/bin/etcdctl get /ssl/server_pem > /etc/ssl/chain.pem
+ExecStartPost=/bin/sh -c '/usr/bin/etcdctl get /ssl/server_chain > /etc/ssl/chain.pem'
+ExecStartPost=/bin/sh -c '/usr/bin/etcdctl get /ssl/key > /etc/ssl/privkey.pem'
+ExecStartPost=/bin/sh -c '/usr/bin/etcdctl get /ssl/server_pem > /etc/ssl/fullchain.pem'
 ExecStartPost=-/usr/bin/docker run --name nginx-templater --net host \
--v /var/nginx:/usr/var/nginx -v /etc/ssl:/etc/nginx/ssl:ro \
+-v /var/nginx:/usr/var/nginx -v /var/ssl:/etc/nginx/ssl:ro \
 chadautry/wac-nginx-config-templater
 Restart=always
 
