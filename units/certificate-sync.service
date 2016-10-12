@@ -9,11 +9,11 @@ After=etcd.service
 [Service]
 ExecStartPre=-/usr/bin/docker pull chadautry/wac-nginx-config-templater
 ExecStartPre=-/usr/bin/docker rm nginx-templater
-ExecStartPre=-mkdir /etc/ssl
+ExecStartPre=-mkdir /var/ssl
 ExecStart=/usr/bin/etcdctl watch /ssl/watched
-ExecStartPost=/bin/sh -c '/usr/bin/etcdctl get /ssl/server_chain > /etc/ssl/chain.pem'
-ExecStartPost=/bin/sh -c '/usr/bin/etcdctl get /ssl/key > /etc/ssl/privkey.pem'
-ExecStartPost=/bin/sh -c '/usr/bin/etcdctl get /ssl/server_pem > /etc/ssl/fullchain.pem'
+ExecStartPost=/bin/sh -c '/usr/bin/etcdctl get /ssl/server_chain > /var/ssl/chain.pem'
+ExecStartPost=/bin/sh -c '/usr/bin/etcdctl get /ssl/key > /var/ssl/privkey.pem'
+ExecStartPost=/bin/sh -c '/usr/bin/etcdctl get /ssl/server_pem > /var/ssl/fullchain.pem'
 ExecStartPost=-/usr/bin/docker run --name nginx-templater --net host \
 -v /var/nginx:/usr/var/nginx -v /var/ssl:/etc/nginx/ssl:ro \
 chadautry/wac-nginx-config-templater
