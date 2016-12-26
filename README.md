@@ -121,12 +121,14 @@ Description=NGINX reload path
 
 [Path]
 PathChanged=/var/nginx/nginx.conf
+PathChanged=/var/ssl/fullchain.pem
 
 [X-Fleet]
 Global=true
 MachineMetadata=frontend=true
 ```
-* Watches config files
+* Watches config file
+* Watches the (last copied) SSL cert file
 * Automatically calls nginx-reload.service on change (because of matching unit name)
 * Blindly runs on all frontend tagged instances
 
@@ -181,9 +183,6 @@ ExecStart=/usr/bin/etcdctl watch /ssl/watched
 ExecStartPost=/bin/sh -c '/usr/bin/etcdctl get /ssl/server_chain > /var/ssl/chain.pem'
 ExecStartPost=/bin/sh -c '/usr/bin/etcdctl get /ssl/key > /var/ssl/privkey.pem'
 ExecStartPost=/bin/sh -c '/usr/bin/etcdctl get /ssl/server_pem > /var/ssl/fullchain.pem'
-ExecStartPost=-/usr/bin/docker run --name nginx-templater --net host \
--v /var/nginx:/usr/var/nginx -v /var/ssl:/etc/nginx/ssl:ro \
-chadautry/wac-nginx-config-templater
 Restart=always
 
 [X-Fleet]
