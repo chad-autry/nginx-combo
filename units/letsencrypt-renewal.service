@@ -1,0 +1,10 @@
+[Unit]
+Description=Letsencrpyt renewal service
+
+[Service]
+ExecStart=-/usr/bin/docker kill -s HUP nginx
+Type=oneshot
+
+[X-Fleet]
+Global=true
+MachineMetadata=frontend=true

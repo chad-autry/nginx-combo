@@ -1,0 +1,9 @@
+[Unit]
+Description=Letsencrpyt renewal timer
+
+[Timer]
+OnCalendar=*:0/10
+
+[X-Fleet]
+Global=true
+MachineMetadata=frontend=true
