@@ -132,7 +132,12 @@ MachineMetadata=frontend=true
 * Automatically calls nginx-reload.service on change (because of matching unit name)
 * Blindly runs on all frontend tagged instances
 
-### acme challenge response watcher
+### SSL
+With nginx in place, several units are responsible for updating its SSL certificates
+
+#### acme challenge response watcher
+This unit takes the acme challenge response from etcd, and templates it into the nginx config
+
 [acme-response-watcher.service](units/acme-response-watcher.service)
 ```yaml
 [Unit]
@@ -164,7 +169,9 @@ MachineMetadata=frontend=true
 * Automatically restarted, causing a new watch and templater execution
 * Blindly runs on all frontend tagged instances
 
-### SSL Certificate Syncronization
+#### SSL Certificate Syncronization
+This unit takes the SSL certificates from etcd, and writes them to the local system
+
 [certificate-sync.service](units/certificate-sync.service)
 ```yaml
 [Unit]
@@ -195,10 +202,39 @@ MachineMetadata=frontend=true
 * Automatically restarted, causing a new watch and copy
 * Metadata driven, don't bother with binding
 
-### letsencrypt renewal unit
-* Scheduled to run once a month
-* Writes acme challenge response to etcd (< 1 MB)
-* Writes certificate to etcd (< 1 MB)
+#### letsencrypt renewal units
+A pair of units are responsible for initiating the letsencrypt renewal process each month
+
+[letsencrypt-renewal.service](units/letsencrypt-renewal.service)
+```yaml
+[Unit]
+Description=Letsencrpyt renewal service
+
+[Service]
+ExecStart=-/usr/bin/docker kill -s HUP nginx
+Type=oneshot
+
+[X-Fleet]
+Global=true
+MachineMetadata=frontend=true
+```
+* Sends a signal to the named nginx container to reload
+* Ignores errors
+* It is a one shot which expects to be called by other units
+* Metadata will cause it to be made available on all frontend servers when loaded
+
+[letsencrypt-renewal.timer](units/letsencrypt-renewal.timer)
+```yaml
+[Unit]
+Description=Letsencrpyt renewal timer
+
+[Timer]
+OnCalendar=*:0/10
+
+[X-Fleet]
+Global=true
+MachineMetadata=frontend=true
+```
 
 ### nginx static app update unit
 Want to load app once, and have it distribute automatically
