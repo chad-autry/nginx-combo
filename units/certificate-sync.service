@@ -7,8 +7,6 @@ Requires=etcd.service
 After=etcd.service
 
 [Service]
-ExecStartPre=-/usr/bin/docker pull chadautry/wac-nginx-config-templater
-ExecStartPre=-/usr/bin/docker rm nginx-templater
 ExecStartPre=-mkdir /var/ssl
 ExecStart=/usr/bin/etcdctl watch /ssl/watched
 ExecStartPost=/bin/sh -c '/usr/bin/etcdctl get /ssl/server_chain > /var/ssl/chain.pem'

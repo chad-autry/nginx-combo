@@ -2,8 +2,8 @@
 Description=Letsencrpyt renewal timer
 
 [Timer]
-OnCalendar=*:0/10
+OnCalendar=*-*-01 05:00:00
+RandomizedDelaySec=60
 
 [X-Fleet]
-Global=true
 MachineMetadata=frontend=true
