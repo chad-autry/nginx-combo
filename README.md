@@ -226,12 +226,16 @@ MachineMetadata=frontend=true
 * Metadata will cause it to be made available on all frontend servers when loaded
     * It technically could run anywhere with etcd, just limiting its loaded footprint
 
-> Special Deployment Note
-> Put the admin e-mail and domain into etcd
+> Special Deployment Note:
+> * Put the admin e-mail and domain into etcd
+> ```
 > /usr/bin/etcdctl set /domain/name <domain>
 > /usr/bin/etcdctl set /domain/email <email>
-> Manually run the wac-acme container once to obtain certificates the first time
+> ```
+> * Manually run the wac-acme container once to obtain certificates the first time
+> ```
 > sudo docker run --net host --name acme chadautry/wac-acme
+> ```
 
 [letsencrypt-renewal.timer](units/letsencrypt-renewal.timer)
 ```yaml
