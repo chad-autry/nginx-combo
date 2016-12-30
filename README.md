@@ -183,8 +183,6 @@ Requires=etcd.service
 After=etcd.service
 
 [Service]
-ExecStartPre=-/usr/bin/docker pull chadautry/wac-nginx-config-templater
-ExecStartPre=-/usr/bin/docker rm nginx-templater
 ExecStartPre=-mkdir /var/ssl
 ExecStart=/usr/bin/etcdctl watch /ssl/watched
 ExecStartPost=/bin/sh -c '/usr/bin/etcdctl get /ssl/server_chain > /var/ssl/chain.pem'
@@ -211,17 +209,29 @@ A pair of units are responsible for initiating the letsencrypt renewal process e
 Description=Letsencrpyt renewal service
 
 [Service]
-ExecStart=-/usr/bin/docker kill -s HUP nginx
+ExecStartPre=-/usr/bin/docker pull chadautry/wac-acme
+ExecStartPre=-/usr/bin/docker rm acme
+ExecStart=-/usr/bin/docker run --net host --name acme chadautry/wac-acme
 Type=oneshot
 
 [X-Fleet]
 Global=true
 MachineMetadata=frontend=true
 ```
-* Sends a signal to the named nginx container to reload
+* Calls the wac-acme container to create/renew the cert
+    * Container takes domain name and domain admin e-mail from etcd
+    * Container interacts with other units/containers to manage the renewal process through etcd
 * Ignores errors
-* It is a one shot which expects to be called by other units
+* It is a one shot which expects to be called by the timer unit
 * Metadata will cause it to be made available on all frontend servers when loaded
+    * It technically could run anywhere with etcd, just limiting its loaded footprint
+
+> Special Deployment Note
+> Put the admin e-mail and domain into etcd
+> /usr/bin/etcdctl set /domain/name <domain>
+> /usr/bin/etcdctl set /domain/email <email>
+> Manually run the wac-acme container once to obtain certificates the first time
+> sudo docker run --net host --name acme chadautry/wac-acme
 
 [letsencrypt-renewal.timer](units/letsencrypt-renewal.timer)
 ```yaml
@@ -229,12 +239,18 @@ MachineMetadata=frontend=true
 Description=Letsencrpyt renewal timer
 
 [Timer]
-OnCalendar=*:0/10
+OnCalendar=*-*-01 05:00:00
+RandomizedDelaySec=60
 
 [X-Fleet]
-Global=true
 MachineMetadata=frontend=true
 ```
+
+* Executes once a month on the 1st at 5:00
+    * Avoid any DST confusions by avoiding the midnight hours
+* Assuming this gets popular (yeah right), add a 1 minute randomized delay to not pound letsencrypt
+* Automagically executes the letsencrypt-renewal.service based on name
+* Not global so there will only be one instance
 
 ### nginx static app update unit
 Want to load app once, and have it distribute automatically
