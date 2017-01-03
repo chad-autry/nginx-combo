@@ -260,10 +260,40 @@ MachineMetadata=frontend=true
 Want to load app once, and have it distribute automatically
 
 ### api endpoint discovery unit
-## Backend
+## API Backend
+These are the units for an api backend, including authentication. A cluster could have multiple backedn processes, just change the tagging from 'backend' to some named process (and change the docker process name)
 ### nodejs unit
+The main application unit, it is simply a docker container with Node.js installed and the code to be executed mounted inside
+
+[certificate-sync.service](units/certificate-sync.service)
+```yaml
+[Unit]
+Description=SSL Certificate Syncronization
+# Dependencies
+Requires=etcd.service
+
+# Ordering
+After=etcd.service
+
+[Service]
+ExecStartPre=-/usr/bin/docker pull chadautry/wac-node
+ExecStartPre=-/usr/bin/docker rm backend-node-container
+ExecStart=/usr/bin/docker run --name backend-node-container -p 80:8080 -p 443:4443 \
+-v /app:/usr/share/node/app:ro \
+chadautry/wac-node
+Restart=on-failure
+
+[X-Fleet]
+Global=true
+MachineMetadata=backend=true
+```
 ### nodejs code update unit
+Need to distribute code accress all backend instances
+Need to restart the local Node server when new code is on the machine
 ### api endpoint publishing unit
+### JWT Encryption Keys
+Need a manual command to generate a new key (placing it in etcd)
+Need to watch the new key, and restart the Node.js unit when it changes
 ### RethinkDB unit
 
 ## Unit Files
