@@ -288,12 +288,12 @@ Global=true
 MachineMetadata=backend=true
 ```
 ### nodejs code update unit
-Need to distribute code accress all backend instances
-Need to restart the local Node server when new code is on the machine
+* Need to distribute code accross all backend instances
+* Need to restart the local Node server when new code is on the machine
 ### api endpoint publishing unit
 ### JWT Encryption Keys
-Need a manual command to generate a new key (placing it in etcd)
-Need to watch the new key, and restart the Node.js unit when it changes
+* Need a manual command to generate a new key (placing it in etcd)
+* Need to watch the new key, and restart the Node.js unit when it changes
 ### RethinkDB unit
 
 ## Unit Files
