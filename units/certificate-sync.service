@@ -7,11 +7,17 @@ Requires=etcd.service
 After=etcd.service
 
 [Service]
-ExecStartPre=-mkdir /var/ssl
-ExecStart=/usr/bin/etcdctl watch /ssl/watched
-ExecStartPost=/bin/sh -c '/usr/bin/etcdctl get /ssl/server_chain > /var/ssl/chain.pem'
-ExecStartPost=/bin/sh -c '/usr/bin/etcdctl get /ssl/key > /var/ssl/privkey.pem'
-ExecStartPost=/bin/sh -c '/usr/bin/etcdctl get /ssl/server_pem > /var/ssl/fullchain.pem'
+ExecStartPre=-/usr/bin/docker pull chadautry/wac-node
+ExecStartPre=-/usr/bin/docker rm backend-node-container
+ExecStart=/usr/bin/docker run --name backend-node-container -p 80:8080 -p 443:4443 \
+-v /app:/usr/share/node/app:ro \
+chadautry/wac-node
+Restart=on-failure
+
+[X-Fleet]
+Global=true
+MachineMetadata=backend=true
+llchain.pem'
 Restart=always
 
 [X-Fleet]
