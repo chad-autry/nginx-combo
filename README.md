@@ -249,7 +249,6 @@ RandomizedDelaySec=60
 [X-Fleet]
 MachineMetadata=frontend=true
 ```
-
 * Executes once a month on the 1st at 5:00
     * Avoid any DST confusions by avoiding the midnight hours
 * Assuming this gets popular (yeah right), add a 1 minute randomized delay to not pound letsencrypt
@@ -265,21 +264,21 @@ These are the units for an api backend, including authentication. A cluster coul
 ### nodejs unit
 The main application unit, it is simply a docker container with Node.js installed and the code to be executed mounted inside
 
-[certificate-sync.service](units/certificate-sync.service)
+[nodejs.service](units/nodejs.service)
 ```yaml
 [Unit]
-Description=SSL Certificate Syncronization
+Description=NodeJS Backend API
 # Dependencies
-Requires=etcd.service
+Requires=docker.service
 
 # Ordering
-After=etcd.service
+After=docker.service
 
 [Service]
 ExecStartPre=-/usr/bin/docker pull chadautry/wac-node
 ExecStartPre=-/usr/bin/docker rm backend-node-container
 ExecStart=/usr/bin/docker run --name backend-node-container -p 80:8080 -p 443:4443 \
--v /app:/usr/share/node/app:ro \
+-v /var/nodejs:/app:ro \
 chadautry/wac-node
 Restart=on-failure
 
@@ -287,13 +286,44 @@ Restart=on-failure
 Global=true
 MachineMetadata=backend=true
 ```
+* requires docker
+* Starts a customized nodejs docker container
+    * Takes the app from local drive
+* Blindly runs on all backend tagged instances
+
 ### nodejs code update unit
 * Need to distribute code accross all backend instances
 * Need to restart the local Node server when new code is on the machine
-### api endpoint publishing unit
+
+### backend publishing unit
+Publishes the backend host into etcd at an expected path for the frontend to route to
+[backend-publishing.service](units/backend-publishing.service)
+```yaml
+[Unit]
+Description=Backend Publishing
+# Dependencies
+Requires=etcd.service
+
+# Ordering
+After=etcd.service
+
+[Service]
+ExecStart=/bin/sh -c "while true; do etcdctl set /discovery/backend/%H '%H' --ttl 60;sleep 45;done"
+ExecStop=/usr/bin/etcdctl rm /discovery/backend/%H
+
+[X-Fleet]
+Global=true
+MachineMetadata=backend=true
+```
+* requires etcd
+* Publishes host into etcd every 45 seconds with a 60 second duration
+* Deletes host from etcd on stop
+* Blindly runs on all backend tagged instances
+
 ### JWT Encryption Keys
 * Need a manual command to generate a new key (placing it in etcd)
 * Need to watch the new key, and restart the Node.js unit when it changes
+
 ### RethinkDB unit
 
 ## Unit Files
