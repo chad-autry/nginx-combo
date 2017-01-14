@@ -277,7 +277,7 @@ After=docker.service
 [Service]
 ExecStartPre=-/usr/bin/docker pull chadautry/wac-node
 ExecStartPre=-/usr/bin/docker rm backend-node-container
-ExecStart=/usr/bin/docker run --name backend-node-container -p 80:8080 -p 443:4443 \
+ExecStart=/usr/bin/docker run --name backend-node-container -p 8080:80 -p 4443:443 \
 -v /var/nodejs:/app:ro \
 chadautry/wac-node
 Restart=on-failure
@@ -297,6 +297,7 @@ MachineMetadata=backend=true
 
 ### backend publishing unit
 Publishes the backend host into etcd at an expected path for the frontend to route to
+
 [backend-publishing.service](units/backend-publishing.service)
 ```yaml
 [Unit]
