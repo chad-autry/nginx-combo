@@ -1,0 +1,19 @@
+[Unit]
+Description=NodeJS Backend API
+# Dependencies
+Requires=docker.service
+
+# Ordering
+After=docker.service
+
+[Service]
+ExecStartPre=-/usr/bin/docker pull chadautry/wac-node
+ExecStartPre=-/usr/bin/docker rm backend-node-container
+ExecStart=/usr/bin/docker run --name backend-node-container -p 80:8080 -p 443:4443 \
+-v /var/nodejs:/app:ro \
+chadautry/wac-node
+Restart=on-failure
+
+[X-Fleet]
+Global=true
+MachineMetadata=backend=true
