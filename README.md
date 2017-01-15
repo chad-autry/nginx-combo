@@ -34,7 +34,7 @@ Documentation and copy-pasteable boilerplate for running a full web application 
 
 ## Frontend
 ### Basic Cloud Config
-Just an example. Starts fleet, bootstraps a single static etcd cluster with only the single instance
+Just an example. Starts fleet, bootstraps a single static etcd cluster with only the single instance as both frontend and backend
 The way I finally loaded it was using the command
 sudo coreos-cloudinit --from-file=/home/chad_autry/cloud-config.yaml
 
@@ -52,7 +52,7 @@ coreos:
     listen-peer-urls: http://0.0.0.0:2380
   fleet:
       public-ip: 10.142.0.2
-      metadata: "frontend=true"
+      metadata: "frontend=true",backend=true
   units:
     - name: etcd2.service
       command: start
