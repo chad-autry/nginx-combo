@@ -258,7 +258,40 @@ MachineMetadata=frontend=true
 ### nginx static app update unit
 Want to load app once, and have it distribute automatically
 
-### api endpoint discovery unit
+### backend discovery unit
+Sets a watch on the backend discovery location, and when it changes templates out the nginx confi
+
+[backend-discovery-watcher.service](units/backend-discovery-watcher.service)
+```yaml
+[Unit]
+Description=Watches for backened instances
+# Dependencies
+Requires=etcd.service
+
+# Ordering
+After=etcd.service
+
+[Service]
+ExecStartPre=-/usr/bin/docker pull chadautry/wac-nginx-config-templater
+ExecStartPre=-/usr/bin/docker rm nginx-templater
+ExecStart=/usr/bin/etcdctl watch /discovery/backend
+ExecStartPost=-/usr/bin/docker run --name nginx-templater --net host \
+-v /var/nginx:/usr/var/nginx -v /var/ssl:/etc/nginx/ssl:ro \
+chadautry/wac-nginx-config-templater
+Restart=always
+
+[X-Fleet]
+Global=true
+MachineMetadata=frontend=true
+```
+* Starts a watch for changes in the backend discovery path
+* Once the watch starts, executes the config templating container
+    * Local volume mapped in for the templated config to be written to
+    * Doesn't error out (TODO move to a secondary unit to be safely concurrent)
+* If the watch is ever satisfied, the unit will exit
+* Automatically restarted, causing a new watch and templater execution
+* Blindly runs on all frontend tagged instances
+
 ## API Backend
 These are the units for an api backend, including authentication. A cluster could have multiple backedn processes, just change the tagging from 'backend' to some named process (and change the docker process name)
 ### nodejs unit
