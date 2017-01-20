@@ -79,7 +79,7 @@ ExecStart=/usr/bin/docker run --name nginx -p 80:80 -p 443:443 \
 -v /var/www:/usr/share/nginx/html:ro -v /var/ssl:/etc/nginx/ssl:ro \
 -v /var/nginx:/usr/var/nginx:ro \
 chadautry/wac-nginx
-Restart=on-failure
+Restart=always
 
 [X-Fleet]
 Global=true
@@ -309,11 +309,12 @@ After=docker.service
 
 [Service]
 ExecStartPre=-/usr/bin/docker pull chadautry/wac-node
-ExecStartPre=-/usr/bin/docker rm backend-node-container
+ExecStartPre=-/usr/bin/docker rm -f backend-node-container
 ExecStart=/usr/bin/docker run --name backend-node-container -p 8080:80 -p 4443:443 \
 -v /var/nodejs:/app:ro \
 chadautry/wac-node
-Restart=on-failure
+ExecStop=-/usr/bin/docker stop backend-node-container
+Restart=always
 
 [X-Fleet]
 Global=true
