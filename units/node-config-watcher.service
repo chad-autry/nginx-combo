@@ -11,8 +11,9 @@ ExecStartPre=-/usr/bin/docker pull chadautry/wac-node-config-templater
 ExecStartPre=-/usr/bin/docker rm node-templater
 ExecStart=/usr/bin/etcdctl watch /node/config
 ExecStartPost=-/usr/bin/docker run --name node-templater --net host \
--v /var/node:/usr/var/node -v /var/ssl:/etc/nginx/ssl:ro \
+-v /var/nodejs:/usr/var/nodejs -v /var/ssl:/etc/nginx/ssl:ro \
 chadautry/wac-node-config-templater
+ExecStartPost=-/usr/bin/docker stop backend-node-container
 Restart=always
 
 [X-Fleet]
