@@ -293,7 +293,42 @@ MachineMetadata=frontend=true
 * Blindly runs on all frontend tagged instances
 
 ## API Backend
-These are the units for an api backend, including authentication. A cluster could have multiple backedn processes, just change the tagging from 'backend' to some named process (and change the docker process name)
+These are the units for an api backend, including authentication. A cluster could have multiple backend processes, just change the tagging from 'backend' to some named process (and change the docker process name)
+
+#### node config watcher
+This unit watches the node config values in etcd, and templates them to a file for the node app when they change
+
+[node-config-watcher.service](units/node-config-watcher.service)
+```yaml
+[Unit]
+Description=Watches for node config changes
+# Dependencies
+Requires=etcd.service
+
+# Ordering
+After=etcd.service
+
+[Service]
+ExecStartPre=-/usr/bin/docker pull chadautry/wac-node-config-templater
+ExecStartPre=-/usr/bin/docker rm node-templater
+ExecStart=/usr/bin/etcdctl watch /node/config
+ExecStartPost=-/usr/bin/docker run --name node-templater --net host \
+-v /var/node:/usr/var/node -v /var/ssl:/etc/nginx/ssl:ro \
+chadautry/wac-node-config-templater
+Restart=always
+
+[X-Fleet]
+Global=true
+MachineMetadata=backend=true
+```
+* Starts a watch for changes in the top node config path
+* Once the watch starts, executes the config templating container
+    * Local volume mapped in for the templated config to be written to
+    * Doesn't error out
+* If the watch is ever satisfied, the unit will exit
+* Automatically restarted, causing a new watch and templater execution
+* Blindly runs on all backend tagged instances
+
 ### nodejs unit
 The main application unit, it is simply a docker container with Node.js installed and the code to be executed mounted inside
 
@@ -303,9 +338,11 @@ The main application unit, it is simply a docker container with Node.js installe
 Description=NodeJS Backend API
 # Dependencies
 Requires=docker.service
+Requires=node-config-watcher.service
 
 # Ordering
 After=docker.service
+After=node-config-watcher.service
 
 [Service]
 ExecStartPre=-/usr/bin/docker pull chadautry/wac-node
@@ -321,6 +358,7 @@ Global=true
 MachineMetadata=backend=true
 ```
 * requires docker
+* requires the configuration templater
 * Starts a customized nodejs docker container
     * Takes the app from local drive
 * Blindly runs on all backend tagged instances
