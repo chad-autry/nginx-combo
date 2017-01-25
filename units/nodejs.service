@@ -2,9 +2,11 @@
 Description=NodeJS Backend API
 # Dependencies
 Requires=docker.service
+Requires=node-config-watcher.service
 
 # Ordering
 After=docker.service
+After=node-config-watcher.service
 
 [Service]
 ExecStartPre=-/usr/bin/docker pull chadautry/wac-node
