@@ -313,8 +313,9 @@ ExecStartPre=-/usr/bin/docker pull chadautry/wac-node-config-templater
 ExecStartPre=-/usr/bin/docker rm node-templater
 ExecStart=/usr/bin/etcdctl watch /node/config
 ExecStartPost=-/usr/bin/docker run --name node-templater --net host \
--v /var/node:/usr/var/node -v /var/ssl:/etc/nginx/ssl:ro \
+-v /var/nodejs:/usr/var/nodejs -v /var/ssl:/etc/nginx/ssl:ro \
 chadautry/wac-node-config-templater
+ExecStartPost=-/usr/bin/docker stop backend-node-container
 Restart=always
 
 [X-Fleet]
@@ -325,6 +326,7 @@ MachineMetadata=backend=true
 * Once the watch starts, executes the config templating container
     * Local volume mapped in for the templated config to be written to
     * Doesn't error out
+* Once the config is templated, stops the node container (it will be restarted by its unit)
 * If the watch is ever satisfied, the unit will exit
 * Automatically restarted, causing a new watch and templater execution
 * Blindly runs on all backend tagged instances
