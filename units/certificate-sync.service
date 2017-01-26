@@ -1,10 +1,10 @@
 [Unit]
 Description=SSL Certificate Syncronization
 # Dependencies
-Requires=etcd.service
+Requires=etcd2.service
 
 # Ordering
-After=etcd.service
+After=etcd2.service
 
 [Service]
 ExecStartPre=-mkdir /var/ssl

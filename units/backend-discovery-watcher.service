@@ -1,10 +1,10 @@
 [Unit]
 Description=Watches for backened instances
 # Dependencies
-Requires=etcd.service
+Requires=etcd2.service
 
 # Ordering
-After=etcd.service
+After=etcd2.service
 
 [Service]
 ExecStartPre=-/usr/bin/docker pull chadautry/wac-nginx-config-templater
