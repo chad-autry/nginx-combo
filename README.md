@@ -143,10 +143,10 @@ This unit takes the acme challenge response from etcd, and templates it into the
 [Unit]
 Description=Watches for distributed acme challenge responses
 # Dependencies
-Requires=etcd.service
+Requires=etcd2.service
 
 # Ordering
-After=etcd.service
+After=etcd2.service
 
 [Service]
 ExecStartPre=-/usr/bin/docker pull chadautry/wac-nginx-config-templater
@@ -177,10 +177,10 @@ This unit takes the SSL certificates from etcd, and writes them to the local sys
 [Unit]
 Description=SSL Certificate Syncronization
 # Dependencies
-Requires=etcd.service
+Requires=etcd2.service
 
 # Ordering
-After=etcd.service
+After=etcd2.service
 
 [Service]
 ExecStartPre=-mkdir /var/ssl
@@ -266,10 +266,10 @@ Sets a watch on the backend discovery location, and when it changes templates ou
 [Unit]
 Description=Watches for backened instances
 # Dependencies
-Requires=etcd.service
+Requires=etcd2.service
 
 # Ordering
-After=etcd.service
+After=etcd2.service
 
 [Service]
 ExecStartPre=-/usr/bin/docker pull chadautry/wac-nginx-config-templater
@@ -303,10 +303,10 @@ This unit watches the node config values in etcd, and templates them to a file f
 [Unit]
 Description=Watches for node config changes
 # Dependencies
-Requires=etcd.service
+Requires=etcd2.service
 
 # Ordering
-After=etcd.service
+After=etcd2.service
 
 [Service]
 ExecStartPre=-/usr/bin/docker pull chadautry/wac-node-config-templater
@@ -386,10 +386,10 @@ Publishes the backend host into etcd at an expected path for the frontend to rou
 [Unit]
 Description=Backend Publishing
 # Dependencies
-Requires=etcd.service
+Requires=etcd2.service
 
 # Ordering
-After=etcd.service
+After=etcd2.service
 
 [Service]
 ExecStart=/bin/sh -c "while true; do etcdctl set /discovery/backend/%H '%H' --ttl 60;sleep 45;done"
