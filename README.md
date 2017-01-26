@@ -331,6 +331,15 @@ MachineMetadata=backend=true
 * Automatically restarted, causing a new watch and templater execution
 * Blindly runs on all backend tagged instances
 
+> Special Deployment Note:
+> * Put the node authorization config values into etcd
+> ```
+> /usr/bin/etcdctl set /node/config/token_secret <Created Private Key>
+> /usr/bin/etcdctl set /node/config/auth/google/client_id <Google Client ID>
+> /usr/bin/etcdctl set /node/config/auth/google/redirect_uri <Google Redirect URI>
+> /usr/bin/etcdctl set/node/config/auth/google/secret <Google OAuth Secret>
+> ```
+
 ### nodejs unit
 The main application unit, it is simply a docker container with Node.js installed and the code to be executed mounted inside
 
