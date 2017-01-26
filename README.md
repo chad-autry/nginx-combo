@@ -337,7 +337,7 @@ MachineMetadata=backend=true
 > /usr/bin/etcdctl set /node/config/token_secret <Created Private Key>
 > /usr/bin/etcdctl set /node/config/auth/google/client_id <Google Client ID>
 > /usr/bin/etcdctl set /node/config/auth/google/redirect_uri <Google Redirect URI>
-> /usr/bin/etcdctl set/node/config/auth/google/secret <Google OAuth Secret>
+> /usr/bin/etcdctl set /node/config/auth/google/secret <Google OAuth Secret>
 > ```
 
 ### nodejs unit
