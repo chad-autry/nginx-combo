@@ -11,5 +11,6 @@ script:
 - npm run clean
 - npm run build
 after_success:
+- tar -cvf dist.tar ./dist
 - chmod ugo+x ./push-units.sh
 - ./push-units.sh
