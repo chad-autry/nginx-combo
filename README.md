@@ -60,17 +60,16 @@ coreos:
       command: start
 ```
 ### Scripts and Files
-The following helper scripts and all the units are extracted to the target directory as part of a build.
+The following helper scripts and all the units are extracted to the dist directory as part of a build.
 wget the folder.
 
 This first script submits all the units under both the started and submitted folders. Then it starts the ones under started.
-[start-units.sh](target/start-units.sh)
+
+[start-units.sh](dist/start-units.sh)
 ```bash
-for file in /units/started/*
-do
-  fleetctl submit "$file"
-done
-for file in /units/submitted/*
+#!/bin/bash
+
+for file in /units/**/*
 do
   fleetctl submit "$file"
 done
@@ -81,13 +80,12 @@ done
 ```
 
 This second script will destroy all the units, so they can be redeployed
-[destroy-units.sh](target/destroy-units.sh)
+
+[destroy-units.sh](dist/destroy-units.sh)
 ```bash
-for file in /units/started/*
-do
-  fleetctl destroy "$file"
-done
-for file in /units/submitted/*
+#!/bin/bash
+
+for file in /units/**/*
 do
   fleetctl destroy "$file"
 done
@@ -97,7 +95,7 @@ done
 ### nginx unit
 The main unit for the front end, nginx is the static file server and reverse proxy. Can have redundant identical instances.
 
-[nginx.service](target/units/started/nginx.service)
+[nginx.service](dist/units/started/nginx.service)
 ```yaml
 [Unit]
 Description=NGINX
@@ -131,7 +129,7 @@ MachineMetadata=frontend=true
 ### nginx reloading units
 A pair of units are responsible for reloading nginx instances on file changes
 
-[nginx-reload.service](target/units/submitted/nginx-reload.service)
+[nginx-reload.service](dist/units/submitted/nginx-reload.service)
 ```yaml
 [Unit]
 Description=NGINX reload service
@@ -149,7 +147,7 @@ MachineMetadata=frontend=true
 * It is a one shot which expects to be called by other units
 * Metadata will cause it to be made available on all frontend servers when loaded
 
-[nginx-reload.path](target/units/started/nginx-reload.path)
+[nginx-reload.path](dist/units/started/nginx-reload.path)
 ```yaml
 [Unit]
 Description=NGINX reload path
@@ -173,7 +171,7 @@ With nginx in place, several units are responsible for updating its SSL certific
 #### acme challenge response watcher
 This unit takes the acme challenge response from etcd, and templates it into the nginx config
 
-[acme-response-watcher.service](target/units/started/acme-response-watcher.service)
+[acme-response-watcher.service](dist/units/started/acme-response-watcher.service)
 ```yaml
 [Unit]
 Description=Watches for distributed acme challenge responses
@@ -207,7 +205,7 @@ MachineMetadata=frontend=true
 #### SSL Certificate Syncronization
 This unit takes the SSL certificates from etcd, and writes them to the local system
 
-[certificate-sync.service](target/units/started/certificate-sync.service)
+[certificate-sync.service](dist/units/started/certificate-sync.service)
 ```yaml
 [Unit]
 Description=SSL Certificate Syncronization
@@ -238,7 +236,7 @@ MachineMetadata=frontend=true
 #### letsencrypt renewal units
 A pair of units are responsible for initiating the letsencrypt renewal process each month
 
-[letsencrypt-renewal.service](target/units/submitted/letsencrypt-renewal.service)
+[letsencrypt-renewal.service](dist/units/submitted/letsencrypt-renewal.service)
 ```yaml
 [Unit]
 Description=Letsencrpyt renewal service
@@ -272,7 +270,7 @@ MachineMetadata=frontend=true
 > sudo docker run --net host --name acme chadautry/wac-acme
 > ```
 
-[letsencrypt-renewal.timer](target/units/started/letsencrypt-renewal.timer)
+[letsencrypt-renewal.timer](dist/units/started/letsencrypt-renewal.timer)
 ```yaml
 [Unit]
 Description=Letsencrpyt renewal timer
@@ -296,7 +294,7 @@ Want to load app once, and have it distribute automatically
 ### backend discovery unit
 Sets a watch on the backend discovery location, and when it changes templates out the nginx confi
 
-[backend-discovery-watcher.service](target/units/started/backend-discovery-watcher.service)
+[backend-discovery-watcher.service](dist/units/started/backend-discovery-watcher.service)
 ```yaml
 [Unit]
 Description=Watches for backened instances
@@ -333,7 +331,7 @@ These are the units for an api backend, including authentication. A cluster coul
 #### node config watcher
 This unit watches the node config values in etcd, and templates them to a file for the node app when they change
 
-[node-config-watcher.service](target/units/started/node-config-watcher.service)
+[node-config-watcher.service](dist/units/started/node-config-watcher.service)
 ```yaml
 [Unit]
 Description=Watches for node config changes
@@ -378,7 +376,7 @@ MachineMetadata=backend=true
 ### nodejs unit
 The main application unit, it is simply a docker container with Node.js installed and the code to be executed mounted inside
 
-[nodejs.service](target/units/started/nodejs.service)
+[nodejs.service](dist/units/started/nodejs.service)
 ```yaml
 [Unit]
 Description=NodeJS Backend API
@@ -416,7 +414,7 @@ MachineMetadata=backend=true
 ### backend publishing unit
 Publishes the backend host into etcd at an expected path for the frontend to route to
 
-[backend-publishing.service](target/units/started/backend-publishing.service)
+[backend-publishing.service](dist/units/started/backend-publishing.service)
 ```yaml
 [Unit]
 Description=Backend Publishing

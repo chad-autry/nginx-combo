@@ -5,8 +5,8 @@
   "main": " ",
   "scripts": {
     "test": " ",
-    "clean:target": "rimraf target && mkdir -p target/units/started && mkdir target/units/submitted",
-    "clean": "npm run clean:target",
+    "clean:dist": "rimraf dist && mkdir -p dist/units/started && mkdir dist/units/submitted",
+    "clean": "npm run clean:dist",
     "build": "node ./node_modules/markdown-code-extractor/index.js < README.md"
   },
   "repository": {
