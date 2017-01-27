@@ -1,0 +1,15 @@
+[Unit]
+Description=Backend Publishing
+# Dependencies
+Requires=etcd2.service
+
+# Ordering
+After=etcd2.service
+
+[Service]
+ExecStart=/bin/sh -c "while true; do etcdctl set /discovery/backend/%H '%H' --ttl 60;sleep 45;done"
+ExecStop=/usr/bin/etcdctl rm /discovery/backend/%H
+
+[X-Fleet]
+Global=true
+MachineMetadata=backend=true

@@ -1,0 +1,20 @@
+[Unit]
+Description=Watches for distributed acme challenge responses
+# Dependencies
+Requires=etcd2.service
+
+# Ordering
+After=etcd2.service
+
+[Service]
+ExecStartPre=-/usr/bin/docker pull chadautry/wac-nginx-config-templater
+ExecStartPre=-/usr/bin/docker rm nginx-templater
+ExecStart=/usr/bin/etcdctl watch /acme/watched
+ExecStartPost=-/usr/bin/docker run --name nginx-templater --net host \
+-v /var/nginx:/usr/var/nginx -v /var/ssl:/etc/nginx/ssl:ro \
+chadautry/wac-nginx-config-templater
+Restart=always
+
+[X-Fleet]
+Global=true
+MachineMetadata=frontend=true
