@@ -1,10 +1,4 @@
 #!/bin/bash
 
-for file in /units/**/*
-do
-  fleetctl submit "$file"
-done
-for file in /units/started/*
-do
-  fleetctl start "$file"
-done
+find ./units -type f -exec fleetctl submit {} \;
+find ./units/started -type f -exec fleetctl start {} \

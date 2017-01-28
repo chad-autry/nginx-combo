@@ -1,6 +1,3 @@
 #!/bin/bash
 
-for file in /units/**/*
-do
-  fleetctl destroy "$file"
-done
+find ./units -type f -exec fleetctl destroy {} \;
