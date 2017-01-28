@@ -38,7 +38,6 @@ Just an example. Starts fleet, bootstraps a single static etcd cluster with only
 The way I finally loaded it was using the command
 sudo coreos-cloudinit --from-file=/home/chad_autry/cloud-config.yaml
 
-
 ```
 #cloud-config
 
@@ -52,16 +51,27 @@ coreos:
     listen-peer-urls: http://0.0.0.0:2380
   fleet:
       public-ip: 10.142.0.2
-      metadata: "frontend=true",backend=true
+      metadata: "frontend=true,backend=true"
   units:
     - name: etcd2.service
       command: start
     - name: fleet.service
       command: start
 ```
+
+### Set Values
+Various units expect values to be configured in etcd
+```
+/usr/bin/etcdctl set /domain/name <domain>
+/usr/bin/etcdctl set /domain/email <email>
+/usr/bin/etcdctl set /node/config/token_secret <Created Private Key>
+/usr/bin/etcdctl set /node/config/auth/google/client_id <Google Client ID>
+/usr/bin/etcdctl set /node/config/auth/google/redirect_uri <Google Redirect URI>
+/usr/bin/etcdctl set /node/config/auth/google/secret <Google OAuth Secret>
+```
+
 ### Scripts and Files
-The following helper scripts and all the units are extracted to the dist directory as part of a build.
-wget the folder.
+Download or checkout the project. Within the dist directory there will be helper scripts and the units
 
 This first script submits all the units under both the started and submitted folders. Then it starts the ones under started.
 
@@ -69,14 +79,8 @@ This first script submits all the units under both the started and submitted fol
 ```bash
 #!/bin/bash
 
-for file in /units/**/*
-do
-  fleetctl submit "$file"
-done
-for file in /units/started/*
-do
-  fleetctl start "$file"
-done
+find ./units -type f -exec fleetctl submit {} \;
+find ./units/started -type f -exec fleetctl start {} \
 ```
 
 This second script will destroy all the units, so they can be redeployed
@@ -85,10 +89,7 @@ This second script will destroy all the units, so they can be redeployed
 ```bash
 #!/bin/bash
 
-for file in /units/**/*
-do
-  fleetctl destroy "$file"
-done
+find ./units -type f -exec fleetctl destroy {} \;
 ```
 
 ## Frontend Units
