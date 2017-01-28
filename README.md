@@ -79,7 +79,7 @@ This first script submits all the unit in the units directory. Then it starts th
 ```bash
 #!/bin/bash
 
-find ./units -type f -exec fleetctl submit {} \;
+find ./units -type f -exec fleetctl load {} \;
 find ./units/started -type f -exec fleetctl start {} \;
 ```
 
