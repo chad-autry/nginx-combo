@@ -73,7 +73,7 @@ Various units expect values to be configured in etcd
 ### Scripts and Files
 Download or checkout the project. Within the dist directory there will be helper scripts and the units
 
-This first script submits all the units under both the started and submitted folders. Then it starts the ones under started.
+This first script submits all the unit in the units directory. Then it starts the ones under started subdirectory.
 
 [start-units.sh](dist/start-units.sh)
 ```bash
@@ -130,7 +130,7 @@ MachineMetadata=frontend=true
 ### nginx reloading units
 A pair of units are responsible for reloading nginx instances on file changes
 
-[nginx-reload.service](dist/units/submitted/nginx-reload.service)
+[nginx-reload.service](dist/units/nginx-reload.service)
 ```yaml
 [Unit]
 Description=NGINX reload service
@@ -237,7 +237,7 @@ MachineMetadata=frontend=true
 #### letsencrypt renewal units
 A pair of units are responsible for initiating the letsencrypt renewal process each month
 
-[letsencrypt-renewal.service](dist/units/submitted/letsencrypt-renewal.service)
+[letsencrypt-renewal.service](dist/units/letsencrypt-renewal.service)
 ```yaml
 [Unit]
 Description=Letsencrpyt renewal service
