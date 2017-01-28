@@ -345,7 +345,7 @@ After=etcd2.service
 [Service]
 ExecStartPre=-/usr/bin/docker pull chadautry/wac-node-config-templater
 ExecStartPre=-/usr/bin/docker rm node-templater
-ExecStart=/usr/bin/etcdctl watch /node/config
+ExecStart=/usr/bin/etcdctl watch --recursive /node/config
 ExecStartPost=-/usr/bin/docker run --name node-templater --net host \
 -v /var/nodejs:/usr/var/nodejs -v /var/ssl:/etc/nginx/ssl:ro \
 chadautry/wac-node-config-templater
