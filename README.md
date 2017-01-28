@@ -80,7 +80,7 @@ This first script submits all the unit in the units directory. Then it starts th
 #!/bin/bash
 
 find ./units -type f -exec fleetctl submit {} \;
-find ./units/started -type f -exec fleetctl start {} \
+find ./units/started -type f -exec fleetctl start {} \;
 ```
 
 This second script will destroy all the units, so they can be redeployed
