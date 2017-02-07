@@ -442,7 +442,34 @@ MachineMetadata=backend=true
 * Need a manual command to generate a new key (placing it in etcd)
 * Need to watch the new key, and restart the Node.js unit when it changes
 
-### RethinkDB unit
+## Database
+
+### database publishing unit
+Publishes the database host into etcd at an expected path for the backend to connect to
+
+[database-publishing.service](dist/units/started/database-publishing.service)
+```yaml
+[Unit]
+Description=Database Publishing
+# Dependencies
+Requires=etcd2.service
+
+# Ordering
+After=etcd2.service
+
+[Service]
+ExecStart=/bin/sh -c "while true; do etcdctl set /discovery/database/%H '%H' --ttl 60;sleep 45;done"
+ExecStop=/usr/bin/etcdctl rm /discovery/database/%H
+
+[X-Fleet]
+Global=true
+MachineMetadata=database=true
+```
+* requires etcd
+* Publishes host into etcd every 45 seconds with a 60 second duration
+* Deletes host from etcd on stop
+* Blindly runs on all database tagged instances
+
 
 ## Unit Files
 [![Build Status](https://travis-ci.org/chad-autry/wac-bp.svg?branch=master)](https://travis-ci.org/chad-autry/wac-bp)
