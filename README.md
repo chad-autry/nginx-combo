@@ -438,38 +438,33 @@ MachineMetadata=backend=true
 * Deletes host from etcd on stop
 * Blindly runs on all backend tagged instances
 
-### JWT Encryption Keys
-* Need a manual command to generate a new key (placing it in etcd)
-* Need to watch the new key, and restart the Node.js unit when it changes
-
-## Database
-
-### database publishing unit
-Publishes the database host into etcd at an expected path for the backend to connect to
-
-[database-publishing.service](dist/units/started/database-publishing.service)
+[rethinkdb-proxy.service](dist/units/started/rethinkdb-proxy.service)
 ```yaml
 [Unit]
-Description=Database Publishing
+Description=RethinkDB Proxy
 # Dependencies
-Requires=etcd2.service
+Requires=docker.service
 
 # Ordering
-After=etcd2.service
+After=docker.service
 
 [Service]
-ExecStart=/bin/sh -c "while true; do etcdctl set /discovery/database/%H '%H' --ttl 60;sleep 45;done"
-ExecStop=/usr/bin/etcdctl rm /discovery/database/%H
+ExecStartPre=-/usr/bin/docker pull chadautry/wac-rethinkdb
+ExecStartPre=-/usr/bin/docker rm -f rethinkdb-proxy
+ExecStart=/bin/sh -c '/usr/bin/docker/usr/bin/docker run --name rethinkdb-proxy \
+-p 29015:29015 -p29016:29016 -p 8081:8080 \
+chadautry/wac-rethinkdb proxy --bind all --join $(/usr/bin/etcdctl get /discovery/rethinkdb)'
+Restart=always
 
 [X-Fleet]
 Global=true
-MachineMetadata=database=true
+MachineMetadata=backend=true
 ```
-* requires etcd
-* Publishes host into etcd every 45 seconds with a 60 second duration
-* Deletes host from etcd on stop
-* Blindly runs on all database tagged instances
-
+* requires docker
+* Pulls the image
+* Removes the container
+* Starts a rethinkdb container in proxy mode
+* Blindly runs on all backend tagged instances
 
 ## Unit Files
 [![Build Status](https://travis-ci.org/chad-autry/wac-bp.svg?branch=master)](https://travis-ci.org/chad-autry/wac-bp)
