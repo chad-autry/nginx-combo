@@ -1,0 +1,19 @@
+[Unit]
+Description=RethinkDB Proxy
+# Dependencies
+Requires=docker.service
+
+# Ordering
+After=docker.service
+
+[Service]
+ExecStartPre=-/usr/bin/docker pull chadautry/wac-rethinkdb
+ExecStartPre=-/usr/bin/docker rm -f rethinkdb-proxy
+ExecStart=/bin/sh -c '/usr/bin/docker/usr/bin/docker run --name rethinkdb-proxy \
+-p 29015:29015 -p29016:29016 -p 8081:8080 \
+chadautry/wac-rethinkdb proxy --bind all --join $(/usr/bin/etcdctl get /discovery/rethinkdb)'
+Restart=always
+
+[X-Fleet]
+Global=true
+MachineMetadata=backend=true
