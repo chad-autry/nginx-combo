@@ -438,22 +438,32 @@ MachineMetadata=backend=true
 * Deletes host from etcd on stop
 * Blindly runs on all backend tagged instances
 
+### rethinkdb proxy unit
+A rethinkdb 
+
 [rethinkdb-proxy.service](dist/units/started/rethinkdb-proxy.service)
 ```yaml
 [Unit]
 Description=RethinkDB Proxy
 # Dependencies
 Requires=docker.service
+Requires=etcd2.service
 
 # Ordering
 After=docker.service
+After=etcd2.service
 
 [Service]
+ExecStartPre=-/usr/bin/docker pull chadautry/wac-rethinkdb-config-templater
+ExecStartPre=-/usr/bin/docker/usr/bin/docker run \
+--net host --rm \
+-v /var/rethinkdn:/var/rethinkdb \
+chadautry/wac-rethinkdb-config-templater "emptyHost"
 ExecStartPre=-/usr/bin/docker pull chadautry/wac-rethinkdb
 ExecStartPre=-/usr/bin/docker rm -f rethinkdb-proxy
-ExecStart=/bin/sh -c '/usr/bin/docker/usr/bin/docker run --name rethinkdb-proxy \
--p 29015:29015 -p29016:29016 -p 8081:8080 \
-chadautry/wac-rethinkdb proxy --bind all --join $(/usr/bin/etcdctl get /discovery/rethinkdb)'
+ExecStart=/usr/bin/docker/usr/bin/docker run --name rethinkdb-proxy \
+-p 29017:29015 -p29018:29016 -p 8082:8080 \
+chadautry/wac-rethinkdb proxy
 Restart=always
 
 [X-Fleet]
@@ -461,9 +471,11 @@ Global=true
 MachineMetadata=backend=true
 ```
 * requires docker
+* Configures the instance, will not exclude any host from join list
 * Pulls the image
 * Removes the container
 * Starts a rethinkdb container in proxy mode
+* All ports shifted by 2, so it won't conflict with a non-proxy node
 * Blindly runs on all backend tagged instances
 
 ## Unit Files
