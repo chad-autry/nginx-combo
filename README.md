@@ -439,7 +439,7 @@ MachineMetadata=backend=true
 * Blindly runs on all backend tagged instances
 
 ### rethinkdb proxy unit
-A rethinkdb 
+A rethinkdb proxy on localhost for nodejs units to connect to
 
 [rethinkdb-proxy.service](dist/units/started/rethinkdb-proxy.service)
 ```yaml
@@ -477,6 +477,48 @@ MachineMetadata=backend=true
 * Starts a rethinkdb container in proxy mode
 * All ports shifted by 2, so it won't conflict with a non-proxy node
 * Blindly runs on all backend tagged instances
+
+## Database
+
+### rethinkdb unit
+A rethinkdb node
+
+[rethinkdb.service](dist/units/started/rethinkdb.service)
+```yaml
+[Unit]
+Description=RethinkDB
+# Dependencies
+Requires=docker.service
+Requires=etcd2.service
+
+# Ordering
+After=docker.service
+After=etcd2.service
+
+[Service]
+ExecStartPre=-/usr/bin/docker pull chadautry/wac-rethinkdb-config-templater
+ExecStartPre=-/usr/bin/docker/usr/bin/docker run \
+--net host --rm \
+-v /var/rethinkdn:/var/rethinkdb \
+chadautry/wac-rethinkdb-config-templater %H
+ExecStartPre=-/usr/bin/docker pull chadautry/wac-rethinkdb
+ExecStartPre=-/usr/bin/docker rm -f rethinkdb-proxy
+ExecStart=/usr/bin/docker/usr/bin/docker run --name rethinkdb \
+-p 29015:29015 -p29016:29016 -p 8081:8080 \
+chadautry/wac-rethinkdb
+Restart=always
+
+[X-Fleet]
+Global=true
+MachineMetadata=database=true
+```
+* requires docker
+* Configures the instance, will exclude its own host from the join list
+* Pulls the image
+* Removes the container
+* Starts a rethinkdb container
+* HTTP shifted to 8081 so ti won't conflict with nginx if colocated
+* Blindly runs on all database tagged instances
 
 ## Unit Files
 [![Build Status](https://travis-ci.org/chad-autry/wac-bp.svg?branch=master)](https://travis-ci.org/chad-autry/wac-bp)
