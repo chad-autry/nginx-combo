@@ -454,14 +454,16 @@ After=docker.service
 After=etcd2.service
 
 [Service]
+ExecStartPre=-mkdir /var/rethinkdbproxy
 ExecStartPre=-/usr/bin/docker pull chadautry/wac-rethinkdb-config-templater
 ExecStartPre=-/usr/bin/docker run \
 --net host --rm \
--v /var/rethinkdn:/var/rethinkdb \
+-v /var/rethinkdbproxy:/var/rethinkdb \
 chadautry/wac-rethinkdb-config-templater "emptyHost"
 ExecStartPre=-/usr/bin/docker pull chadautry/wac-rethinkdb
 ExecStartPre=-/usr/bin/docker rm -f rethinkdb-proxy
 ExecStart=/usr/bin/docker/usr/bin/docker run --name rethinkdb-proxy \
+-v /var/rethinkdbproxy:/var/rethinkdb \
 -p 29017:29015 -p29018:29016 -p 8082:8080 \
 chadautry/wac-rethinkdb proxy
 Restart=always
@@ -496,6 +498,7 @@ After=docker.service
 After=etcd2.service
 
 [Service]
+ExecStartPre=-mkdir /var/rethinkdb
 ExecStartPre=-/usr/bin/docker pull chadautry/wac-rethinkdb-config-templater
 ExecStartPre=-/usr/bin/docker run \
 --net host --rm \
@@ -504,6 +507,7 @@ chadautry/wac-rethinkdb-config-templater %H
 ExecStartPre=-/usr/bin/docker pull chadautry/wac-rethinkdb
 ExecStartPre=-/usr/bin/docker rm -f rethinkdb
 ExecStart=/usr/bin/docker/usr/bin/docker run --name rethinkdb \
+-v /var/rethinkdb:/var/rethinkdb \
 -p 29015:29015 -p29016:29016 -p 8081:8080 \
 chadautry/wac-rethinkdb
 Restart=always
