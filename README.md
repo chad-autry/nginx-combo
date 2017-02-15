@@ -458,14 +458,14 @@ ExecStartPre=-mkdir /var/rethinkdbproxy
 ExecStartPre=-/usr/bin/docker pull chadautry/wac-rethinkdb-config-templater
 ExecStartPre=-/usr/bin/docker run \
 --net host --rm \
--v /var/rethinkdbproxy:/var/rethinkdb \
+-v /var/rethinkdbproxy:/usr/var/rethinkdb \
 chadautry/wac-rethinkdb-config-templater "emptyHost"
 ExecStartPre=-/usr/bin/docker pull chadautry/wac-rethinkdb
 ExecStartPre=-/usr/bin/docker rm -f rethinkdb-proxy
 ExecStart=/usr/bin/docker/usr/bin/docker run --name rethinkdb-proxy \
 -v /var/rethinkdbproxy:/usr/var/rethinkdb \
 -p 29017:29015 -p29018:29016 -p 8082:8080 \
-chadautry/wac-rethinkdb proxy
+chadautry/wac-rethinkdb proxy --config-file /usr/var/rethinkdb/rethinkdb.conf
 Restart=always
 
 [X-Fleet]
@@ -502,14 +502,14 @@ ExecStartPre=-mkdir /var/rethinkdb
 ExecStartPre=-/usr/bin/docker pull chadautry/wac-rethinkdb-config-templater
 ExecStartPre=-/usr/bin/docker run \
 --net host --rm \
--v /var/rethinkdb:/var/rethinkdb \
+-v /var/rethinkdb:/usr/var/rethinkdb \
 chadautry/wac-rethinkdb-config-templater %H
 ExecStartPre=-/usr/bin/docker pull chadautry/wac-rethinkdb
 ExecStartPre=-/usr/bin/docker rm -f rethinkdb
 ExecStart=/usr/bin/docker/usr/bin/docker run --name rethinkdb \
 -v /var/rethinkdb:/usr/var/rethinkdb \
 -p 29015:29015 -p29016:29016 -p 8081:8080 \
-chadautry/wac-rethinkdb
+chadautry/wac-rethinkdb --config-file /usr/var/rethinkdb/rethinkdb.conf
 Restart=always
 
 [X-Fleet]
