@@ -1,5 +1,10 @@
 # web-application cluster boiler-plate
-Documentation and copy-pasteable boilerplate for running a full web application in a micro-services style. Many pieces are optional and could be swapped out to match others desires.
+Documentation and scripts for running a full web application in a micro-services style. Many pieces are optional and could be swapped out to match others desires.
+
+## Unit Files
+[![Build Status](https://travis-ci.org/chad-autry/wac-bp.svg?branch=master)](https://travis-ci.org/chad-autry/wac-bp)
+
+The unit files scripts in the dist directory have been extracted from this document and pushed back to the repo.
 
 ## Assumptions and Opinions
 * Alpine Linux is my prefered containerized OS, and the choice I've made for images
@@ -530,7 +535,3 @@ MachineMetadata=database=true
 > docker run --rm /var/rethinkdb:/usr/var/rethinkdb chadautry/wac-rethinkdb create -d /var/rethinkdb
 > sudo etcd set /discovery/database/<host> <host>
 > ```
-## Unit Files
-[![Build Status](https://travis-ci.org/chad-autry/wac-bp.svg?branch=master)](https://travis-ci.org/chad-autry/wac-bp)
-
-The unit files under the units directory have been extracted from this document and pushed back to the repo.
