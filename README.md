@@ -521,17 +521,16 @@ MachineMetadata=database=true
 * Pulls the image
 * Removes the container
 * Starts a rethinkdb container
-* HTTP shifted to 8081 so ti won't conflict with nginx if colocated
+* HTTP shifted to 8081 so it won't conflict with nginx if colocated
 * Blindly runs on all database tagged instances
 
+> DB Instance Prep:
+> There is some prep that needs to be done manually on each DB instance
+> ```
+> docker run --rm /var/rethinkdb:/usr/var/rethinkdb chadautry/wac-rethinkdb create -d /var/rethinkdb
+> sudo etcd set /discovery/database/<host> <host>
+> ```
 ## Unit Files
 [![Build Status](https://travis-ci.org/chad-autry/wac-bp.svg?branch=master)](https://travis-ci.org/chad-autry/wac-bp)
 
 The unit files under the units directory have been extracted from this document and pushed back to the repo.
-
-## Addendum
-
-### Tips and Tools
-* Pre-create/retrieve Unit files externally
-* Script to launch units
-* Sftp to move files easily
