@@ -534,6 +534,6 @@ MachineMetadata=database=true
 > DB Instance Prep:
 > There is some prep that needs to be done manually on each DB instance
 > ```
-> docker run --rm /var/rethinkdb:/usr/var/rethinkdb chadautry/wac-rethinkdb create -d /var/rethinkdb
+> docker run --rm -v /var/rethinkdb:/usr/var/rethinkdb chadautry/wac-rethinkdb create -d /var/rethinkdb/data
 > sudo etcd set /discovery/database/<host> <host>
 > ```
