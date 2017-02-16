@@ -467,6 +467,7 @@ ExecStartPre=-/usr/bin/docker run \
 chadautry/wac-rethinkdb-config-templater "emptyHost"
 ExecStartPre=-/usr/bin/docker pull chadautry/wac-rethinkdb
 ExecStartPre=-/usr/bin/docker rm -f rethinkdb-proxy
+ExecStartPre=-rm /var/rethinkdbproxy/pid_file
 ExecStart=/usr/bin/docker run --name rethinkdb-proxy \
 -v /var/rethinkdbproxy:/usr/var/rethinkdb \
 -p 29017:29015 -p29018:29016 -p 8082:8080 \
@@ -511,6 +512,7 @@ ExecStartPre=-/usr/bin/docker run \
 chadautry/wac-rethinkdb-config-templater %H
 ExecStartPre=-/usr/bin/docker pull chadautry/wac-rethinkdb
 ExecStartPre=-/usr/bin/docker rm -f rethinkdb
+ExecStartPre=-rm /var/rethinkdb/pid_file
 ExecStart=/usr/bin/docker run --name rethinkdb \
 -v /var/rethinkdb:/usr/var/rethinkdb \
 -p 29015:29015 -p29016:29016 -p 8081:8080 \
