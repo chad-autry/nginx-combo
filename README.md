@@ -69,6 +69,7 @@ Various units expect values to be configured in etcd
 ```
 /usr/bin/etcdctl set /domain/name <domain>
 /usr/bin/etcdctl set /domain/email <email>
+/usr/bin/etcdctl set /rethinkdb/pwd <Web Authorization Password>
 /usr/bin/etcdctl set /node/config/token_secret <Created Private Key>
 /usr/bin/etcdctl set /node/config/auth/google/client_id <Google Client ID>
 /usr/bin/etcdctl set /node/config/auth/google/redirect_uri <Google Redirect URI>
@@ -294,11 +295,8 @@ MachineMetadata=frontend=true
 * Automagically executes the letsencrypt-renewal.service based on name
 * Not global so there will only be one instance
 
-### nginx static app update unit
-Want to load app once, and have it distribute automatically
-
 ### backend discovery unit
-Sets a watch on the backend discovery location, and when it changes templates out the nginx confi
+Sets a watch on the backend discovery location, and when it changes templates out the nginx conf
 
 [backend-discovery-watcher.service](dist/units/started/backend-discovery-watcher.service)
 ```yaml
