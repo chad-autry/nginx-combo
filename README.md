@@ -1,16 +1,18 @@
 # web-application cluster boiler-plate
 Documentation and scripts for running a full web application in a micro-services style. Many pieces are optional and could be swapped out to match others desires.
 
-## Unit Files
+## Transitioning to Ansible
+Currentlly transitioning from fleet to ansible
+
+## Unit Files, Scripts, Playbooks
 [![Build Status](https://travis-ci.org/chad-autry/wac-bp.svg?branch=master)](https://travis-ci.org/chad-autry/wac-bp)
 
-The unit files scripts in the dist directory have been extracted from this document and pushed back to the repo.
+The unit files, scripts, and playbooks in the dist directory have been extracted from this document and pushed back to the repo.
 
 ## Assumptions and Opinions
 * Alpine Linux is my prefered containerized OS, and the choice I've made for images
 * CoreOS is the chosen host operating system
-  * fleet comes for free for orchestration
-  * etcd comes for free for a key value store
+* Ansible is used for orchestration
 
 ## Requirements and Features
 * Dockerized nginx container to host static site
@@ -19,19 +21,20 @@ The unit files scripts in the dist directory have been extracted from this docum
   * SSL termination
   * By default forward http connections to https
   * Have a configuration mode which allows initial letsencrypt validation over http
-  * Oauth & Oauth2 Termination
-    * JWT generation and validation
 * Https certificate from letsencrypt with autorenewal
 * Static Front End boilerplate, with static component upgrade strategy
 * Containerized Node.js server with application upgrade strategy
   * Boilerplate to publish to etcd
   * Discovers database from etcd
+  * Oauth & Oauth2 Termination
+    * JWT generation and validation
 * Dockerized  RethinkDB
   * Boilerplate to publish to etcd
 
 ## Externalities
 * Configure DNS
 * Create machine instances
+* Create ansible inventory
 * Firewall
 * Create fleet cluster
     * Tag instances
@@ -64,6 +67,18 @@ coreos:
       command: start
 ```
 
+### Sample Ansible Inventory(s)
+An example inventory file defines the etcd and RethinkDB instances (eventually migrate to a dynamic inventory)
+
+```
+10.142.0.2
+
+[etcd]
+10.142.0.2
+
+[rethinkdb]
+10.142.0.2
+```
 ### Set Values
 Various units expect values to be configured in etcd
 ```
