@@ -78,6 +78,7 @@ An example inventory file defines the etcd and RethinkDB instances (eventually m
 
 [rethinkdb]
 10.142.0.2
+
 ```
 ### Set Values
 Various units expect values to be configured in etcd
