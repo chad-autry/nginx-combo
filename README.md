@@ -40,7 +40,7 @@ The unit files, scripts, and playbooks in the dist directory have been extracted
     * Tag instances
 * Machine instance monitoring
 
-## Deployment 
+## Fleet Deployment 
 ### Basic Cloud Config
 Just an example. Starts fleet, bootstraps a single static etcd cluster with only the single instance as both frontend and backend
 The way I finally loaded it was using the command
@@ -67,19 +67,6 @@ coreos:
       command: start
 ```
 
-### Sample Ansible Inventory(s)
-An example inventory file defines the etcd and RethinkDB instances (eventually migrate to a dynamic inventory)
-
-```
-10.142.0.2
-
-[etcd]
-10.142.0.2
-
-[rethinkdb]
-10.142.0.2
-
-```
 ### Set Values
 Various units expect values to be configured in etcd
 ```
@@ -112,6 +99,44 @@ This second script will destroy all the units, so they can be redeployed
 #!/bin/bash
 
 find ./units -type f -exec fleetctl destroy {} \;
+```
+
+## Ansible Deployment
+The machine used for a controller will need SSH access to all the machines being managed. You can use one of the instances being managed, on GCE [cloud shell](https://cloud.google.com/shell/docs/) is a handy resource to use.
+
+If docker is available, [containerized Ansible](https://github.com/chad-autry/wac-ansible) can be used, else you'll need to install Python and Ansible onto the controller.
+
+```
+docker run -it --net host -v$(pwd):/ansible/playbooks chadautry/wac-ansible -i <inventory file> <playbook>
+```
+
+### Sample Ansible Inventory(s)
+An example inventory file defines the etcd and RethinkDB instances (eventually migrate to a dynamic inventory)
+
+```
+10.142.0.2
+
+[etcd]
+10.142.0.2
+
+[rethinkdb]
+10.142.0.2
+
+```
+
+### group_vars/all
+The variables file contains all the container versions to use.
+
+[group_vars/all](dist/ansible/group_vars/all)
+```yaml
+wac_nginx_version=latest
+```
+
+### Python
+Ansible requires Python on the remote instances to run the majority of its playbook commands. The included python playbook uses raw commands and can be used to setup a containerized Python on all the instances.
+
+```shell
+TODO
 ```
 
 ## Frontend Units
