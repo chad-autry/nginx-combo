@@ -33,11 +33,9 @@ The unit files, scripts, and playbooks in the dist directory have been extracted
 
 ## Externalities
 * Configure DNS
-* Create machine instances
+* Create tagged machine instances
 * Create ansible inventory
 * Firewall
-* Create fleet cluster
-    * Tag instances
 * Machine instance monitoring
 
 ## Fleet Deployment 
@@ -110,19 +108,31 @@ If docker is available, [containerized Ansible](https://github.com/chad-autry/wa
 docker run -it --net host -v$(pwd):/ansible/playbooks chadautry/wac-ansible -i <inventory file> <playbook>
 ```
 
-### Sample Ansible Inventory(s)
-An example inventory file defines the etcd and RethinkDB instances (eventually migrate to a dynamic inventory)
+### Ansible Inventory
+Here is an example inventory. wac-bp operates on machines based on the group they belong to. You can manually create the inventory file, or alternatively tag the machines at creation and use a dynamic inventory script
 
 ```
-10.142.0.2
+hostnameone
+hostnametwo
 
 [etcd]
-10.142.0.2
+hostnameone
 
 [rethinkdb]
-10.142.0.2
+hostnameone
 
 ```
+
+#### Dynamic Inventory
+Even better tag the instances at creation, and use a dynamic inventory script. From your cloud shell instance
+
+```
+cd ~/ansible/inventory
+wget --no-check-certificate https://raw.githubusercontent.com/ansible/ansible/devel/contrib/inventory/gce.ini
+wget --no-check-certificate https://raw.githubusercontent.com/ansible/ansible/devel/contrib/inventory/gce.py
+```
+
+Then edit the gce_project_id = field for your project. We'll leave the rest blank since we're on a GCE instance and it will automatically use the service account.
 
 ### group_vars/all
 The variables file contains all the container versions to use.
