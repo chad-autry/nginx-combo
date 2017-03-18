@@ -109,7 +109,7 @@ docker run -it --net host -v$(pwd):/ansible/playbooks chadautry/wac-ansible -i <
 ```
 
 ### Ansible Inventory
-Here is an example inventory. wac-bp operates on machines based on the group they belong to. You can manually create the inventory file, or alternatively tag the machines at creation and use a dynamic inventory script
+Here is an example inventory. wac-bp operates on machines based on the group they belong to. You can manually create the inventory file with the hosts to manage.
 
 ```
 hostnameone
@@ -139,14 +139,30 @@ The variables file contains all the container versions to use.
 
 [group_vars/all](dist/ansible/group_vars/all)
 ```yaml
-wac_nginx_version=latest
+wac-python.version=latest
 ```
 
 ### Python
 Ansible requires Python on the remote instances to run the majority of its playbook commands. The included python playbook uses raw commands and can be used to setup a containerized Python on all the instances.
 
-```shell
-TODO
+[setupPython.yaml](dist/ansible/playbooks/setupPython.yaml)
+```yaml
+---
+- hosts: all:!localhost
+  remote_user: root
+  tasks:
+    - name: Ensure /opt/bin exists
+      raw: mkdir -p /opt/bin
+    - name: Pull container
+      raw: docker pull chadautry/wac-python:{wac-python.version}
+    - name: Instantiate container
+      raw: docker create --name copy-python chadautry/wac-python
+    - name: Copy script from container instance
+      raw docker cp copy-python:/opt/bin/python.sh /opt/bin
+    - name: Delete container instance
+      raw: docker rm copy-python
+    - name: Set permissions on script
+      raw: chmod 755 /opt/bin/python.sh
 ```
 
 ## Frontend Units
