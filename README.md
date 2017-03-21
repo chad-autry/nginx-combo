@@ -161,7 +161,7 @@ docker run -it --net host -v $(pwd):/var/ansible chadautry/wac-ansible -i ./inve
   - name: Instantiate container
     raw: docker create --name copy-python chadautry/wac-python
   - name: Copy script from container instance
-    raw docker cp copy-python:/opt/bin/python.sh /opt/bin
+    raw: docker cp copy-python:/opt/bin/python.sh /opt/bin
   - name: Delete container instance
     raw: docker rm copy-python
   - name: Set permissions on script
