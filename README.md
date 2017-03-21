@@ -145,24 +145,27 @@ wac-python.version=latest
 ### Python
 Ansible requires Python on the remote instances to run the majority of its playbook commands. The included python playbook uses raw commands and can be used to setup a containerized Python on all the instances.
 
+```
+docker run -it --net host -v $(pwd):/var/ansible chadautry/wac-ansible -i ./inventory ./playbooks/setupPython.yaml
+```
 [setupPython.yaml](dist/ansible/playbooks/setupPython.yaml)
 ```yaml
 ---
 - hosts: all:!localhost
   remote_user: root
   tasks:
-    - name: Ensure /opt/bin exists
-      raw: mkdir -p /opt/bin
-    - name: Pull container
-      raw: docker pull chadautry/wac-python:{wac-python.version}
-    - name: Instantiate container
-      raw: docker create --name copy-python chadautry/wac-python
-    - name: Copy script from container instance
-      raw docker cp copy-python:/opt/bin/python.sh /opt/bin
-    - name: Delete container instance
-      raw: docker rm copy-python
-    - name: Set permissions on script
-      raw: chmod 755 /opt/bin/python.sh
+  - name: Ensure /opt/bin exists
+    raw: mkdir -p /opt/bin
+  - name: Pull container
+    raw: docker pull chadautry/wac-python:{wac-python.version}
+  - name: Instantiate container
+    raw: docker create --name copy-python chadautry/wac-python
+  - name: Copy script from container instance
+    raw docker cp copy-python:/opt/bin/python.sh /opt/bin
+  - name: Delete container instance
+    raw: docker rm copy-python
+  - name: Set permissions on script
+    raw: chmod 755 /opt/bin/python.sh
 ```
 
 ## Frontend Units
