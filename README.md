@@ -152,7 +152,7 @@ docker run -it --net host -v $(pwd):/var/ansible chadautry/wac-ansible -i ./inve
 ```yaml
 ---
 - hosts: all:!localhost
-  remote_user: root
+  become: true
   tasks:
   - name: Ensure /opt/bin exists
     raw: mkdir -p /opt/bin
