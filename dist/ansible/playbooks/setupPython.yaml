@@ -1,6 +1,6 @@
 ---
 - hosts: all:!localhost
-  remote_user: root
+  become: true
   tasks:
   - name: Ensure /opt/bin exists
     raw: mkdir -p /opt/bin
