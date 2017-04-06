@@ -5,7 +5,7 @@
   "main": " ",
   "scripts": {
     "test": " ",
-    "clean:dist": "rimraf dist && mkdir -p dist/units/started && mkdir dist/units/submitted && mkdir -p dist/ansible/group_vars && mkdir dist/ansible/playbooks",
+    "clean:dist": "rimraf dist && mkdir -p dist/units/started && mkdir dist/units/submitted && mkdir -p dist/ansible/group_vars && mkdir -p dist/ansible/roles/coreos-python/files && mkdir dist/ansible/roles/coreos-python/units",
     "clean": "npm run clean:dist",
     "build": "node ./node_modules/markdown-code-extractor/index.js < README.md"
   },
