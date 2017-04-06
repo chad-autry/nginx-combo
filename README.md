@@ -34,82 +34,15 @@ The unit files, scripts, and playbooks in the dist directory have been extracted
 ## Externalities
 * Configure DNS
 * Create tagged machine instances
-* Create ansible inventory
+* Create Ansible inventory
 * Firewall
 * Machine instance monitoring
 
-## Fleet Deployment 
-### Basic Cloud Config
-Just an example. Starts fleet, bootstraps a single static etcd cluster with only the single instance as both frontend and backend
-The way I finally loaded it was using the command
-sudo coreos-cloudinit --from-file=/home/chad_autry/cloud-config.yaml
-
-```
-#cloud-config
-
-coreos:
-  etcd2:
-    name: etcdserver
-    initial-cluster: etcdserver=http://10.142.0.2:2380
-    initial-advertise-peer-urls: http://10.142.0.2:2380
-    advertise-client-urls: http://10.142.0.2:2379
-    listen-client-urls: http://0.0.0.0:2379
-    listen-peer-urls: http://0.0.0.0:2380
-  fleet:
-      public-ip: 10.142.0.2
-      metadata: "frontend=true,backend=true"
-  units:
-    - name: etcd2.service
-      command: start
-    - name: fleet.service
-      command: start
-```
-
-### Set Values
-Various units expect values to be configured in etcd
-```
-/usr/bin/etcdctl set /domain/name <domain>
-/usr/bin/etcdctl set /domain/email <email>
-/usr/bin/etcdctl set /rethinkdb/pwd <Web Authorization Password>
-/usr/bin/etcdctl set /node/config/token_secret <Created Private Key>
-/usr/bin/etcdctl set /node/config/auth/google/client_id <Google Client ID>
-/usr/bin/etcdctl set /node/config/auth/google/redirect_uri <Google Redirect URI>
-/usr/bin/etcdctl set /node/config/auth/google/secret <Google OAuth Secret>
-```
-
-### Scripts and Files
-Download or checkout the project. Within the dist directory there will be helper scripts and the units
-
-This first script submits all the unit in the units directory. Then it starts the ones under started subdirectory.
-
-[start-units.sh](dist/start-units.sh)
-```bash
-#!/bin/bash
-
-find ./units -type f -exec fleetctl load {} \;
-find ./units/started -type f -exec fleetctl start {} \;
-```
-
-This second script will destroy all the units, so they can be redeployed
-
-[destroy-units.sh](dist/destroy-units.sh)
-```bash
-#!/bin/bash
-
-find ./units -type f -exec fleetctl destroy {} \;
-```
-
 ## Ansible Deployment
-The machine used for a controller will need SSH access to all the machines being managed. You can use one of the instances being managed, on GCE [cloud shell](https://cloud.google.com/shell/docs/) is a handy resource to use.
-
-If docker is available, [containerized Ansible](https://github.com/chad-autry/wac-ansible) can be used, else you'll need to install Python and Ansible onto the controller.
-
-```
-docker run -it --net host -v$(pwd):/ansible/playbooks chadautry/wac-ansible -i <inventory file> <playbook>
-```
+The machine used for a controller will need SSH access to all the machines being managed. You can use one of the instances being managed, on GCE [cloud shell](https://cloud.google.com/shell/docs/) is a handy resource to use. I'm personally running in GCE using [wac-gce-ansible](https://github.com/chad-autry/wac-gce-ansible)
 
 ### Ansible Inventory
-Here is an example inventory. wac-bp operates on machines based on the group they belong to. You can manually create the inventory file with the hosts to manage.
+Here is an example inventory. wac-bp operates on machines based on the group they belong to. You can manually create the inventory file with the hosts to manage, or use a dynamic inventory script for your cloud provider.
 
 ```
 hostnameone
@@ -121,52 +54,43 @@ hostnameone
 [rethinkdb]
 hostnameone
 
-```
+[coreos]
+hostnameone
+hostnametwo
 
-#### Dynamic Inventory
-Even better tag the instances at creation, and use a dynamic inventory script. From your cloud shell instance
-
 ```
-cd ~/ansible/inventory
-wget --no-check-certificate https://raw.githubusercontent.com/ansible/ansible/devel/contrib/inventory/gce.ini
-wget --no-check-certificate https://raw.githubusercontent.com/ansible/ansible/devel/contrib/inventory/gce.py
-```
-
-Then edit the gce_project_id = field for your project. We'll leave the rest blank since we're on a GCE instance and it will automatically use the service account.
 
 ### group_vars/all
-The variables file contains all the container versions to use.
+The all variables file contains all the container versions to use.
 
 [group_vars/all](dist/ansible/group_vars/all)
 ```yaml
-wac-python.version=latest
+---
+wac-python.version:latest
 ```
 
-### Python
-Ansible requires Python on the remote instances to run the majority of its playbook commands. The included python playbook uses raw commands and can be used to setup a containerized Python on all the instances.
+### group_vars/coreos
+CoreOS doesn't have python installed by default (or a normal /bin directory). This parameter defines the Python interpreter location for CoreOS hosts.
 
-```
-docker run -it --net host -v $(pwd):/var/ansible chadautry/wac-ansible -i ./inventory ./playbooks/setupPython.yaml
-```
-[setupPython.yaml](dist/ansible/playbooks/setupPython.yaml)
+[group_vars/coreos](dist/ansible/group_vars/coreos)
 ```yaml
 ---
-- hosts: all:!localhost
-  become: true
-  tasks:
-  - name: Ensure /opt/bin exists
-    raw: mkdir -p /opt/bin
-  - name: Pull container
-    raw: docker pull chadautry/wac-python:{wac-python.version}
-  - name: Instantiate container
-    raw: docker create --name copy-python chadautry/wac-python
-  - name: Copy script from container instance
-    raw: docker cp copy-python:/opt/bin/python.sh /opt/bin
-  - name: Delete container instance
-    raw: docker rm copy-python
-  - name: Set permissions on script
-    raw: chmod 755 /opt/bin/python.sh
+ansible_python_interpreter:/opt/bin/python
 ```
+
+### Set Values
+Various units expect values to be configured in etcd, used by a playbook
+```
+/usr/bin/etcdctl set /domain/name <domain>
+/usr/bin/etcdctl set /domain/email <email>
+/usr/bin/etcdctl set /rethinkdb/pwd <Web Authorization Password>
+/usr/bin/etcdctl set /node/config/token_secret <Created Private Key>
+/usr/bin/etcdctl set /node/config/auth/google/client_id <Google Client ID>
+/usr/bin/etcdctl set /node/config/auth/google/redirect_uri <Google Redirect URI>
+/usr/bin/etcdctl set /node/config/auth/google/secret <Google OAuth Secret>
+```
+
+## Playbooks
 
 ## Frontend Units
 ### nginx unit
