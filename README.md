@@ -129,7 +129,7 @@ A role used to install Python onto CoreOS hosts
   changed_when: false
   when: need_bootstrap | failed
   ```
-[roles/coreos-python/files/bootstrap.sh](dist/ansible/roles/coreos-ansible/files/bootstrap.sh)
+[roles/coreos-python/files/bootstrap.sh](dist/ansible/roles/coreos-python/files/bootstrap.sh)
 ```bash
 #/bin/bash
 
