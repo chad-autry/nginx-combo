@@ -54,10 +54,15 @@ hostnameone
 [rethinkdb]
 hostnameone
 
+[frontend]
+hostnametwo
+
+[backend]
+hostnametwo
+
 [coreos]
 hostnameone
 hostnametwo
-
 ```
 
 ### group_vars/all
@@ -90,7 +95,79 @@ Various units expect values to be configured in etcd, used by a playbook
 /usr/bin/etcdctl set /node/config/auth/google/secret <Google OAuth Secret>
 ```
 
-## Playbooks
+## Playbooks and Roles
+## site.yml
+The main playbook that sets the cluster to have the desired installations
+
+[site.yml](dist/ansible/site.yml)
+```yml
+- hosts: all:!localhost
+  gather_facts: false
+  roles:
+    - coreos-python
+```
+
+## coreos-ansible
+A role used to install Python onto CoreOS hosts
+
+
+[roles/coreos-python/tasks/main.yml](dist/ansible/roles/coreos-python/tasks/main.yml)
+```yml
+- name: Check if bootstrap is needed
+  raw: stat $HOME/.bootstrapped
+  register: need_bootstrap
+  ignore_errors: True
+
+- name: Run bootstrap.sh
+  script: bootstrap.sh
+  when: need_bootstrap | failed
+
+- name: Check if we need to install pip
+  shell: "{{ansible_python_interpreter}} -m pip --version"
+  register: need_pip
+  ignore_errors: True
+  changed_when: false
+  when: need_bootstrap | failed
+  ```
+[roles/coreos-python/files/bootstrap.sh](dist/ansible/roles/coreos-ansible/files/bootstrap.sh)
+```bash
+#/bin/bash
+
+set -e
+
+cd
+
+if [[ -e $HOME/.bootstrapped ]]; then
+  exit 0
+fi
+
+PYPY_VERSION=5.1.0
+
+if [[ -e $HOME/pypy-$PYPY_VERSION-linux64.tar.bz2 ]]; then
+  tar -xjf $HOME/pypy-$PYPY_VERSION-linux64.tar.bz2
+  rm -rf $HOME/pypy-$PYPY_VERSION-linux64.tar.bz2
+else
+  wget -O - https://bitbucket.org/pypy/pypy/downloads/pypy-$PYPY_VERSION-linux64.tar.bz2 |tar -xjf -
+fi
+
+mv -n pypy-$PYPY_VERSION-linux64 pypy
+
+## library fixup
+mkdir -p pypy/lib
+ln -snf /lib64/libncurses.so.5.9 $HOME/pypy/lib/libtinfo.so.5
+
+mkdir -p $HOME/bin
+
+cat > $HOME/bin/python <<EOF
+#!/bin/bash
+LD_LIBRARY_PATH=$HOME/pypy/lib:$LD_LIBRARY_PATH exec $HOME/pypy/bin/pypy "\$@"
+EOF
+
+chmod +x $HOME/bin/python
+$HOME/bin/python --version
+
+touch $HOME/.bootstrapped
+```
 
 ## Frontend Units
 ### nginx unit
