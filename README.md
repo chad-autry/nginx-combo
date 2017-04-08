@@ -30,11 +30,12 @@ The unit files, scripts, and playbooks in the dist directory have been extracted
     * JWT generation and validation
 * Dockerized  RethinkDB
   * Boilerplate to publish to etcd
+* Tag based easy deployment
 
 ## Externalities
 * Configure DNS
 * Create tagged machine instances
-* Create Ansible inventory
+* Create Ansible inventory (or use dynamic inventory script!)
 * Firewall
 * Machine instance monitoring
 
@@ -95,11 +96,11 @@ Various units expect values to be configured in etcd, used by a playbook
 /usr/bin/etcdctl set /node/config/auth/google/secret <Google OAuth Secret>
 ```
 
-## Playbooks and Roles
-## site.yml
-The main playbook that sets the cluster to have the desired installations
+## Playbooks
+### statefullInit.yml
+This playbook initializes the stateful etcd and RethinkDB clusters
 
-[site.yml](dist/ansible/site.yml)
+[statefullInit.yml](dist/ansible/statefullInit.yml)
 ```yml
 - hosts: all:!localhost
   gather_facts: false
@@ -107,8 +108,22 @@ The main playbook that sets the cluster to have the desired installations
     - coreos-python
 ```
 
-## coreos-ansible
-A role used to install Python onto CoreOS hosts
+### siteApps.yml
+This playbook updates the frontend and backend instances to the latest. Includes tags so individual components can be run (like only redeploy the frontend webapp)
+
+[statefullInit.yml](dist/ansible/statefullInit.yml)
+```yml
+- hosts: all:!localhost
+  gather_facts: false
+  roles:
+    - coreos-python
+```
+
+## Roles
+The roles used by the playbooks above
+
+### coreos-ansible
+Install Python onto CoreOS hosts
 
 
 [roles/coreos-python/tasks/main.yml](dist/ansible/roles/coreos-python/tasks/main.yml)
