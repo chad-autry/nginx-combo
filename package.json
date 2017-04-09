@@ -24,7 +24,7 @@
   },
   "homepage": "https://github.com/chad-autry/wac-bp#readme",
   "devDependencies": {
-    "markdown-code-extractor": "^1.3.2",
+    "markdown-code-extractor": "^1.4.0",
     "rimraf": "^2.5.4"
   }
 }
