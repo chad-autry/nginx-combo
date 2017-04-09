@@ -1,4 +1,4 @@
-- hosts: frontend:backend:!localhost
+- hosts: rethinkdb:etcd:!localhost
   gather_facts: false
   roles:
     - coreos-python
