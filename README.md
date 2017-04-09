@@ -27,7 +27,7 @@ The unit files, scripts, and playbooks in the dist directory have been extracted
   * Expets DB proxy on localhost
   * Oauth & Oauth2 Termination
     * JWT generation and validation
-* Dockerized  RethinkDB
+* Dockerized RethinkDB
 * Ansible based deployment and initialization
 
 ## Externalities
@@ -71,6 +71,7 @@ The all variables file contains all the container versions to use.
 ```yaml
 ---
 wac-python.version:latest
+etcdv2.version:latest
 ```
 
 ### group_vars/coreos
@@ -104,6 +105,10 @@ This playbook initializes the stateful etcd and RethinkDB clusters
   gather_facts: false
   roles:
     - coreos-python
+    
+- hosts: etcd
+  roles:
+    - etcd-bootstrap
 ```
 
 ### siteApps.yml
@@ -123,23 +128,15 @@ The roles used by the playbooks above
 ### coreos-ansible
 Install Python onto CoreOS hosts
 
-
 [roles/coreos-python/tasks/main.yml](dist/ansible/roles/coreos-python/tasks/main.yml)
 ```yml
 - name: Check if bootstrap is needed
-  raw: stat $HOME/.bootstrapped
+  raw: stat /opt/bin/python
   register: need_bootstrap
   ignore_errors: True
 
 - name: Run bootstrap.sh
   script: bootstrap.sh
-  when: need_bootstrap | failed
-
-- name: Check if we need to install pip
-  shell: "{{ansible_python_interpreter}} -m pip --version"
-  register: need_pip
-  ignore_errors: True
-  changed_when: false
   when: need_bootstrap | failed
   ```
 [roles/coreos-python/files/bootstrap.sh](dist/ansible/roles/coreos-python/files/bootstrap.sh)
@@ -150,7 +147,7 @@ set -e
 
 cd
 
-if [[ -e $HOME/.bootstrapped ]]; then
+if [[ -e /opt/bin/python ]]; then
   exit 0
 fi
 
@@ -166,21 +163,51 @@ fi
 mv -n pypy-$PYPY_VERSION-linux64 pypy
 
 ## library fixup
-mkdir -p pypy/lib
-ln -snf /lib64/libncurses.so.5.9 $HOME/pypy/lib/libtinfo.so.5
+mkdir -p /opt/pypy/lib
+ln -snf /lib64/libncurses.so.5.9 /opt/pypy/lib/libtinfo.so.5
 
-mkdir -p $HOME/bin
+mkdir -p /opt/bin
 
-cat > $HOME/bin/python <<EOF
+cat > /opt/bin/python <<EOF
 #!/bin/bash
-LD_LIBRARY_PATH=$HOME/pypy/lib:$LD_LIBRARY_PATH exec $HOME/pypy/bin/pypy "\$@"
+LD_LIBRARY_PATH=/opt/pypy/lib:$LD_LIBRARY_PATH exec /opt/pypy/bin/pypy "\$@"
 EOF
 
-chmod +x $HOME/bin/python
-$HOME/bin/python --version
-
-touch $HOME/.bootstrapped
+chmod +x /opt/bin/python
+/opt/bin/python --version
 ```
+
+## etcd-bootstrap
+Sets up the initial etcd cluster
+
+[roles/etcd-bootstrap/tasks/main.yml](dist/ansible/roles/etcd-bootstrap/tasks/main.yml)
+```yml
+# template out the systemd service unit DO NOT OVERWRITE
+# On successful template, start the unit
+```
+
+[etcd2.service](dist/ansible/roles/etcd-bootstrap/files/etcd2.service)
+```yaml
+[Unit]
+Description=etcd2
+# Dependencies
+Requires=docker.service
+
+# Ordering
+After=docker.service
+
+[Service]
+ExecStartPre=-/usr/bin/docker pull chadautry/wac-etcdv2:{{etcdv2.version}}
+ExecStartPre=-/usr/bin/docker rm etcdv2
+ExecStart=/usr/bin/docker run --name etcdv2 -p 80:80 -p 443:443 \
+-v /var/www:/usr/share/nginx/html:ro -v /var/ssl:/etc/nginx/ssl:ro \
+-v /var/nginx:/usr/var/nginx:ro \
+chadautry/wac-etcdv2:{{etcdv2.version}}
+Restart=always
+````
+* requires docker
+* takes version from etcdv2_version variable
+* expects cluster variables
 
 ## Frontend Units
 ### nginx unit
