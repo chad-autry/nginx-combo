@@ -2,3 +2,7 @@
   gather_facts: false
   roles:
     - coreos-python
+    
+- hosts: etcd
+  roles:
+    - etcd-bootstrap

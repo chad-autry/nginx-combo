@@ -1,0 +1,16 @@
+[Unit]
+Description=etcd2
+# Dependencies
+Requires=docker.service
+
+# Ordering
+After=docker.service
+
+[Service]
+ExecStartPre=-/usr/bin/docker pull chadautry/wac-etcdv2:{{etcdv2.version}}
+ExecStartPre=-/usr/bin/docker rm etcdv2
+ExecStart=/usr/bin/docker run --name etcdv2 -p 80:80 -p 443:443 \
+-v /var/www:/usr/share/nginx/html:ro -v /var/ssl:/etc/nginx/ssl:ro \
+-v /var/nginx:/usr/var/nginx:ro \
+chadautry/wac-etcdv2:{{etcdv2.version}}
+Restart=always

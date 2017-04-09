@@ -1,17 +1,10 @@
 - name: Check if bootstrap is needed
-  raw: stat $HOME/.bootstrapped
+  raw: stat /opt/bin/python
   register: need_bootstrap
   ignore_errors: True
 
 - name: Run bootstrap.sh
   script: bootstrap.sh
-  when: need_bootstrap | failed
-
-- name: Check if we need to install pip
-  shell: "{{ansible_python_interpreter}} -m pip --version"
-  register: need_pip
-  ignore_errors: True
-  changed_when: false
   when: need_bootstrap | failed
   ```
 [roles/coreos-python/files/bootstrap.sh](dist/ansible/roles/coreos-python/files/bootstrap.sh)
