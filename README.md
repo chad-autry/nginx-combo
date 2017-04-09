@@ -22,15 +22,13 @@ The unit files, scripts, and playbooks in the dist directory have been extracted
   * By default forward http connections to https
   * Have a configuration mode which allows initial letsencrypt validation over http
 * Https certificate from letsencrypt with autorenewal
-* Static Front End boilerplate, with static component upgrade strategy
-* Containerized Node.js server with application upgrade strategy
-  * Boilerplate to publish to etcd
-  * Discovers database from etcd
+* Containerized Node.js server
+  * Publishes to etcd for discovery
+  * Expets DB proxy on localhost
   * Oauth & Oauth2 Termination
     * JWT generation and validation
 * Dockerized  RethinkDB
-  * Boilerplate to publish to etcd
-* Tag based easy deployment
+* Ansible based deployment and initialization
 
 ## Externalities
 * Configure DNS
@@ -97,12 +95,12 @@ Various units expect values to be configured in etcd, used by a playbook
 ```
 
 ## Playbooks
-### statefullInit.yml
+### statefullBootstrap.yml
 This playbook initializes the stateful etcd and RethinkDB clusters
 
-[statefullInit.yml](dist/ansible/statefullInit.yml)
+[statefullBootstrap.yml](dist/ansible/statefullBootstrap.yml)
 ```yml
-- hosts: all:!localhost
+- hosts: rethinkdb:etcd:!localhost
   gather_facts: false
   roles:
     - coreos-python
@@ -113,7 +111,7 @@ This playbook updates the frontend and backend instances to the latest. Includes
 
 [statefullInit.yml](dist/ansible/statefullInit.yml)
 ```yml
-- hosts: all:!localhost
+- hosts: frontend:backend:!localhost
   gather_facts: false
   roles:
     - coreos-python
