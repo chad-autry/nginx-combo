@@ -114,7 +114,7 @@ This playbook initializes the stateful etcd and RethinkDB clusters
 ### siteApps.yml
 This playbook updates the frontend and backend instances to the latest. Includes tags so individual components can be run (like only redeploy the frontend webapp)
 
-[statefullInit.yml](dist/ansible/statefullInit.yml)
+[statefullInit.yml](dist/ansible/siteApps.yml)
 ```yml
 - hosts: frontend:backend:!localhost
   gather_facts: false
@@ -183,7 +183,12 @@ Sets up the initial etcd cluster
 [roles/etcd-bootstrap/tasks/main.yml](dist/ansible/roles/etcd-bootstrap/tasks/main.yml)
 ```yml
 # template out the systemd service unit DO NOT OVERWRITE
-# On successful template, start the unit
+- template:
+    src: etcd2.service
+    dest: /etc/systemd/system/etcd2.service
+
+- name: Make sure a service is running
+  systemd: state=started name=etcd2.service
 ```
 
 [etcd2.service](dist/ansible/roles/etcd-bootstrap/files/etcd2.service)
@@ -199,10 +204,17 @@ After=docker.service
 [Service]
 ExecStartPre=-/usr/bin/docker pull chadautry/wac-etcdv2:{{etcdv2.version}}
 ExecStartPre=-/usr/bin/docker rm etcdv2
-ExecStart=/usr/bin/docker run --name etcdv2 -p 80:80 -p 443:443 \
--v /var/www:/usr/share/nginx/html:ro -v /var/ssl:/etc/nginx/ssl:ro \
--v /var/nginx:/usr/var/nginx:ro \
-chadautry/wac-etcdv2:{{etcdv2.version}}
+ExecStart=/usr/bin/docker run --name etcdv2 -p 2380:2380 -p 2379:2379 \
+-v /var/etcd:/var/etcd \
+chadautry/wac-etcdv2:{{etcdv2.version}} \
+--name infra0 --initial-advertise-peer-urls http://10.0.1.10:2380 \
+--listen-peer-urls http://10.0.1.10:2380 \
+--listen-client-urls http://10.0.1.10:2379,http://127.0.0.1:2379 \
+--advertise-client-urls http://10.0.1.10:2379 \
+-–data-dir /var/etcd \
+--initial-cluster infra0=http://10.0.1.10:2380,infra1=http://10.0.1.11:2380,infra2=http://10.0.1.12:2380 \
+--initial-cluster-state new
+
 Restart=always
 ````
 * requires docker
