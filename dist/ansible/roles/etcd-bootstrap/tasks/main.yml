@@ -1,2 +1,7 @@
 # template out the systemd service unit DO NOT OVERWRITE
-# On successful template, start the unit
+- template:
+    src: etcd2.service
+    dest: /etc/systemd/system/etcd2.service
+
+- name: Make sure a service is running
+  systemd: state=started name=etcd2.service

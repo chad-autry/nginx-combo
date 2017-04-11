@@ -9,8 +9,15 @@ After=docker.service
 [Service]
 ExecStartPre=-/usr/bin/docker pull chadautry/wac-etcdv2:{{etcdv2.version}}
 ExecStartPre=-/usr/bin/docker rm etcdv2
-ExecStart=/usr/bin/docker run --name etcdv2 -p 80:80 -p 443:443 \
--v /var/www:/usr/share/nginx/html:ro -v /var/ssl:/etc/nginx/ssl:ro \
--v /var/nginx:/usr/var/nginx:ro \
-chadautry/wac-etcdv2:{{etcdv2.version}}
+ExecStart=/usr/bin/docker run --name etcdv2 -p 2380:2380 -p 2379:2379 \
+-v /var/etcd:/var/etcd \
+chadautry/wac-etcdv2:{{etcdv2.version}} \
+--name infra0 --initial-advertise-peer-urls http://10.0.1.10:2380 \
+--listen-peer-urls http://10.0.1.10:2380 \
+--listen-client-urls http://10.0.1.10:2379,http://127.0.0.1:2379 \
+--advertise-client-urls http://10.0.1.10:2379 \
+-–data-dir /var/etcd \
+--initial-cluster infra0=http://10.0.1.10:2380,infra1=http://10.0.1.11:2380,infra2=http://10.0.1.12:2380 \
+--initial-cluster-state new
+
 Restart=always
