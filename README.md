@@ -70,8 +70,12 @@ The all variables file contains all the container versions to use.
 [group_vars/all](dist/ansible/group_vars/all)
 ```yaml
 ---
+# The host value which will be templated out for intra-machine connectivity. Match your manual inventory or dynamic inventory variable
+internal_ip_name:gce_private_ip
+
+# The container versions to use
 wac-python.version:latest
-etcdv2.version:latest
+etcd.version:latest
 ```
 
 ### group_vars/coreos
@@ -101,14 +105,21 @@ The main playbook that deploys or updates a cluster
 
 [site.yml](dist/ansible/site.yml)
 ```yml
-- hosts: rethinkdb:etcd:!localhost
+# Make sure python is installed
+- hosts: all:!localhost
   gather_facts: false
   roles:
     - coreos-python
     
+# Place a full etcd on the etcd hosts
 - hosts: etcd
   roles:
-    - etcd-bootstrap
+    - { role: etcd, proxy_etcd: False }
+    
+# Put a proxy etcd everywhere except the etcd hosts
+- hosts: all:!etcd:!localhost
+  roles:
+    - { role: etcd, proxy_etcd: True }
 ```
 
 ## Roles
@@ -167,12 +178,10 @@ chmod +x /opt/bin/python
 ```
 
 ## etcd
-Deploys or redeploys the etcd cluster along with a proxy for each instance. Etcd is persistent, but if the cluster changes wac treats it as emphemeral and reloads it from the Ansible config.
+Deploys or redeploys the etcd instance on a host. Etcd is persistent, but if the cluster changes wac treats it as emphemeral and reloads it from the Ansible config.
 
 [roles/etcd-bootstrap/tasks/main.yml](dist/ansible/roles/etcd-bootstrap/tasks/main.yml)
 ```yml
-# Create the initial cluster parameter
-
 # template out the systemd service unit on the etcd hosts
 - name etcd template
     template:
@@ -180,9 +189,11 @@ Deploys or redeploys the etcd cluster along with a proxy for each instance. Etcd
     dest: /etc/systemd/system/etcd.service
     register: etcd_template
 
-- name: Make sure a service is running
+- name: start/restart the service if template changed
   systemd: state=restarted name=etcd2.service
-  when: 
+  when: etcd_template | changed
+  
+# Attempt to init etcd with values if they don't exist?
 ```
 
 [etcd.service](dist/ansible/roles/etcd-bootstrap/files/etcd.service)
@@ -199,21 +210,25 @@ After=docker.service
 ExecStartPre=-/usr/bin/docker pull chadautry/wac-etcdv2:{{etcd.version}}
 ExecStartPre=-/usr/bin/docker rm etcd
 ExecStart=/usr/bin/docker run --name etcd -p 2380:2380 -p 2379:2379 \
--v /var/etcd:/var/etcd
-chadautry/wac-etcdv2:{{etcdv2.version}} \
---name infra0 --initial-advertise-peer-urls http://10.0.1.10:2380 \
---listen-peer-urls http://10.0.1.10:2380 \
---listen-client-urls http://10.0.1.10:2379,http://127.0.0.1:2379 \
---advertise-client-urls http://10.0.1.10:2379 \
--–data-dir /var/etcd \
---initial-cluster infra0=http://10.0.1.10:2380,infra1=http://10.0.1.11:2380,infra2=http://10.0.1.12:2380 \
---initial-cluster-state new
+-v /var/etcd:/var/etcd \
+chadautry/wac-etcdv2:{{etcd.version}} \
+{%- if not proxy_etcd %}  --name {{ ansible_hostname }} \{% endif %}
+{%- if not proxy_etcd %}  --initial-advertise-peer-urls http://{{hostvars[inventory_hostname][internal_ip_name]}}:2380 \{% endif %}
+{%- if not proxy_etcd %}  --listen-peer-urls http://{{hostvars[inventory_hostname][internal_ip_name]}}:2380 \{% endif %}
+--listen-client-urls http://{{hostvars[inventory_hostname][internal_ip_name]}}:2379,http://127.0.0.1:2379 \
+{%- if not proxy_etcd %}  --advertise-client-urls http://{{hostvars[inventory_hostname][internal_ip_name]}}:2379 \{% endif %}
+{%- if not proxy_etcd %}  -–data-dir /var/etcd \{% endif %}
+{%- if proxy_etcd %}  --proxy on \{% endif %}
+--initial-cluster {% for host in groups['etcd']  %}{{ansible_hostname}}=http://{{hostvars[host][internal_ip_name]}}:2380{%- if loop.first %},{% endif %}{% endfor %} \
+{%- if not proxy_etcd %}  --initial-cluster-state new{% endif %}
 
 Restart=always
 ````
 * requires docker
 * takes version from etcd.version variable
-* expects cluster variables
+* writes different lines for proxy mode or standard
+* uses the internal ip variable configured
+* walks the etcd hosts for the initial cluster
 
 ## Frontend Units
 ### nginx unit
