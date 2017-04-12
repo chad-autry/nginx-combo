@@ -1,4 +1,0 @@
-- hosts: frontend:backend:!localhost
-  gather_facts: false
-  roles:
-    - coreos-python
