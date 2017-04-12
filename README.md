@@ -96,10 +96,10 @@ Various units expect values to be configured in etcd, used by a playbook
 ```
 
 ## Playbooks
-### statefullBootstrap.yml
-This playbook initializes the stateful etcd and RethinkDB clusters
+### site.yml
+The main playbook that deploys or updates a cluster
 
-[statefullBootstrap.yml](dist/ansible/statefullBootstrap.yml)
+[site.yml](dist/ansible/site.yml)
 ```yml
 - hosts: rethinkdb:etcd:!localhost
   gather_facts: false
@@ -109,17 +109,6 @@ This playbook initializes the stateful etcd and RethinkDB clusters
 - hosts: etcd
   roles:
     - etcd-bootstrap
-```
-
-### siteApps.yml
-This playbook updates the frontend and backend instances to the latest. Includes tags so individual components can be run (like only redeploy the frontend webapp)
-
-[statefullInit.yml](dist/ansible/siteApps.yml)
-```yml
-- hosts: frontend:backend:!localhost
-  gather_facts: false
-  roles:
-    - coreos-python
 ```
 
 ## Roles
@@ -177,24 +166,29 @@ chmod +x /opt/bin/python
 /opt/bin/python --version
 ```
 
-## etcd-bootstrap
-Sets up the initial etcd cluster
+## etcd
+Deploys or redeploys the etcd cluster along with a proxy for each instance. Etcd is persistent, but if the cluster changes wac treats it as emphemeral and reloads it from the Ansible config.
 
 [roles/etcd-bootstrap/tasks/main.yml](dist/ansible/roles/etcd-bootstrap/tasks/main.yml)
 ```yml
-# template out the systemd service unit DO NOT OVERWRITE
-- template:
-    src: etcd2.service
-    dest: /etc/systemd/system/etcd2.service
+# Create the initial cluster parameter
+
+# template out the systemd service unit on the etcd hosts
+- name etcd template
+    template:
+    src: etcd.service
+    dest: /etc/systemd/system/etcd.service
+    register: etcd_template
 
 - name: Make sure a service is running
-  systemd: state=started name=etcd2.service
+  systemd: state=restarted name=etcd2.service
+  when: 
 ```
 
-[etcd2.service](dist/ansible/roles/etcd-bootstrap/files/etcd2.service)
+[etcd.service](dist/ansible/roles/etcd-bootstrap/files/etcd.service)
 ```yaml
 [Unit]
-Description=etcd2
+Description=etcd
 # Dependencies
 Requires=docker.service
 
@@ -202,10 +196,10 @@ Requires=docker.service
 After=docker.service
 
 [Service]
-ExecStartPre=-/usr/bin/docker pull chadautry/wac-etcdv2:{{etcdv2.version}}
-ExecStartPre=-/usr/bin/docker rm etcdv2
-ExecStart=/usr/bin/docker run --name etcdv2 -p 2380:2380 -p 2379:2379 \
--v /var/etcd:/var/etcd \
+ExecStartPre=-/usr/bin/docker pull chadautry/wac-etcdv2:{{etcd.version}}
+ExecStartPre=-/usr/bin/docker rm etcd
+ExecStart=/usr/bin/docker run --name etcd -p 2380:2380 -p 2379:2379 \
+-v /var/etcd:/var/etcd
 chadautry/wac-etcdv2:{{etcdv2.version}} \
 --name infra0 --initial-advertise-peer-urls http://10.0.1.10:2380 \
 --listen-peer-urls http://10.0.1.10:2380 \
@@ -218,7 +212,7 @@ chadautry/wac-etcdv2:{{etcdv2.version}} \
 Restart=always
 ````
 * requires docker
-* takes version from etcdv2_version variable
+* takes version from etcd.version variable
 * expects cluster variables
 
 ## Frontend Units
