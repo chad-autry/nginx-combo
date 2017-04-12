@@ -1,5 +1,3 @@
-# Create the initial cluster parameter
-
 # template out the systemd service unit on the etcd hosts
 - name etcd template
     template:
@@ -7,6 +5,8 @@
     dest: /etc/systemd/system/etcd.service
     register: etcd_template
 
-- name: Make sure a service is running
+- name: start/restart the service if template changed
   systemd: state=restarted name=etcd2.service
-  when: 
+  when: etcd_template | changed
+  
+# Attempt to init etcd with values if they don't exist?

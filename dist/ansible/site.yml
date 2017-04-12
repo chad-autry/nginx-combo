@@ -1,8 +1,15 @@
-- hosts: rethinkdb:etcd:!localhost
+# Make sure python is installed
+- hosts: all:!localhost
   gather_facts: false
   roles:
     - coreos-python
     
+# Place a full etcd on the etcd hosts
 - hosts: etcd
   roles:
-    - etcd-bootstrap
+    - { role: etcd, proxy_etcd: False }
+    
+# Put a proxy etcd everywhere except the etcd hosts
+- hosts: all:!etcd:!localhost
+  roles:
+    - { role: etcd, proxy_etcd: True }

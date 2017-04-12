@@ -1,3 +1,7 @@
 ---
+# The host value which will be templated out for intra-machine connectivity. Match your manual inventory or dynamic inventory variable
+internal_ip_name:gce_private_ip
+
+# The container versions to use
 wac-python.version:latest
-etcdv2.version:latest
+etcd.version:latest
