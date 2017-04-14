@@ -67,13 +67,13 @@ The all variables file contains all the container versions to use.
 ```yaml
 ---
 # CoreOS can't have python installed at the normal /etc/bin. Override in inventory for localhost (if not CoreOS)
-ansible_python_interpreter:/opt/bin/python
+ansible_python_interpreter: /opt/bin/python
 # The host value which will be templated out for intra-machine connectivity. Match your manual inventory or dynamic inventory variable
-internal_ip_name:gce_private_ip
+internal_ip_name: gce_private_ip
 
 # The container versions to use
-wac-python.version:latest
-etcd.version:latest
+wac-python.version: latest
+etcd.version: latest
 ```
 
 ### TODO Set Values
@@ -182,7 +182,6 @@ Deploys or redeploys the etcd instance on a host. Etcd is persistent, but if the
 - name: wipe out etcd directory
   file:
     state: absent
-    state: directory
     path: /var/etcd
   when: etcd_template | changed
     
