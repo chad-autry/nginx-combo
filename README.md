@@ -173,7 +173,7 @@ Deploys or redeploys the etcd instance on a host. Etcd is persistent, but if the
 [roles/etcd/tasks/main.yml](dist/ansible/roles/etcd/tasks/main.yml)
 ```yml
 # template out the systemd service unit on the etcd hosts
-- name etcd template
+- name: etcd template
     template:
       src: etcd.service
       dest: /etc/systemd/system/etcd.service
