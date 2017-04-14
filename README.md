@@ -169,7 +169,7 @@ chmod +x /opt/bin/python
 ## etcd
 Deploys or redeploys the etcd instance on a host. Etcd is persistent, but if the cluster changes wac treats it as emphemeral and reloads it from the Ansible config.
 
-[roles/etcd-bootstrap/tasks/main.yml](dist/ansible/roles/etcd-bootstrap/tasks/main.yml)
+[roles/etcd/tasks/main.yml](dist/ansible/roles/etcd/tasks/main.yml)
 ```yml
 # template out the systemd service unit on the etcd hosts
 - name etcd template
