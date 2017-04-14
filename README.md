@@ -174,28 +174,28 @@ Deploys or redeploys the etcd instance on a host. Etcd is persistent, but if the
 ```yml
 # template out the systemd service unit on the etcd hosts
 - name: etcd template
-    template:
-      src: etcd.service
-      dest: /etc/systemd/system/etcd.service
-      register: etcd_template
+  template:
+    src: etcd.service
+    dest: /etc/systemd/system/etcd.service
+  register: etcd_template
 
 - name: wipe out etcd directory
   file:
     state: absent
     state: directory
     path: /var/etcd
-    when: etcd_template | changed
+  when: etcd_template | changed
     
 - name: ensure etcd directory is present
   file:
     state: present
     state: directory
     path: /var/etcd
-    when: etcd_template | changed
+  when: etcd_template | changed
 
 - name: start/restart the service if template changed
   systemd: state=restarted name=etcd2.service
-    when: etcd_template | changed
+  when: etcd_template | changed
   
 # Attempt to init etcd with values if they don't exist?
 ```
