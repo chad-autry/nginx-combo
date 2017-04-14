@@ -58,10 +58,6 @@ hostnametwo
 
 [backend]
 hostnametwo
-
-[coreos]
-hostnameone
-hostnametwo
 ```
 
 ### group_vars/all
@@ -70,6 +66,8 @@ The all variables file contains all the container versions to use.
 [group_vars/all](dist/ansible/group_vars/all)
 ```yaml
 ---
+# CoreOS can't have python installed at the normal /etc/bin. Override in inventory for localhost (if not CoreOS)
+ansible_python_interpreter:/opt/bin/python
 # The host value which will be templated out for intra-machine connectivity. Match your manual inventory or dynamic inventory variable
 internal_ip_name:gce_private_ip
 
@@ -78,16 +76,7 @@ wac-python.version:latest
 etcd.version:latest
 ```
 
-### group_vars/coreos
-CoreOS doesn't have python installed by default (or a normal /bin directory). This parameter defines the Python interpreter location for CoreOS hosts.
-
-[group_vars/coreos](dist/ansible/group_vars/coreos)
-```yaml
----
-ansible_python_interpreter:/opt/bin/python
-```
-
-### Set Values
+### TODO Set Values
 Various units expect values to be configured in etcd, used by a playbook
 ```
 /usr/bin/etcdctl set /domain/name <domain>
@@ -116,7 +105,7 @@ The main playbook that deploys or updates a cluster
   roles:
     - { role: etcd, proxy_etcd: False }
     
-# Put a proxy etcd everywhere except the etcd hosts
+# Place a proxy etcd everywhere except the etcd hosts
 - hosts: all:!etcd:!localhost
   roles:
     - { role: etcd, proxy_etcd: True }
@@ -185,13 +174,27 @@ Deploys or redeploys the etcd instance on a host. Etcd is persistent, but if the
 # template out the systemd service unit on the etcd hosts
 - name etcd template
     template:
-    src: etcd.service
-    dest: /etc/systemd/system/etcd.service
-    register: etcd_template
+      src: etcd.service
+      dest: /etc/systemd/system/etcd.service
+      register: etcd_template
+
+- name: wipe out etcd directory
+  file:
+    state: absent
+    state: directory
+    path: /var/etcd
+    when: etcd_template | changed
+    
+- name: ensure etcd directory is present
+  file:
+    state: present
+    state: directory
+    path: /var/etcd
+    when: etcd_template | changed
 
 - name: start/restart the service if template changed
   systemd: state=restarted name=etcd2.service
-  when: etcd_template | changed
+    when: etcd_template | changed
   
 # Attempt to init etcd with values if they don't exist?
 ```
