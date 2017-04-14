@@ -199,7 +199,7 @@ Deploys or redeploys the etcd instance on a host. Etcd is persistent, but if the
 # Attempt to init etcd with values if they don't exist?
 ```
 
-[etcd.service](dist/ansible/roles/etcd-bootstrap/files/etcd.service)
+[etcd.service](dist/ansible/roles/etcd/files/etcd.service)
 ```yaml
 [Unit]
 Description=etcd
