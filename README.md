@@ -121,12 +121,12 @@ Install Python onto CoreOS hosts
 ```yml
 - name: Check if bootstrap is needed
   raw: stat /opt/bin/python
-    register: need_bootstrap
-    ignore_errors: True
+  register: need_bootstrap
+  ignore_errors: True
 
 - name: Run bootstrap.sh
   script: bootstrap.sh
-    when: need_bootstrap | failed
+  when: need_bootstrap | failed
 ```
 
 [roles/coreos-python/files/bootstrap.sh](dist/ansible/roles/coreos-python/files/bootstrap.sh)
