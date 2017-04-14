@@ -8,7 +8,6 @@
 - name: wipe out etcd directory
   file:
     state: absent
-    state: directory
     path: /var/etcd
   when: etcd_template | changed
     
