@@ -13,7 +13,6 @@
     
 - name: ensure etcd directory is present
   file:
-    state: present
     state: directory
     path: /var/etcd
   when: etcd_template | changed
