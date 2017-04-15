@@ -97,16 +97,19 @@ The main playbook that deploys or updates a cluster
 # Make sure python is installed
 - hosts: all:!localhost
   gather_facts: false
+  become: true
   roles:
     - coreos-python
     
 # Place a full etcd on the etcd hosts
 - hosts: etcd
+  become: true
   roles:
     - { role: etcd, proxy_etcd: False }
     
 # Place a proxy etcd everywhere except the etcd hosts
 - hosts: all:!etcd:!localhost
+  become: true
   roles:
     - { role: etcd, proxy_etcd: True }
 ```
@@ -187,7 +190,6 @@ Deploys or redeploys the etcd instance on a host. Etcd is persistent, but if the
     
 - name: ensure etcd directory is present
   file:
-    state: present
     state: directory
     path: /var/etcd
   when: etcd_template | changed
