@@ -5,5 +5,5 @@ ansible_python_interpreter: /opt/bin/python
 internal_ip_name: gce_private_ip
 
 # The container versions to use
-wac-python.version: latest
-etcd.version: latest
+wac-python_version: latest
+etcd_version: latest
