@@ -153,17 +153,17 @@ else
   wget -O - https://bitbucket.org/pypy/pypy/downloads/pypy-$PYPY_VERSION-linux64.tar.bz2 |tar -xjf -
 fi
 
-mv -n pypy-$PYPY_VERSION-linux64 pypy
+mkdir -p /opt/bin
+
+mv -n pypy-$PYPY_VERSION-linux64 /opt/bin/pypy
 
 ## library fixup
 mkdir -p /opt/pypy/lib
 ln -snf /lib64/libncurses.so.5.9 /opt/pypy/lib/libtinfo.so.5
 
-mkdir -p /opt/bin
-
 cat > /opt/bin/python <<EOF
 #!/bin/bash
-LD_LIBRARY_PATH=/opt/pypy/lib:$LD_LIBRARY_PATH exec /opt/pypy/bin/pypy "\$@"
+LD_LIBRARY_PATH=/opt/bin/pypy/lib:$LD_LIBRARY_PATH exec /opt/bin/pypy/bin/pypy "\$@"
 EOF
 
 chmod +x /opt/bin/python
