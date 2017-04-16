@@ -47,16 +47,16 @@ Here is an example inventory. wac-bp operates on machines based on the group the
 hostnameone
 hostnametwo
 
-[etcd]
+[tag_etcd]
 hostnameone
 
-[rethinkdb]
+[tag_rethinkdb]
 hostnameone
 
-[frontend]
+[tag_frontend]
 hostnametwo
 
-[backend]
+[tag_backend]
 hostnametwo
 ```
 
@@ -102,13 +102,13 @@ The main playbook that deploys or updates a cluster
     - coreos-python
     
 # Place a full etcd on the etcd hosts
-- hosts: etcd
+- hosts: tag_etcd
   become: true
   roles:
     - { role: etcd, proxy_etcd: False }
     
 # Place a proxy etcd everywhere except the etcd hosts
-- hosts: all:!etcd:!localhost
+- hosts: all:!tag_etcd:!localhost
   become: true
   roles:
     - { role: etcd, proxy_etcd: True }
