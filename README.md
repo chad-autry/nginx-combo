@@ -72,8 +72,8 @@ ansible_python_interpreter: /opt/bin/python
 internal_ip_name: gce_private_ip
 
 # The container versions to use
-wac-python.version: latest
-etcd.version: latest
+wac-python_version: latest
+etcd_version: latest
 ```
 
 ### TODO Set Values
@@ -212,7 +212,7 @@ Requires=docker.service
 After=docker.service
 
 [Service]
-ExecStartPre=-/usr/bin/docker pull chadautry/wac-etcdv2:{{etcd.version}}
+ExecStartPre=-/usr/bin/docker pull chadautry/wac-etcdv2:{{etcd_version}}
 ExecStartPre=-/usr/bin/docker rm etcd
 ExecStart=/usr/bin/docker run --name etcd -p 2380:2380 -p 2379:2379 \
 -v /var/etcd:/var/etcd \
@@ -224,7 +224,7 @@ chadautry/wac-etcdv2:{{etcd.version}} \
 {%- if not proxy_etcd %}  --advertise-client-urls http://{{hostvars[inventory_hostname][internal_ip_name]}}:2379 \{% endif %}
 {%- if not proxy_etcd %}  -–data-dir /var/etcd \{% endif %}
 {%- if proxy_etcd %}  --proxy on \{% endif %}
---initial-cluster {% for host in groups['etcd']  %}{{ansible_hostname}}=http://{{hostvars[host][internal_ip_name]}}:2380{%- if loop.first %},{% endif %}{% endfor %} \
+--initial-cluster {% for host in groups['tag_etcd']  %}{{ansible_hostname}}=http://{{hostvars[host][internal_ip_name]}}:2380{%- if loop.first %},{% endif %}{% endfor %} \
 {%- if not proxy_etcd %}  --initial-cluster-state new{% endif %}
 
 Restart=always
