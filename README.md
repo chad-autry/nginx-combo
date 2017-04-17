@@ -216,7 +216,7 @@ ExecStartPre=-/usr/bin/docker pull chadautry/wac-etcdv2:{{etcd_version}}
 ExecStartPre=-/usr/bin/docker rm etcd
 ExecStart=/usr/bin/docker run --name etcd -p 2380:2380 -p 2379:2379 \
 -v /var/etcd:/var/etcd \
-chadautry/wac-etcdv2:{{etcd.version}} \
+chadautry/wac-etcdv2:{{etcd_version}} \
 {%- if not proxy_etcd %}  --name {{ ansible_hostname }} \{% endif %}
 {%- if not proxy_etcd %}  --initial-advertise-peer-urls http://{{hostvars[inventory_hostname][internal_ip_name]}}:2380 \{% endif %}
 {%- if not proxy_etcd %}  --listen-peer-urls http://{{hostvars[inventory_hostname][internal_ip_name]}}:2380 \{% endif %}
@@ -230,7 +230,7 @@ chadautry/wac-etcdv2:{{etcd.version}} \
 Restart=always
 ````
 * requires docker
-* takes version from etcd.version variable
+* takes version from etcd_version variable
 * writes different lines for proxy mode or standard
 * uses the internal ip variable configured
 * walks the etcd hosts for the initial cluster
