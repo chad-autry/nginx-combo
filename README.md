@@ -224,7 +224,7 @@ chadautry/wac-etcdv2:{{etcd_version}} \
 {%- if not proxy_etcd %}  --advertise-client-urls http://{{hostvars[inventory_hostname][internal_ip_name]}}:2379 \{% endif %}
 {%- if not proxy_etcd %}  -–data-dir /var/etcd \{% endif %}
 {%- if proxy_etcd %}  --proxy on \{% endif %}
---initial-cluster {% for host in groups['tag_etcd']  %}{{ansible_hostname}}=http://{{hostvars[host][internal_ip_name]}}:2380{%- if loop.first %},{% endif %}{% endfor %} \
+--initial-cluster {% for host in groups['tag_etcd']  %}{{host}}=http://{{hostvars[host][internal_ip_name]}}:2380{%- if loop.first %},{% endif %}{% endfor %} \
 {%- if not proxy_etcd %}  --initial-cluster-state new{% endif %}
 
 Restart=always
