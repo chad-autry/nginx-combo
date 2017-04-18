@@ -22,6 +22,7 @@ mkdir -p /opt/bin
 mv -n pypy-$PYPY_VERSION-linux64 /opt/bin/pypy
 
 ## library fixup
+mkdir -p /opt/bin/pypy/lib
 ln -snf /lib64/libncurses.so.5.9 /opt/bin/pypy/lib/libtinfo.so.5
 
 cat > /opt/bin/python <<EOF
