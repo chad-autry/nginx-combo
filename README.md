@@ -70,6 +70,8 @@ The all variables file contains all the container versions to use.
 ansible_python_interpreter: /opt/bin/python
 # The host value which will be templated out for intra-machine connectivity. Match your manual inventory or dynamic inventory variable
 internal_ip_name: gce_private_ip
+# The unique name of machine instances to be used in templates
+machine_name: gce_name
 
 # The container versions to use
 wac-python_version: latest
@@ -217,14 +219,14 @@ ExecStartPre=-/usr/bin/docker rm etcd
 ExecStart=/usr/bin/docker run --name etcd -p 2380:2380 -p 2379:2379 \
 -v /var/etcd:/var/etcd \
 chadautry/wac-etcdv2:{{etcd_version}} \
-{%- if not proxy_etcd %}  --name {{ ansible_hostname }} \{% endif %}
+{%- if not proxy_etcd %}  --name {{hostvars[inventory_hostname][machine_name]}} \{% endif %}
 {%- if not proxy_etcd %}  --initial-advertise-peer-urls http://{{hostvars[inventory_hostname][internal_ip_name]}}:2380 \{% endif %}
 {%- if not proxy_etcd %}  --listen-peer-urls http://{{hostvars[inventory_hostname][internal_ip_name]}}:2380 \{% endif %}
 --listen-client-urls http://{{hostvars[inventory_hostname][internal_ip_name]}}:2379,http://127.0.0.1:2379 \
 {%- if not proxy_etcd %}  --advertise-client-urls http://{{hostvars[inventory_hostname][internal_ip_name]}}:2379 \{% endif %}
 {%- if not proxy_etcd %}  -–data-dir /var/etcd \{% endif %}
 {%- if proxy_etcd %}  --proxy on \{% endif %}
---initial-cluster {% for host in groups['tag_etcd']  %}{{host}}=http://{{hostvars[host][internal_ip_name]}}:2380{%- if loop.first %},{% endif %}{% endfor %} \
+--initial-cluster {% for host in groups['tag_etcd']  %}{{{hostvars[host][machine_name]}}=http://{{hostvars[host][internal_ip_name]}}:2380{%- if loop.first %},{% endif %}{% endfor %} \
 {%- if not proxy_etcd %}  --initial-cluster-state new{% endif %}
 
 Restart=always
