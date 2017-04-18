@@ -197,7 +197,10 @@ Deploys or redeploys the etcd instance on a host. Etcd is persistent, but if the
   when: etcd_template | changed
 
 - name: start/restart the service if template changed
-  systemd: state=restarted name=etcd.service
+  systemd:
+    daemon_reload: yes
+    state: restarted
+    name: etcd.service
   when: etcd_template | changed
   
 # Attempt to init etcd with values if they don't exist?
