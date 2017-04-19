@@ -12,14 +12,14 @@ ExecStartPre=-/usr/bin/docker rm etcd
 ExecStart=/usr/bin/docker run --name etcd -p 2380:2380 -p 2379:2379 \
 -v /var/etcd:/var/etcd \
 chadautry/wac-etcdv2:{{etcd_version}} \
-{%- if not proxy_etcd %}
+{% if not proxy_etcd %}
 --initial-advertise-peer-urls http://{{hostvars[inventory_hostname][internal_ip_name]}}:2380 \
 --listen-peer-urls http://{{hostvars[inventory_hostname][internal_ip_name]}}:2380 \
 --advertise-client-urls http://{{hostvars[inventory_hostname][internal_ip_name]}}:2379 \
 --data-dir /var/etcd \
 --initial-cluster-state new \
 {% endif %}
-{%- if proxy_etcd %}
+{% if proxy_etcd %}
 --proxy on \
 {% endif %}
 --name {{hostvars[inventory_hostname][machine_name]}} \
