@@ -23,5 +23,3 @@
     state: restarted
     name: etcd.service
   when: etcd_template | changed
-  
-# Attempt to init etcd with values if they don't exist?

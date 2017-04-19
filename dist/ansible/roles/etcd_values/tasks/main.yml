@@ -1,0 +1,4 @@
+# Condititionally import the setter.yml, so we don't have to see all the individual set tasks excluded in the output
+- include: setter.yml
+  static: no
+  when: etcd_template | changed

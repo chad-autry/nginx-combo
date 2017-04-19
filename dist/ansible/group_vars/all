@@ -6,6 +6,15 @@ internal_ip_name: gce_private_ip
 # The unique name of machine instances to be used in templates
 machine_name: gce_name
 
+# Variables which get set into etcd (some of them are private!) needed by other applications
+domain_name: <domain_name>
+domain_email: <domain_email>
+rethinkdb_web_password: <rethinkdb_web_password>
+jwt_token_secret: <jwt_token_secret>
+google_client_id: <google_client_id>
+google_rediret_uri: <google_redirect_uri>
+google_auth_secret: <google_auth_secret>
+
 # The container versions to use
 wac-python_version: latest
 etcd_version: latest

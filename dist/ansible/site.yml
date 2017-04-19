@@ -10,7 +10,13 @@
   become: true
   roles:
     - { role: etcd, proxy_etcd: False }
-    
+
+# Set the etcd values (if required) from the first etcd host
+- hosts: {{groups[['tag_etcd'][0]]}}
+  become: true
+  roles:
+    - etcd_values
+
 # Place a proxy etcd everywhere except the etcd hosts
 - hosts: all:!tag_etcd:!localhost
   become: true
