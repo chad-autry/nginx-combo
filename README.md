@@ -73,21 +73,18 @@ internal_ip_name: gce_private_ip
 # The unique name of machine instances to be used in templates
 machine_name: gce_name
 
+# Variables which get set into etcd (some of them are private!) needed by other applications
+domain_name: <domain_name>
+domain_email: <domain_email>
+rethinkdb_web_password: <rethinkdb_web_password>
+jwt_token_secret: <jwt_token_secret>
+google_client_id: <google_client_id>
+google_rediret_uri: <google_redirect_uri>
+google_auth_secret: <google_auth_secret>
+
 # The container versions to use
 wac-python_version: latest
 etcd_version: latest
-```
-
-### TODO Set Values
-Various units expect values to be configured in etcd, used by a playbook
-```
-/usr/bin/etcdctl set /domain/name <domain>
-/usr/bin/etcdctl set /domain/email <email>
-/usr/bin/etcdctl set /rethinkdb/pwd <Web Authorization Password>
-/usr/bin/etcdctl set /node/config/token_secret <Created Private Key>
-/usr/bin/etcdctl set /node/config/auth/google/client_id <Google Client ID>
-/usr/bin/etcdctl set /node/config/auth/google/redirect_uri <Google Redirect URI>
-/usr/bin/etcdctl set /node/config/auth/google/secret <Google OAuth Secret>
 ```
 
 ## Playbooks
@@ -108,7 +105,13 @@ The main playbook that deploys or updates a cluster
   become: true
   roles:
     - { role: etcd, proxy_etcd: False }
-    
+
+# Set the etcd values (if required) from the first etcd host
+- hosts: {{groups[['tag_etcd'][0]]}}
+  become: true
+  roles:
+    - etcd_values
+
 # Place a proxy etcd everywhere except the etcd hosts
 - hosts: all:!tag_etcd:!localhost
   become: true
@@ -172,8 +175,8 @@ chmod +x /opt/bin/python
 /opt/bin/python --version
 ```
 
-## etcd
-Deploys or redeploys the etcd instance on a host. Etcd is persistent, but if the cluster changes wac treats it as emphemeral and reloads it from the Ansible config.
+### etcd
+Deploys or redeploys the etcd instance on a host. Etcd is persistent, but if the cluster changes wac-bp blows it away instead of attempting to add/remove instances.
 
 [roles/etcd/tasks/main.yml](dist/ansible/roles/etcd/tasks/main.yml)
 ```yml
@@ -202,8 +205,6 @@ Deploys or redeploys the etcd instance on a host. Etcd is persistent, but if the
     state: restarted
     name: etcd.service
   when: etcd_template | changed
-  
-# Attempt to init etcd with values if they don't exist?
 ```
 
 [etcd.service](dist/ansible/roles/etcd/templates/etcd.service)
@@ -243,6 +244,41 @@ Restart=always
 * writes different lines for proxy mode or standard
 * uses the internal ip variable configured
 * walks the etcd hosts for the initial cluster
+
+### etcd_values
+This role sets values into etcd from the Ansible config when the etcd cluster has been recreated. It only needs to be executed from a single etcd machine.
+
+[roles/etcd_values/tasks/main.yml](dist/ansible/roles/etcd_values/tasks/main.yml)
+```yml
+# Condititionally import the setter.yml, so we don't have to see all the individual set tasks excluded in the output
+- include: setter.yml
+  static: no
+  when: etcd_template | changed
+```
+
+[roles/etcd_values/tasks/setter.yml](dist/ansible/roles/etcd_values/tasks/setter.yml)
+```yml
+- name: /usr/bin/etcdctl set /domain/name <domain>
+  command: /usr/bin/etcdctl set /domain/name {{domain_name}}
+  
+- name: /usr/bin/etcdctl set /domain/email <email>
+  command: /usr/bin/etcdctl set /domain/email {{domain_email}}
+  
+- name: /usr/bin/etcdctl set /rethinkdb/pwd <Web Authorization Password>
+  command: /usr/bin/etcdctl set /rethinkdb/pwd {{rethinkdb_web_password}}
+  
+- name: /usr/bin/etcdctl set /node/config/token_secret <Created Private Key>
+  command: /usr/bin/etcdctl set /node/config/token_secret {{jwt_token_secret}}
+
+- name: /usr/bin/etcdctl set /node/config/auth/google/client_id <Google Client ID>
+  command: /usr/bin/etcdctl set /node/config/auth/google/client_id {{google_client_id}}
+  
+- name: /usr/bin/etcdctl set /node/config/auth/google/redirect_uri <Google Redirect URI>
+  command: /usr/bin/etcdctl set /node/config/auth/google/redirect_uri {{google_rediret_uri}}
+  
+- name: /usr/bin/etcdctl set /node/config/auth/google/secret <Google OAuth Secret>
+  command: /usr/bin/etcdctl set /node/config/auth/google/secret {{google_auth_secret}}
+```
 
 ## Frontend Units
 ### nginx unit
