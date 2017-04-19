@@ -107,7 +107,7 @@ The main playbook that deploys or updates a cluster
     - { role: etcd, proxy_etcd: False }
 
 # Set the etcd values (if required) from the first etcd host
-- hosts: {{groups[['tag_etcd'][0]]}}
+- hosts: {{groups['tag_etcd'][0]}}
   become: true
   roles:
     - etcd_values
