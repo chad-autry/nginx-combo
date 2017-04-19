@@ -223,30 +223,18 @@ ExecStart=/usr/bin/docker run --name etcd -p 2380:2380 -p 2379:2379 \
 -v /var/etcd:/var/etcd \
 chadautry/wac-etcdv2:{{etcd_version}} \
 {%- if not proxy_etcd %}
---name {{hostvars[inventory_hostname][machine_name]}} \
-{% endif %}
-{%- if not proxy_etcd %}
 --initial-advertise-peer-urls http://{{hostvars[inventory_hostname][internal_ip_name]}}:2380 \
-{% endif %}
-{%- if not proxy_etcd %}
-
 --listen-peer-urls http://{{hostvars[inventory_hostname][internal_ip_name]}}:2380 \
-{% endif %}
---listen-client-urls http://{{hostvars[inventory_hostname][internal_ip_name]}}:2379,http://127.0.0.1:2379 \
-{%- if not proxy_etcd %}
 --advertise-client-urls http://{{hostvars[inventory_hostname][internal_ip_name]}}:2379 \
-{% endif %}
-{%- if not proxy_etcd %}
 --data-dir /var/etcd \
+--initial-cluster-state new \
 {% endif %}
 {%- if proxy_etcd %}
 --proxy on \
 {% endif %}
-{%- if not proxy_etcd %}
---initial-cluster-state new \
-{% endif %}
---initial-cluster {% for host in groups['tag_etcd']  %}{{hostvars[host][machine_name]}}=http://{{hostvars[host][internal_ip_name]}}:2380{%- if not loop.last %},{% endif %}{% endfor %}
-
+--name {{hostvars[inventory_hostname][machine_name]}} \
+--listen-client-urls http://{{hostvars[inventory_hostname][internal_ip_name]}}:2379,http://127.0.0.1:2379 \
+--initial-cluster {% for host in groups['tag_etcd']  %}{{hostvars[host][machine_name]}}=http://{{hostvars[host][internal_ip_name]}}:2380{% if not loop.last %},{% endif %}{% endfor %}
 
 Restart=always
 ````
