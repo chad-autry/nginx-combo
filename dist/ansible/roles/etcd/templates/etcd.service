@@ -9,7 +9,7 @@ After=docker.service
 [Service]
 ExecStartPre=-/usr/bin/docker pull chadautry/wac-etcdv2:{{etcd_version}}
 ExecStartPre=-/usr/bin/docker rm etcd
-ExecStart=/usr/bin/docker run --name etcd -p 2380:2380 -p 2379:2379 \
+ExecStart=/usr/bin/docker run --name etcd --net host -p 2380:2380 -p 2379:2379 \
 -v /var/etcd:/var/etcd \
 chadautry/wac-etcdv2:{{etcd_version}} \
 {% if not proxy_etcd %}
