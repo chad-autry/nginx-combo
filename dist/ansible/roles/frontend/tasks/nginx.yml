@@ -1,0 +1,28 @@
+# template out the systemd service unit
+- name: nginx.service template
+  template:
+    src: nginx.service
+    dest: /etc/systemd/system/nginx.service
+  register: nginx_template
+    
+- name: ensure www directory is present
+  file:
+    state: directory
+    path: /var/www
+    
+- name: ensure nginx directory is present
+  file:
+    state: directory
+    path: /var/nginx
+    
+- name: ensure ssl directory is present
+  file:
+    state: directory
+    path: /var/ssl
+
+- name: start/restart the service if template changed
+  systemd:
+    daemon_reload: yes
+    state: restarted
+    name: nginx.service
+  when: nginx_template | changed
