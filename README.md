@@ -85,6 +85,7 @@ google_auth_secret: <google_auth_secret>
 # The container versions to use
 wac-python_version: latest
 etcd_version: latest
+nginx_version: latest
 ```
 
 ## Playbooks
