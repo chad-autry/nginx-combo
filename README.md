@@ -117,6 +117,12 @@ The main playbook that deploys or updates a cluster
   become: true
   roles:
     - { role: etcd, proxy_etcd: True }
+    
+# nginx
+- hosts: tag_frontend
+  become: true
+  roles:
+    - frontend
 ```
 
 ## Roles
@@ -250,13 +256,13 @@ This role sets values into etcd from the Ansible config when the etcd cluster ha
 
 [roles/populate_etcd/tasks/main.yml](dist/ansible/roles/populate_etcd/tasks/main.yml)
 ```yml
-# Condititionally import the setter.yml, so we don't have to see all the individual set tasks excluded in the output
-- include: setter.yml
+# Condititionally import the populate.yml, so we don't have to see all the individual set tasks excluded in the output
+- include: populate.yml
   static: no
   when: (etcd_template | changed) or (force_populate_etcd is defined)
 ```
 
-[roles/populate_etcd/tasks/setter.yml](dist/ansible/roles/populate_etcd/tasks/setter.yml)
+[roles/populate_etcd/tasks/populate.yml](dist/ansible/roles/populate_etcd/tasks/populate.yml)
 ```yml
 - name: /usr/bin/etcdctl set /domain/name <domain>
   command: /usr/bin/etcdctl set /domain/name {{domain_name}}
@@ -278,6 +284,22 @@ This role sets values into etcd from the Ansible config when the etcd cluster ha
   
 - name: /usr/bin/etcdctl set /node/config/auth/google/secret <Google OAuth Secret>
   command: /usr/bin/etcdctl set /node/config/auth/google/secret {{google_auth_secret}}
+```
+
+### frontend
+The front end playbook sets up the nginx unit, the nginx file watching & reloading units, the letsencrypt renewal units, and finally pushes the front end application across (tagged so it can be executed alone)
+
+[roles/frontend/tasks/main.yml](dist/ansible/roles/frontend/tasks/main.yml)
+```yml
+# Import nginx task file
+
+# Import nginx reloading tasks
+
+# Import letsencrypt tasks
+
+# Import etcd route discovery task
+
+# Import application push task
 ```
 
 ## Frontend Units
