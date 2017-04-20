@@ -22,3 +22,9 @@
   become: true
   roles:
     - { role: etcd, proxy_etcd: True }
+    
+# nginx
+- hosts: tag_frontend
+  become: true
+  roles:
+    - frontend
