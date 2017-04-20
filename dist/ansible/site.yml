@@ -15,7 +15,7 @@
 - hosts: tag_etcd[0]
   become: true
   roles:
-    - etcd_values
+    - populate_etcd
 
 # Place a proxy etcd everywhere except the etcd hosts
 - hosts: all:!tag_etcd:!localhost
