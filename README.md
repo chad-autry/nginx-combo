@@ -292,6 +292,7 @@ The front end playbook sets up the nginx unit, the nginx file watching & reloadi
 [roles/frontend/tasks/main.yml](dist/ansible/roles/frontend/tasks/main.yml)
 ```yml
 # Import nginx task file
+- include: nginx.yml
 
 # Import nginx reloading tasks
 
@@ -301,6 +302,65 @@ The front end playbook sets up the nginx unit, the nginx file watching & reloadi
 
 # Import application push task
 ```
+
+## nginx
+[roles/frontend/tasks/main.yml](dist/ansible/roles/frontend/tasks/nginx.yml)
+```yml
+# template out the systemd service unit
+- name: nginx.service template
+  template:
+    src: nginx.service
+    dest: /etc/systemd/system/nginx.service
+  register: nginx_template
+    
+- name: ensure www directory is present
+  file:
+    state: directory
+    path: /var/www
+    
+- name: ensure nginx directory is present
+  file:
+    state: directory
+    path: /var/nginx
+    
+- name: ensure ssl directory is present
+  file:
+    state: directory
+    path: /var/ssl
+
+- name: start/restart the service if template changed
+  systemd:
+    daemon_reload: yes
+    state: restarted
+    name: nginx.service
+  when: nginx_template | changed
+```
+
+[nginx.service](dist/ansible/roles/frontend/templates/nginx.service)
+```yaml
+[Unit]
+Description=NGINX
+# Dependencies
+Requires=docker.service
+
+# Ordering
+After=docker.service
+
+[Service]
+ExecStartPre=-/usr/bin/docker pull chadautry/wac-nginx:{{nginx_version}}
+ExecStartPre=-/usr/bin/docker rm nginx
+ExecStart=/usr/bin/docker run --name nginx -p 80:80 -p 443:443 \
+-v /var/www:/usr/share/nginx/html:ro -v /var/ssl:/etc/nginx/ssl:ro \
+-v /var/nginx:/usr/var/nginx:ro \
+chadautry/wac-nginx
+Restart=always
+```
+* requires docker
+* Starts a customized nginx docker container
+    * Version comes from variables
+    * Takes server config from local drive
+    * Takes html from local drive
+    * Takes certs from local drive
 
 ## Frontend Units
 ### nginx unit
