@@ -110,7 +110,7 @@ The main playbook that deploys or updates a cluster
 - hosts: tag_etcd[0]
   become: true
   roles:
-    - etcd_values
+    - populate_etcd
 
 # Place a proxy etcd everywhere except the etcd hosts
 - hosts: all:!tag_etcd:!localhost
@@ -245,18 +245,18 @@ Restart=always
 * uses the internal ip variable configured
 * walks the etcd hosts for the initial cluster
 
-### etcd_values
+### populate_etcd
 This role sets values into etcd from the Ansible config when the etcd cluster has been recreated. It only needs to be executed from a single etcd machine.
 
-[roles/etcd_values/tasks/main.yml](dist/ansible/roles/etcd_values/tasks/main.yml)
+[roles/populate_etcd/tasks/main.yml](dist/ansible/roles/populate_etcd/tasks/main.yml)
 ```yml
 # Condititionally import the setter.yml, so we don't have to see all the individual set tasks excluded in the output
 - include: setter.yml
   static: no
-  when: etcd_template | changed
+  when: (etcd_template | changed) or (force_populate_etcd is defined)
 ```
 
-[roles/etcd_values/tasks/setter.yml](dist/ansible/roles/etcd_values/tasks/setter.yml)
+[roles/populate_etcd/tasks/setter.yml](dist/ansible/roles/populate_etcd/tasks/setter.yml)
 ```yml
 - name: /usr/bin/etcdctl set /domain/name <domain>
   command: /usr/bin/etcdctl set /domain/name {{domain_name}}
