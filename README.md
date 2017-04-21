@@ -292,28 +292,7 @@ The front end playbook sets up the nginx unit, the nginx file watching & reloadi
 
 [roles/frontend/tasks/main.yml](dist/ansible/roles/frontend/tasks/main.yml)
 ```yml
-# Import nginx task file
-- include: nginx.yml
-
-# Import nginx reloading tasks
-
-# Import letsencrypt tasks
-
-# Import etcd route discovery task
-
-# Import application push task
-```
-
-## nginx
-[roles/frontend/tasks/main.yml](dist/ansible/roles/frontend/tasks/nginx.yml)
-```yml
-# template out the systemd service unit
-- name: nginx.service template
-  template:
-    src: nginx.service
-    dest: /etc/systemd/system/nginx.service
-  register: nginx_template
-    
+# Ensure the frontend directories are created
 - name: ensure www directory is present
   file:
     state: directory
@@ -328,7 +307,31 @@ The front end playbook sets up the nginx unit, the nginx file watching & reloadi
   file:
     state: directory
     path: /var/ssl
+    
+# Import backend route configurator (creates config before nginx starts)
 
+# Import nginx task file
+- include: nginx.yml
+
+# Import letsencrypt tasks
+
+# Import etcd route discovery task
+
+# Import application push task
+```
+
+## nginx
+Hosts static files, routes to backends, terminates SSL
+
+[roles/frontend/tasks/main.yml](dist/ansible/roles/frontend/tasks/nginx.yml)
+```yml
+# template out the systemd service unit
+- name: nginx.service template
+  template:
+    src: nginx.service
+    dest: /etc/systemd/system/nginx.service
+  register: nginx_template
+    
 - name: start/restart the service if template changed
   systemd:
     daemon_reload: yes
@@ -363,40 +366,58 @@ Restart=always
     * Takes html from local drive
     * Takes certs from local drive
 
-## Frontend Units
-### nginx unit
-The main unit for the front end, nginx is the static file server and reverse proxy. Can have redundant identical instances.
+## backend discovery
+Sets a watch on the backend discovery location, and when it changes templates out the nginx conf
+[roles/frontend/tasks/main.yml](dist/ansible/roles/frontend/tasks/backend-discovery-watcher.yml)
+```yml
+# template out the systemd service unit
+- name: backend-discovery-watcher.service template
+  template:
+    src: backend-discovery-watcher.service
+    dest: /etc/systemd/system/backend-discovery-watcher.service
+  register: backend-discovery-watcher_template
+    
+- name: start/restart the service if template changed
+  systemd:
+    daemon_reload: yes
+    state: restarted
+    name: backend-discovery-watcher.service
+  when: backend-discovery-watcher_template | changed
+```
 
-[nginx.service](dist/units/started/nginx.service)
+[backend-discovery-watcher.service](dist/ansible/roles/frontend/templates/backend-discovery-watcher.service)
 ```yaml
 [Unit]
-Description=NGINX
+Description=Watches for backened instances
 # Dependencies
-Requires=docker.service
+Requires=etcd.service
 
 # Ordering
-After=docker.service
+After=etcd.service
+
+# Restart when dependency restarts
+PartOf=etcd.service
 
 [Service]
-ExecStartPre=-/usr/bin/docker pull chadautry/wac-nginx
-ExecStartPre=-/usr/bin/docker rm nginx
-ExecStart=/usr/bin/docker run --name nginx -p 80:80 -p 443:443 \
--v /var/www:/usr/share/nginx/html:ro -v /var/ssl:/etc/nginx/ssl:ro \
--v /var/nginx:/usr/var/nginx:ro \
-chadautry/wac-nginx
+ExecStartPre=-/usr/bin/docker pull chadautry/wac-nginx-config-templater
+ExecStartPre=-/usr/bin/docker rm nginx-templater
+ExecStart=/usr/bin/etcdctl watch /discovery/backend
+ExecStartPost=-/usr/bin/docker run --name nginx-templater --net host \
+-v /var/nginx:/usr/var/nginx -v /var/ssl:/etc/nginx/ssl:ro \
+chadautry/wac-nginx-config-templater
 Restart=always
-
-[X-Fleet]
-Global=true
-MachineMetadata=frontend=true
 ```
-* requires docker
-* wants all files to be copied before startup
-* Starts a customized nginx docker container
-    * Takes server config from local drive
-    * Takes html from local drive
-    * Takes certs from local drive
-* Blindly runs on all frontend tagged instances
+* Restarted if etcd restarts
+* Starts a watch for changes in the backend discovery path
+* Once the watch starts, executes the config templating container
+    * Local volume mapped in for the templated config to be written to
+    * Local ssl volume mapped in for the template container to read
+    * Doesn't error out (TODO move to a secondary unit to be safely concurrent)
+* If the watch is ever satisfied, the unit will exit
+* Automatically restarted, causing a new watch and templater execution
+
+## Frontend Units
+
 
 ### nginx reloading units
 A pair of units are responsible for reloading nginx instances on file changes
@@ -560,39 +581,7 @@ MachineMetadata=frontend=true
 * Automagically executes the letsencrypt-renewal.service based on name
 * Not global so there will only be one instance
 
-### backend discovery unit
-Sets a watch on the backend discovery location, and when it changes templates out the nginx conf
 
-[backend-discovery-watcher.service](dist/units/started/backend-discovery-watcher.service)
-```yaml
-[Unit]
-Description=Watches for backened instances
-# Dependencies
-Requires=etcd2.service
-
-# Ordering
-After=etcd2.service
-
-[Service]
-ExecStartPre=-/usr/bin/docker pull chadautry/wac-nginx-config-templater
-ExecStartPre=-/usr/bin/docker rm nginx-templater
-ExecStart=/usr/bin/etcdctl watch /discovery/backend
-ExecStartPost=-/usr/bin/docker run --name nginx-templater --net host \
--v /var/nginx:/usr/var/nginx -v /var/ssl:/etc/nginx/ssl:ro \
-chadautry/wac-nginx-config-templater
-Restart=always
-
-[X-Fleet]
-Global=true
-MachineMetadata=frontend=true
-```
-* Starts a watch for changes in the backend discovery path
-* Once the watch starts, executes the config templating container
-    * Local volume mapped in for the templated config to be written to
-    * Doesn't error out (TODO move to a secondary unit to be safely concurrent)
-* If the watch is ever satisfied, the unit will exit
-* Automatically restarted, causing a new watch and templater execution
-* Blindly runs on all frontend tagged instances
 
 ## API Backend
 These are the units for an api backend, including authentication. A cluster could have multiple backend processes, just change the tagging from 'backend' to some named process (and change the docker process name)
