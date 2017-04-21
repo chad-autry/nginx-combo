@@ -12,5 +12,5 @@ ExecStartPre=-/usr/bin/docker rm nginx
 ExecStart=/usr/bin/docker run --name nginx -p 80:80 -p 443:443 \
 -v /var/www:/usr/share/nginx/html:ro -v /var/ssl:/etc/nginx/ssl:ro \
 -v /var/nginx:/usr/var/nginx:ro \
-chadautry/wac-nginx
+chadautry/wac-nginx:{{nginx_version}}
 Restart=always

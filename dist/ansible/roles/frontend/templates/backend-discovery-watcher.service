@@ -10,10 +10,10 @@ After=etcd.service
 PartOf=etcd.service
 
 [Service]
-ExecStartPre=-/usr/bin/docker pull chadautry/wac-nginx-config-templater
+ExecStartPre=-/usr/bin/docker pull chadautry/wac-nginx-config-templater:{{backend-discovery-watcher_version}}
 ExecStartPre=-/usr/bin/docker rm nginx-templater
 ExecStart=/usr/bin/etcdctl watch /discovery/backend
 ExecStartPost=-/usr/bin/docker run --name nginx-templater --net host \
 -v /var/nginx:/usr/var/nginx -v /var/ssl:/etc/nginx/ssl:ro \
-chadautry/wac-nginx-config-templater
+chadautry/wac-nginx-config-templater:{{backend-discovery-watcher_version}}
 Restart=always
