@@ -86,6 +86,7 @@ google_auth_secret: <google_auth_secret>
 wac-python_version: latest
 etcd_version: latest
 nginx_version: latest
+backend-discovery-watcher_version: latest
 ```
 
 ## Playbooks
@@ -309,6 +310,7 @@ The front end playbook sets up the nginx unit, the nginx file watching & reloadi
     path: /var/ssl
     
 # Import backend route configurator (creates config before nginx starts)
+- include: backend-discovery-watcher.yml
 
 # Import nginx task file
 - include: nginx.yml
@@ -323,7 +325,7 @@ The front end playbook sets up the nginx unit, the nginx file watching & reloadi
 ## nginx
 Hosts static files, routes to backends, terminates SSL
 
-[roles/frontend/tasks/main.yml](dist/ansible/roles/frontend/tasks/nginx.yml)
+[roles/frontend/tasks/nginx.yml](dist/ansible/roles/frontend/tasks/nginx.yml)
 ```yml
 # template out the systemd service unit
 - name: nginx.service template
@@ -368,13 +370,13 @@ Restart=always
 
 ## backend discovery
 Sets a watch on the backend discovery location, and when it changes templates out the nginx conf
-[roles/frontend/tasks/main.yml](dist/ansible/roles/frontend/tasks/backend-discovery-watcher.yml)
+[roles/frontend/tasks/backend-discovery-watcher.yml](dist/ansible/roles/frontend/tasks/backend-discovery-watcher.yml)
 ```yml
 # template out the systemd service unit
 - name: backend-discovery-watcher.service template
   template:
     src: backend-discovery-watcher.service
-    dest: /etc/systemd/system/backend-discovery-watcher.service
+    dest: /etc/systemd/system/backend-discovery-watcher.service:{{backend-discovery-watcher_version}}
   register: backend-discovery-watcher_template
     
 - name: start/restart the service if template changed
