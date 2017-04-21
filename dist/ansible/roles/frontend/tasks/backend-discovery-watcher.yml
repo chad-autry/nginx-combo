@@ -1,0 +1,13 @@
+# template out the systemd service unit
+- name: backend-discovery-watcher.service template
+  template:
+    src: backend-discovery-watcher.service
+    dest: /etc/systemd/system/backend-discovery-watcher.service
+  register: backend-discovery-watcher_template
+    
+- name: start/restart the service if template changed
+  systemd:
+    daemon_reload: yes
+    state: restarted
+    name: backend-discovery-watcher.service
+  when: backend-discovery-watcher_template | changed

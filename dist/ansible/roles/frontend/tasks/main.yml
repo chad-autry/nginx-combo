@@ -1,7 +1,23 @@
+# Ensure the frontend directories are created
+- name: ensure www directory is present
+  file:
+    state: directory
+    path: /var/www
+    
+- name: ensure nginx directory is present
+  file:
+    state: directory
+    path: /var/nginx
+    
+- name: ensure ssl directory is present
+  file:
+    state: directory
+    path: /var/ssl
+    
+# Import backend route configurator (creates config before nginx starts)
+
 # Import nginx task file
 - include: nginx.yml
-
-# Import nginx reloading tasks
 
 # Import letsencrypt tasks
 
