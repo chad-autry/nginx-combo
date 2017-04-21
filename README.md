@@ -376,13 +376,13 @@ Sets a watch on the backend discovery location, and when it changes templates ou
   template:
     src: backend-discovery-watcher.service
     dest: /etc/systemd/system/backend-discovery-watcher.service
-  register: backend-discovery-watcher_template
+  register: backend_discovery_watcher_template
     
 - name: start/restart the service if template changed
   systemd:
     daemon_reload: yes
     state: restarted
-    name: backend-discovery-watcher.service
+    name: backend_discovery_watcher.service
   when: backend-discovery-watcher_template | changed
 ```
 
