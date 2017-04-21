@@ -83,10 +83,9 @@ google_rediret_uri: <google_redirect_uri>
 google_auth_secret: <google_auth_secret>
 
 # The container versions to use
-wac-python_version: latest
 etcd_version: latest
 nginx_version: latest
-backend-discovery-watcher_version: latest
+backend_discovery_watcher_version: latest
 ```
 
 ## Playbooks
@@ -401,12 +400,12 @@ After=etcd.service
 PartOf=etcd.service
 
 [Service]
-ExecStartPre=-/usr/bin/docker pull chadautry/wac-nginx-config-templater:{{backend-discovery-watcher_version}}
+ExecStartPre=-/usr/bin/docker pull chadautry/wac-nginx-config-templater:{{backend_discovery_watcher_version}}
 ExecStartPre=-/usr/bin/docker rm nginx-templater
 ExecStart=/usr/bin/etcdctl watch /discovery/backend
 ExecStartPost=-/usr/bin/docker run --name nginx-templater --net host \
 -v /var/nginx:/usr/var/nginx -v /var/ssl:/etc/nginx/ssl:ro \
-chadautry/wac-nginx-config-templater:{{backend-discovery-watcher_version}}
+chadautry/wac-nginx-config-templater:{{backend_discovery_watcher_version}}
 Restart=always
 ```
 * Restarted if etcd restarts
