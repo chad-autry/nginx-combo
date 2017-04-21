@@ -327,6 +327,24 @@ Hosts static files, routes to backends, terminates SSL
 [roles/frontend/tasks/nginx.yml](dist/ansible/roles/frontend/tasks/nginx.yml)
 ```yml
 # template out the systemd service unit
+- name: nginx-reload.service template
+  template:
+    src: nginx.service
+    dest: /etc/systemd/system/nginx-reload.service
+    
+# template out the systemd service unit
+- name: nginx.service template
+  template:
+    src: nginx.service
+    dest: /etc/systemd/system/nginx-reload.path
+    
+- name: Start nginx-reload.path
+  systemd:
+    daemon_reload: yes
+    state: restarted
+    name: nginx-reload.path
+
+# template out the systemd service unit
 - name: nginx.service template
   template:
     src: nginx.service
@@ -341,6 +359,7 @@ Hosts static files, routes to backends, terminates SSL
   when: nginx_template | changed
 ```
 
+The nginx service unit itself
 [nginx.service](dist/ansible/roles/frontend/templates/nginx.service)
 ```yaml
 [Unit]
@@ -366,6 +385,33 @@ Restart=always
     * Takes server config from local drive
     * Takes html from local drive
     * Takes certs from local drive
+
+A pair of units are responsible for reloading the nginx instance on file changes
+[nginx-reload.service](dist/ansible/roles/frontend/templates/nginx-reload.service)
+```yaml
+[Unit]
+Description=NGINX reload service
+
+[Service]
+ExecStart=-/usr/bin/docker kill -s HUP nginx
+Type=oneshot
+```
+* Sends a signal to the named nginx container to reload
+* Ignores errors
+* It is a one shot which expects to be called by other units
+
+[nginx-reload.path](dist/ansible/roles/frontend/templates/nginx-reload.path)
+```yaml
+[Unit]
+Description=NGINX reload path
+
+[Path]
+PathChanged=/var/nginx/nginx.conf
+PathChanged=/var/ssl/fullchain.pem
+```
+* Watches config file
+* Watches the (last copied) SSL cert file
+* Automatically calls nginx-reload.service on change (because of matching unit name)
 
 ## backend discovery
 Sets a watch on the backend discovery location, and when it changes templates out the nginx conf
@@ -421,43 +467,7 @@ Restart=always
 
 
 ### nginx reloading units
-A pair of units are responsible for reloading nginx instances on file changes
 
-[nginx-reload.service](dist/units/nginx-reload.service)
-```yaml
-[Unit]
-Description=NGINX reload service
-
-[Service]
-ExecStart=-/usr/bin/docker kill -s HUP nginx
-Type=oneshot
-
-[X-Fleet]
-Global=true
-MachineMetadata=frontend=true
-```
-* Sends a signal to the named nginx container to reload
-* Ignores errors
-* It is a one shot which expects to be called by other units
-* Metadata will cause it to be made available on all frontend servers when loaded
-
-[nginx-reload.path](dist/units/started/nginx-reload.path)
-```yaml
-[Unit]
-Description=NGINX reload path
-
-[Path]
-PathChanged=/var/nginx/nginx.conf
-PathChanged=/var/ssl/fullchain.pem
-
-[X-Fleet]
-Global=true
-MachineMetadata=frontend=true
-```
-* Watches config file
-* Watches the (last copied) SSL cert file
-* Automatically calls nginx-reload.service on change (because of matching unit name)
-* Blindly runs on all frontend tagged instances
 
 ### SSL
 With nginx in place, several units are responsible for updating its SSL certificates
