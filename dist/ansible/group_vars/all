@@ -19,3 +19,4 @@ google_auth_secret: <google_auth_secret>
 wac-python_version: latest
 etcd_version: latest
 nginx_version: latest
+backend-discovery-watcher_version: latest

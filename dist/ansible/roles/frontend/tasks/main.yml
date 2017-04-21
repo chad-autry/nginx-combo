@@ -15,6 +15,7 @@
     path: /var/ssl
     
 # Import backend route configurator (creates config before nginx starts)
+- include: backend-discovery-watcher.yml
 
 # Import nginx task file
 - include: nginx.yml

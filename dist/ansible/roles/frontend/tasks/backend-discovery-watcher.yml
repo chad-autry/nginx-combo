@@ -2,7 +2,7 @@
 - name: backend-discovery-watcher.service template
   template:
     src: backend-discovery-watcher.service
-    dest: /etc/systemd/system/backend-discovery-watcher.service
+    dest: /etc/systemd/system/backend-discovery-watcher.service:{{backend-discovery-watcher_version}}
   register: backend-discovery-watcher_template
     
 - name: start/restart the service if template changed
