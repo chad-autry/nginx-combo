@@ -329,13 +329,13 @@ Hosts static files, routes to backends, terminates SSL
 # template out the systemd service unit
 - name: nginx-reload.service template
   template:
-    src: nginx.service
+    src: nginx-reload.service
     dest: /etc/systemd/system/nginx-reload.service
     
 # template out the systemd service unit
-- name: nginx.service template
+- name: nginx-reload.path template
   template:
-    src: nginx.service
+    src: nginx-reload.path
     dest: /etc/systemd/system/nginx-reload.path
     
 - name: Start nginx-reload.path
