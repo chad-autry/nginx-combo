@@ -382,8 +382,8 @@ Sets a watch on the backend discovery location, and when it changes templates ou
   systemd:
     daemon_reload: yes
     state: restarted
-    name: backend_discovery_watcher.service
-  when: backend-discovery-watcher_template | changed
+    name: backend-discovery-watcher.service
+  when: backen_discovery_watcher_template | changed
 ```
 
 [backend-discovery-watcher.service](dist/ansible/roles/frontend/templates/backend-discovery-watcher.service)
