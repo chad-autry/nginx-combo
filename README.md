@@ -358,7 +358,7 @@ ExecStartPre=-/usr/bin/docker rm nginx
 ExecStart=/usr/bin/docker run --name nginx -p 80:80 -p 443:443 \
 -v /var/www:/usr/share/nginx/html:ro -v /var/ssl:/etc/nginx/ssl:ro \
 -v /var/nginx:/usr/var/nginx:ro \
-chadautry/wac-nginx
+chadautry/wac-nginx:{{nginx_version}}
 Restart=always
 ```
 * requires docker
@@ -376,7 +376,7 @@ Sets a watch on the backend discovery location, and when it changes templates ou
 - name: backend-discovery-watcher.service template
   template:
     src: backend-discovery-watcher.service
-    dest: /etc/systemd/system/backend-discovery-watcher.service:{{backend-discovery-watcher_version}}
+    dest: /etc/systemd/system/backend-discovery-watcher.service
   register: backend-discovery-watcher_template
     
 - name: start/restart the service if template changed
@@ -401,12 +401,12 @@ After=etcd.service
 PartOf=etcd.service
 
 [Service]
-ExecStartPre=-/usr/bin/docker pull chadautry/wac-nginx-config-templater
+ExecStartPre=-/usr/bin/docker pull chadautry/wac-nginx-config-templater:{{backend-discovery-watcher_version}}
 ExecStartPre=-/usr/bin/docker rm nginx-templater
 ExecStart=/usr/bin/etcdctl watch /discovery/backend
 ExecStartPost=-/usr/bin/docker run --name nginx-templater --net host \
 -v /var/nginx:/usr/var/nginx -v /var/ssl:/etc/nginx/ssl:ro \
-chadautry/wac-nginx-config-templater
+chadautry/wac-nginx-config-templater:{{backend-discovery-watcher_version}}
 Restart=always
 ```
 * Restarted if etcd restarts
