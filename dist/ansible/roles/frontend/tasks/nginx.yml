@@ -23,7 +23,7 @@
     dest: /etc/systemd/system/nginx.service
   register: nginx_template
     
-- name: start/restart the service if template changed
+- name: start/restart nginx.service if template changed
   systemd:
     daemon_reload: yes
     state: restarted

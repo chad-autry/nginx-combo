@@ -21,7 +21,6 @@
 - include: nginx.yml
 
 # Import letsencrypt tasks
-
-# Import etcd route discovery task
+- include: acme-response-watcher
 
 # Import application push task
