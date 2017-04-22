@@ -85,7 +85,7 @@ google_auth_secret: <google_auth_secret>
 # The container versions to use
 etcd_version: latest
 nginx_version: latest
-backend_discovery_watcher_version: latest
+nginx_config_templater_version: latest
 ```
 
 ## Playbooks
@@ -315,13 +315,12 @@ The front end playbook sets up the nginx unit, the nginx file watching & reloadi
 - include: nginx.yml
 
 # Import letsencrypt tasks
-
-# Import etcd route discovery task
+- include: acme-response-watcher
 
 # Import application push task
 ```
 
-## nginx
+#### nginx
 Hosts static files, routes to backends, terminates SSL
 
 [roles/frontend/tasks/nginx.yml](dist/ansible/roles/frontend/tasks/nginx.yml)
@@ -351,7 +350,7 @@ Hosts static files, routes to backends, terminates SSL
     dest: /etc/systemd/system/nginx.service
   register: nginx_template
     
-- name: start/restart the service if template changed
+- name: start/restart nginx.service if template changed
   systemd:
     daemon_reload: yes
     state: restarted
@@ -413,8 +412,9 @@ PathChanged=/var/ssl/fullchain.pem
 * Watches the (last copied) SSL cert file
 * Automatically calls nginx-reload.service on change (because of matching unit name)
 
-## backend discovery
+#### backend discovery
 Sets a watch on the backend discovery location, and when it changes templates out the nginx conf
+
 [roles/frontend/tasks/backend-discovery-watcher.yml](dist/ansible/roles/frontend/tasks/backend-discovery-watcher.yml)
 ```yml
 # template out the systemd service unit
@@ -446,12 +446,12 @@ After=etcd.service
 PartOf=etcd.service
 
 [Service]
-ExecStartPre=-/usr/bin/docker pull chadautry/wac-nginx-config-templater:{{backend_discovery_watcher_version}}
+ExecStartPre=-/usr/bin/docker pull chadautry/wac-nginx-config-templater:{{nginx_config_templater_version}}
 ExecStartPre=-/usr/bin/docker rm nginx-templater
 ExecStart=/usr/bin/etcdctl watch /discovery/backend
 ExecStartPost=-/usr/bin/docker run --name nginx-templater --net host \
 -v /var/nginx:/usr/var/nginx -v /var/ssl:/etc/nginx/ssl:ro \
-chadautry/wac-nginx-config-templater:{{backend_discovery_watcher_version}}
+chadautry/wac-nginx-config-templater:{{nginx_config_templater_version}}
 Restart=always
 ```
 * Restarted if etcd restarts
@@ -459,6 +459,52 @@ Restart=always
 * Once the watch starts, executes the config templating container
     * Local volume mapped in for the templated config to be written to
     * Local ssl volume mapped in for the template container to read
+    * Doesn't error out (TODO move to a secondary unit to be safely concurrent)
+* If the watch is ever satisfied, the unit will exit
+* Automatically restarted, causing a new watch and templater execution
+
+#### acme challenge response watcher
+This unit takes the acme challenge response from etcd, and templates it into the nginx config
+
+[roles/frontend/tasks/acme-response-watcher.yml](dist/ansible/roles/frontend/tasks/acme-response-watcher.yml)
+```yml
+# template out the systemd service unit
+- name: acme-response-watcher.service template
+  template:
+    src: acme-response-watcher.service
+    dest: /etc/systemd/system/acme-response-watcher.service
+  register: acme_response_watcher_template
+    
+- name: start/restart the service if template changed
+  systemd:
+    daemon_reload: yes
+    state: restarted
+    name: acme-response-watcher.service
+  when: acme_response_watcher_template | changed
+```
+
+[acme-response-watcher.service](dist/ansible/roles/frontend/templates/acme-response-watcher.service)
+```yaml
+[Unit]
+Description=Watches for distributed acme challenge responses
+# Dependencies
+Requires=etcd.service
+
+# Ordering
+After=etcd.service
+
+[Service]
+ExecStartPre=-/usr/bin/docker pull chadautry/wac-nginx-config-templater:{{nginx_config_templater_version}}
+ExecStartPre=-/usr/bin/docker rm nginx-templater
+ExecStart=/usr/bin/etcdctl watch /acme/watched
+ExecStartPost=-/usr/bin/docker run --name nginx-templater --net host \
+-v /var/nginx:/usr/var/nginx -v /var/ssl:/etc/nginx/ssl:ro \
+chadautry/wac-nginx-config-templater:{{nginx_config_templater_version}}
+Restart=always
+```
+* Starts a watch for changes in the acme challenge response
+* Once the watch starts, executes the config templating container
+    * Local volume mapped in for the templated config to be written to
     * Doesn't error out (TODO move to a secondary unit to be safely concurrent)
 * If the watch is ever satisfied, the unit will exit
 * Automatically restarted, causing a new watch and templater execution
@@ -472,39 +518,7 @@ Restart=always
 ### SSL
 With nginx in place, several units are responsible for updating its SSL certificates
 
-#### acme challenge response watcher
-This unit takes the acme challenge response from etcd, and templates it into the nginx config
 
-[acme-response-watcher.service](dist/units/started/acme-response-watcher.service)
-```yaml
-[Unit]
-Description=Watches for distributed acme challenge responses
-# Dependencies
-Requires=etcd2.service
-
-# Ordering
-After=etcd2.service
-
-[Service]
-ExecStartPre=-/usr/bin/docker pull chadautry/wac-nginx-config-templater
-ExecStartPre=-/usr/bin/docker rm nginx-templater
-ExecStart=/usr/bin/etcdctl watch /acme/watched
-ExecStartPost=-/usr/bin/docker run --name nginx-templater --net host \
--v /var/nginx:/usr/var/nginx -v /var/ssl:/etc/nginx/ssl:ro \
-chadautry/wac-nginx-config-templater
-Restart=always
-
-[X-Fleet]
-Global=true
-MachineMetadata=frontend=true
-```
-* Starts a watch for changes in the acme challenge response
-* Once the watch starts, executes the config templating container
-    * Local volume mapped in for the templated config to be written to
-    * Doesn't error out (TODO move to a secondary unit to be safely concurrent)
-* If the watch is ever satisfied, the unit will exit
-* Automatically restarted, causing a new watch and templater execution
-* Blindly runs on all frontend tagged instances
 
 #### SSL Certificate Syncronization
 This unit takes the SSL certificates from etcd, and writes them to the local system
