@@ -20,7 +20,7 @@
 # Import nginx task file
 - include: nginx.yml
 
-# Import letsencrypt tasks
-- include: acme-response-watcher
+# Import ssl related tasks
+- include: ssl.yml
 
 # Import application push task

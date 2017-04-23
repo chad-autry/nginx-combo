@@ -1,10 +1,10 @@
 [Unit]
 Description=SSL Certificate Syncronization
 # Dependencies
-Requires=etcd2.service
+Requires=etcd.service
 
 # Ordering
-After=etcd2.service
+After=etcd.service
 
 [Service]
 ExecStartPre=-mkdir /var/ssl
@@ -13,7 +13,3 @@ ExecStartPost=/bin/sh -c '/usr/bin/etcdctl get /ssl/server_chain > /var/ssl/chai
 ExecStartPost=/bin/sh -c '/usr/bin/etcdctl get /ssl/key > /var/ssl/privkey.pem'
 ExecStartPost=/bin/sh -c '/usr/bin/etcdctl get /ssl/server_pem > /var/ssl/fullchain.pem'
 Restart=always
-
-[X-Fleet]
-Global=true
-MachineMetadata=frontend=true

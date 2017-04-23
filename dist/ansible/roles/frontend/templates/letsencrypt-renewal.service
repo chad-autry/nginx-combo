@@ -1,0 +1,8 @@
+[Unit]
+Description=Letsencrpyt renewal service
+
+[Service]
+ExecStartPre=-/usr/bin/docker pull chadautry/wac-acme:{{wac_acme_version}}
+ExecStartPre=-/usr/bin/docker rm acme
+ExecStart=-/usr/bin/docker run --net host --name acme chadautry/wac-acme:{{wac_acme_version}}
+Type=oneshot
