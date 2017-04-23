@@ -1,10 +1,10 @@
-# template out the systemd service unit
+# template out the systemd nginx-reload.service unit
 - name: nginx-reload.service template
   template:
     src: nginx-reload.service
     dest: /etc/systemd/system/nginx-reload.service
     
-# template out the systemd service unit
+# template out the systemd nginx-reload.path unit
 - name: nginx-reload.path template
   template:
     src: nginx-reload.path
@@ -16,7 +16,7 @@
     state: restarted
     name: nginx-reload.path
 
-# template out the systemd service unit
+# template out the systemd nginx.service unit
 - name: nginx.service template
   template:
     src: nginx.service

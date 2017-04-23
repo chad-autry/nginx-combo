@@ -25,3 +25,22 @@
     state: restarted
     name: acme-response-watcher.service
   when: acme_response_watcher_template | changed
+ 
+ # template out the systemd letsencrypt renewal units
+- name: letsencrypt-renewal.service template
+  template:
+    src: letsencrypt-renewal.service
+    dest: /etc/systemd/system/letsencrypt-renewal.service
+  
+- name: letsencrypt-renewal.timer template
+  template:
+    src: letsencrypt-renewal.timer
+    dest: /etc/systemd/system/letsencrypt-renewal.timer
+  register: letsencrpyt_renewal_template
+
+- name: start/restart the letsencrypt-renewal.timer if template changed
+  systemd:
+    daemon_reload: yes
+    state: restarted
+    name: letsencrypt-renewal.timer
+  when: letsencrpyt_renewal_template | changed

@@ -1,4 +1,4 @@
-# template out the systemd service unit on the etcd hosts
+# template out the systemd etcd.service unit on the etcd hosts
 - name: etcd template
   template:
     src: etcd.service
@@ -17,7 +17,7 @@
     path: /var/etcd
   when: etcd_template | changed
 
-- name: start/restart the service if template changed
+- name: start/restart the etcd.service if template changed
   systemd:
     daemon_reload: yes
     state: restarted
