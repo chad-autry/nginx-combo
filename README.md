@@ -188,7 +188,7 @@ Deploys or redeploys the etcd instance on a host. Etcd is persistent, but if the
 
 [roles/etcd/tasks/main.yml](dist/ansible/roles/etcd/tasks/main.yml)
 ```yml
-# template out the systemd service unit on the etcd hosts
+# template out the systemd etcd.service unit on the etcd hosts
 - name: etcd template
   template:
     src: etcd.service
@@ -207,7 +207,7 @@ Deploys or redeploys the etcd instance on a host. Etcd is persistent, but if the
     path: /var/etcd
   when: etcd_template | changed
 
-- name: start/restart the service if template changed
+- name: start/restart the etcd.service if template changed
   systemd:
     daemon_reload: yes
     state: restarted
@@ -326,13 +326,13 @@ Hosts static files, routes to backends, terminates SSL
 
 [roles/frontend/tasks/nginx.yml](dist/ansible/roles/frontend/tasks/nginx.yml)
 ```yml
-# template out the systemd service unit
+# template out the systemd nginx-reload.service unit
 - name: nginx-reload.service template
   template:
     src: nginx-reload.service
     dest: /etc/systemd/system/nginx-reload.service
     
-# template out the systemd service unit
+# template out the systemd nginx-reload.path unit
 - name: nginx-reload.path template
   template:
     src: nginx-reload.path
@@ -344,7 +344,7 @@ Hosts static files, routes to backends, terminates SSL
     state: restarted
     name: nginx-reload.path
 
-# template out the systemd service unit
+# template out the systemd nginx.service unit
 - name: nginx.service template
   template:
     src: nginx.service
@@ -498,6 +498,25 @@ This unit takes the acme challenge response from etcd, and templates it into the
     state: restarted
     name: acme-response-watcher.service
   when: acme_response_watcher_template | changed
+ 
+ # template out the systemd letsencrypt renewal units
+- name: letsencrypt-renewal.service template
+  template:
+    src: letsencrypt-renewal.service
+    dest: /etc/systemd/system/letsencrypt-renewal.service
+  
+- name: letsencrypt-renewal.timer template
+  template:
+    src: letsencrypt-renewal.timer
+    dest: /etc/systemd/system/letsencrypt-renewal.timer
+  register: letsencrpyt_renewal_template
+
+- name: start/restart the letsencrypt-renewal.timer if template changed
+  systemd:
+    daemon_reload: yes
+    state: restarted
+    name: letsencrypt-renewal.timer
+  when: letsencrpyt_renewal_template | changed
 ```
 
 ##### SSL Certificate Syncronization
