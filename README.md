@@ -86,6 +86,7 @@ google_auth_secret: <google_auth_secret>
 etcd_version: latest
 nginx_version: latest
 nginx_config_templater_version: latest
+wac_acme_version: latest
 ```
 
 ## Playbooks
@@ -314,8 +315,8 @@ The front end playbook sets up the nginx unit, the nginx file watching & reloadi
 # Import nginx task file
 - include: nginx.yml
 
-# Import letsencrypt tasks
-- include: acme-response-watcher
+# Import ssl related tasks
+- include: ssl.yml
 
 # Import application push task
 ```
@@ -359,6 +360,7 @@ Hosts static files, routes to backends, terminates SSL
 ```
 
 The nginx service unit itself
+
 [nginx.service](dist/ansible/roles/frontend/templates/nginx.service)
 ```yaml
 [Unit]
@@ -386,6 +388,7 @@ Restart=always
     * Takes certs from local drive
 
 A pair of units are responsible for reloading the nginx instance on file changes
+
 [nginx-reload.service](dist/ansible/roles/frontend/templates/nginx-reload.service)
 ```yaml
 [Unit]
@@ -463,25 +466,67 @@ Restart=always
 * If the watch is ever satisfied, the unit will exit
 * Automatically restarted, causing a new watch and templater execution
 
-#### acme challenge response watcher
+#### SSL
 This unit takes the acme challenge response from etcd, and templates it into the nginx config
 
-[roles/frontend/tasks/acme-response-watcher.yml](dist/ansible/roles/frontend/tasks/acme-response-watcher.yml)
+[roles/frontend/tasks/acme-response-watcher.yml](dist/ansible/roles/frontend/tasks/ssl.yml)
 ```yml
-# template out the systemd service unit
+# template out the systemd certificate-sync.service unit
+- name: acme-response-watcher.service template
+  template:
+    src: acme-response-watcher.service
+    dest: /etc/systemd/system/certificate-sync.service
+  register: certificate_sync_template
+    
+- name: start/restart the certificate-sync.service if template changed
+  systemd:
+    daemon_reload: yes
+    state: restarted
+    name: certificate-sync.service
+  when: certificate_sync_template | changed
+
+# template out the systemd acme-response-watcher.service unit
 - name: acme-response-watcher.service template
   template:
     src: acme-response-watcher.service
     dest: /etc/systemd/system/acme-response-watcher.service
   register: acme_response_watcher_template
     
-- name: start/restart the service if template changed
+- name: start/restart the acme-response-watcher.service if template changed
   systemd:
     daemon_reload: yes
     state: restarted
     name: acme-response-watcher.service
   when: acme_response_watcher_template | changed
 ```
+
+##### SSL Certificate Syncronization
+This unit takes the SSL certificates from etcd, and writes them to the local system
+
+[certificate-sync.service](dist/ansible/roles/frontend/templates/certificate-sync.service)
+```yaml
+[Unit]
+Description=SSL Certificate Syncronization
+# Dependencies
+Requires=etcd.service
+
+# Ordering
+After=etcd.service
+
+[Service]
+ExecStartPre=-mkdir /var/ssl
+ExecStart=/usr/bin/etcdctl watch /ssl/watched
+ExecStartPost=/bin/sh -c '/usr/bin/etcdctl get /ssl/server_chain > /var/ssl/chain.pem'
+ExecStartPost=/bin/sh -c '/usr/bin/etcdctl get /ssl/key > /var/ssl/privkey.pem'
+ExecStartPost=/bin/sh -c '/usr/bin/etcdctl get /ssl/server_pem > /var/ssl/fullchain.pem'
+Restart=always
+```
+* Starts a watch for SSL cert changes to copy
+* Once the watch starts, copy the current certs
+* If the watch is ever satisfied, the unit will exit
+* Automatically restarted, causing a new watch and copy
+
+##### acme challenge response watcher
 
 [acme-response-watcher.service](dist/ansible/roles/frontend/templates/acme-response-watcher.service)
 ```yaml
@@ -509,65 +554,21 @@ Restart=always
 * If the watch is ever satisfied, the unit will exit
 * Automatically restarted, causing a new watch and templater execution
 
-## Frontend Units
-
-
-### nginx reloading units
-
-
-### SSL
-With nginx in place, several units are responsible for updating its SSL certificates
-
-
-
-#### SSL Certificate Syncronization
-This unit takes the SSL certificates from etcd, and writes them to the local system
-
-[certificate-sync.service](dist/units/started/certificate-sync.service)
-```yaml
-[Unit]
-Description=SSL Certificate Syncronization
-# Dependencies
-Requires=etcd2.service
-
-# Ordering
-After=etcd2.service
-
-[Service]
-ExecStartPre=-mkdir /var/ssl
-ExecStart=/usr/bin/etcdctl watch /ssl/watched
-ExecStartPost=/bin/sh -c '/usr/bin/etcdctl get /ssl/server_chain > /var/ssl/chain.pem'
-ExecStartPost=/bin/sh -c '/usr/bin/etcdctl get /ssl/key > /var/ssl/privkey.pem'
-ExecStartPost=/bin/sh -c '/usr/bin/etcdctl get /ssl/server_pem > /var/ssl/fullchain.pem'
-Restart=always
-
-[X-Fleet]
-Global=true
-MachineMetadata=frontend=true
-```
-* Starts a watch for SSL cert changes to copy
-* Once the watch starts, copy the current certs
-* If the watch is ever satisfied, the unit will exit
-* Automatically restarted, causing a new watch and copy
-* Metadata driven, don't bother with binding
-
-#### letsencrypt renewal units
+##### letsencrypt renewal units
 A pair of units are responsible for initiating the letsencrypt renewal process each month
+TODO Change container to put lock into etcd and then validate current cert before execution
+TODO Change to run daily after the above changes
 
-[letsencrypt-renewal.service](dist/units/letsencrypt-renewal.service)
+[letsencrypt-renewal.service](dist/ansible/roles/frontend/templates/letsencrypt-renewal.service)
 ```yaml
 [Unit]
 Description=Letsencrpyt renewal service
 
 [Service]
-ExecStartPre=-/usr/bin/docker pull chadautry/wac-acme
+ExecStartPre=-/usr/bin/docker pull chadautry/wac-acme:{{wac_acme_version}}
 ExecStartPre=-/usr/bin/docker rm acme
-ExecStart=-/usr/bin/docker run --net host --name acme chadautry/wac-acme
+ExecStart=-/usr/bin/docker run --net host --name acme chadautry/wac-acme:{{wac_acme_version}}
 Type=oneshot
-
-[X-Fleet]
-Global=true
-MachineMetadata=frontend=true
 ```
 * Calls the wac-acme container to create/renew the cert
     * Container takes domain name and domain admin e-mail from etcd
@@ -588,7 +589,7 @@ MachineMetadata=frontend=true
 > sudo docker run --net host --name acme chadautry/wac-acme
 > ```
 
-[letsencrypt-renewal.timer](dist/units/started/letsencrypt-renewal.timer)
+[letsencrypt-renewal.timer](dist/ansible/roles/frontend/templates/letsencrypt-renewal.timer)
 ```yaml
 [Unit]
 Description=Letsencrpyt renewal timer
@@ -596,17 +597,11 @@ Description=Letsencrpyt renewal timer
 [Timer]
 OnCalendar=*-*-01 05:00:00
 RandomizedDelaySec=60
-
-[X-Fleet]
-MachineMetadata=frontend=true
 ```
 * Executes once a month on the 1st at 5:00
     * Avoid any DST confusions by avoiding the midnight hours
 * Assuming this gets popular (yeah right), add a 1 minute randomized delay to not pound letsencrypt
 * Automagically executes the letsencrypt-renewal.service based on name
-* Not global so there will only be one instance
-
-
 
 ## API Backend
 These are the units for an api backend, including authentication. A cluster could have multiple backend processes, just change the tagging from 'backend' to some named process (and change the docker process name)
