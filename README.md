@@ -83,6 +83,7 @@ google_rediret_uri: <google_redirect_uri>
 google_auth_secret: <google_auth_secret>
 
 # The container versions to use
+rsync_version: latest
 etcd_version: latest
 nginx_version: latest
 nginx_config_templater_version: latest
@@ -101,7 +102,13 @@ The main playbook that deploys or updates a cluster
   become: true
   roles:
     - coreos-python
-    
+
+# 'install' rsync
+- hosts: all:
+  become: true
+  roles:
+    - rsync
+
 # Place a full etcd on the etcd hosts
 - hosts: tag_etcd
   become: true
@@ -183,6 +190,32 @@ chmod +x /opt/bin/python
 /opt/bin/python --version
 ```
 
+### rsync
+Deploys the script which mimics the rsync executable with a docker container
+
+[roles/rsync/tasks/main.yml](dist/ansible/roles/rsync/tasks/main.yml)
+```yml
+- name: ensure /opt/bin is present
+  file:
+    state: directory
+    path: /opt/bin
+
+# template out the systemd etcd.service unit on the etcd hosts
+- name: etcd template
+  template:
+    src: rsync
+    dest: /opt/bin/rsync
+
+- name: Pull alpine-rsync image
+  command: /usr/bin/docker pull chadautry/alpine-rsync:{{rsync_version}}
+```
+
+[rsync](dist/ansible/roles/rsync/templates/rsync)
+```bash
+#!/bin/bash
+
+docker run --rm -i -t -v /var:/var -v ~:/root --net host chadautry/alpine-rsync:{{rsync_version}} "$@"
+````
 ### etcd
 Deploys or redeploys the etcd instance on a host. Etcd is persistent, but if the cluster changes wac-bp blows it away instead of attempting to add/remove instances.
 
