@@ -16,6 +16,7 @@ google_rediret_uri: <google_redirect_uri>
 google_auth_secret: <google_auth_secret>
 
 # The container versions to use
+rsync_version: latest
 etcd_version: latest
 nginx_version: latest
 nginx_config_templater_version: latest

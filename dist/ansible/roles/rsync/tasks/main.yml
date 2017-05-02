@@ -1,0 +1,13 @@
+- name: ensure /opt/bin is present
+  file:
+    state: directory
+    path: /opt/bin
+
+# template out the systemd etcd.service unit on the etcd hosts
+- name: etcd template
+  template:
+    src: rsync
+    dest: /opt/bin/rsync
+
+- name: Pull alpine-rsync image
+  command: /usr/bin/docker pull chadautry/alpine-rsync:{{rsync_version}}
