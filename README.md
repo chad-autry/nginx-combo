@@ -203,8 +203,8 @@ Deploys the script which mimics the rsync executable with a docker container
     state: directory
     path: /opt/bin
 
-# template out the systemd etcd.service unit on the etcd hosts
-- name: etcd template
+# template out the rsync script
+- name: rsync template
   template:
     src: rsync
     dest: /opt/bin/rsync
