@@ -107,7 +107,7 @@ The main playbook that deploys or updates a cluster
     - coreos-python
 
 # 'install' rsync
-- hosts: all:
+- hosts: all
   become: true
   roles:
     - rsync
