@@ -6,7 +6,7 @@
     - coreos-python
 
 # 'install' rsync
-- hosts: all:
+- hosts: all
   become: true
   roles:
     - rsync
