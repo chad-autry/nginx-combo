@@ -348,7 +348,7 @@ The front end playbook sets up the nginx unit, the nginx file watching & reloadi
     
 - name: Syncronize frontend source
   synchronize:
-    src: {{frontend_src_path}}
+    src: "{{frontend_src_path}}"
     dest: /var/www
     
 # Import backend route configurator (creates config before nginx starts)
