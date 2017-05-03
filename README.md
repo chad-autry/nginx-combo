@@ -350,6 +350,7 @@ The front end playbook sets up the nginx unit, the nginx file watching & reloadi
   synchronize:
     src: "{{frontend_src_path}}"
     dest: /var/www
+    rsync_path: /opt/bin/rsync
     
 # Import backend route configurator (creates config before nginx starts)
 - include: backend-discovery-watcher.yml
