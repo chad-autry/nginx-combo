@@ -82,6 +82,9 @@ google_client_id: <google_client_id>
 google_rediret_uri: <google_redirect_uri>
 google_auth_secret: <google_auth_secret>
 
+# Location of the frontend app on the controller, The home directory is mapped to /home in the rsync container
+frontend_src_path: /home/frontend/src
+
 # The container versions to use
 rsync_version: latest
 etcd_version: latest
@@ -205,6 +208,7 @@ Deploys the script which mimics the rsync executable with a docker container
   template:
     src: rsync
     dest: /opt/bin/rsync
+    mode: "u=rwx,g=r,o=r"
 
 - name: Pull alpine-rsync image
   command: /usr/bin/docker pull chadautry/alpine-rsync:{{rsync_version}}
@@ -214,7 +218,7 @@ Deploys the script which mimics the rsync executable with a docker container
 ```bash
 #!/bin/bash
 
-docker run --rm -i -t -v /var:/var -v ~:/root --net host chadautry/alpine-rsync:{{rsync_version}} "$@"
+docker run --rm -i -t -v /var:/var -v ~:/home --net host chadautry/alpine-rsync:{{rsync_version}} "$@"
 ````
 ### etcd
 Deploys or redeploys the etcd instance on a host. Etcd is persistent, but if the cluster changes wac-bp blows it away instead of attempting to add/remove instances.
@@ -341,6 +345,11 @@ The front end playbook sets up the nginx unit, the nginx file watching & reloadi
   file:
     state: directory
     path: /var/ssl
+    
+- name: Syncronize frontend source
+  synchronize:
+    src: {{frontend_src_path}}
+    dest: /var/www
     
 # Import backend route configurator (creates config before nginx starts)
 - include: backend-discovery-watcher.yml
