@@ -3,8 +3,8 @@
     state: directory
     path: /opt/bin
 
-# template out the systemd etcd.service unit on the etcd hosts
-- name: etcd template
+# template out the rsync script
+- name: rsync template
   template:
     src: rsync
     dest: /opt/bin/rsync
