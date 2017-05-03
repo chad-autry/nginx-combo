@@ -15,6 +15,9 @@ google_client_id: <google_client_id>
 google_rediret_uri: <google_redirect_uri>
 google_auth_secret: <google_auth_secret>
 
+# Location of the frontend app on the controller, The home directory is mapped to /home in the rsync container
+frontend_src_path: /home/frontend/src
+
 # The container versions to use
 rsync_version: latest
 etcd_version: latest
