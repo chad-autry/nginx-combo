@@ -208,7 +208,7 @@ Deploys the script which mimics the rsync executable with a docker container
   template:
     src: rsync
     dest: /opt/bin/rsync
-    mode: "u=rwx,g=r,o=r"
+    mode: "u=rwx,g=rx,o=rx"
 
 - name: Pull alpine-rsync image
   command: /usr/bin/docker pull chadautry/alpine-rsync:{{rsync_version}}
