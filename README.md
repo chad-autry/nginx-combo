@@ -218,7 +218,7 @@ Deploys the script which mimics the rsync executable with a docker container
 ```bash
 #!/bin/bash
 
-docker run --rm -i -t -v /var:/var -v ~:/home --net host chadautry/alpine-rsync:{{rsync_version}} "$@"
+sudo docker run --rm -i -t -v /var:/var -v ~:/home --net host chadautry/alpine-rsync:{{rsync_version}} "$@"
 ````
 ### etcd
 Deploys or redeploys the etcd instance on a host. Etcd is persistent, but if the cluster changes wac-bp blows it away instead of attempting to add/remove instances.
