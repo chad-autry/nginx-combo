@@ -86,7 +86,6 @@ google_auth_secret: <google_auth_secret>
 frontend_src_path: /home/frontend/src
 
 # The container versions to use
-rsync_version: latest
 etcd_version: latest
 nginx_version: latest
 nginx_config_templater_version: latest
@@ -129,7 +128,9 @@ The main playbook that deploys or updates a cluster
   become: true
   roles:
     - { role: etcd, proxy_etcd: True }
-    
+
+# Create archive of frontend content on localhost to transfer
+
 # nginx
 - hosts: tag_frontend
   become: true
@@ -193,33 +194,6 @@ chmod +x /opt/bin/python
 /opt/bin/python --version
 ```
 
-### rsync
-Deploys the script which mimics the rsync executable with a docker container
-
-[roles/rsync/tasks/main.yml](dist/ansible/roles/rsync/tasks/main.yml)
-```yml
-- name: ensure /opt/bin is present
-  file:
-    state: directory
-    path: /opt/bin
-
-# template out the rsync script
-- name: rsync template
-  template:
-    src: rsync
-    dest: /opt/bin/rsync
-    mode: "u=rwx,g=rx,o=rx"
-
-- name: Pull alpine-rsync image
-  command: /usr/bin/docker pull chadautry/alpine-rsync:{{rsync_version}}
-```
-
-[rsync](dist/ansible/roles/rsync/templates/rsync)
-```bash
-#!/bin/bash
-
-sudo docker run --rm -i -t -v /var:/var -v ~:/home --net host chadautry/alpine-rsync:{{rsync_version}} "$@"
-````
 ### etcd
 Deploys or redeploys the etcd instance on a host. Etcd is persistent, but if the cluster changes wac-bp blows it away instead of attempting to add/remove instances.
 
@@ -345,12 +319,6 @@ The front end playbook sets up the nginx unit, the nginx file watching & reloadi
   file:
     state: directory
     path: /var/ssl
-    
-- name: Syncronize frontend source
-  synchronize:
-    src: "{{frontend_src_path}}"
-    dest: /var/www
-    rsync_path: /opt/bin/rsync
     
 # Import backend route configurator (creates config before nginx starts)
 - include: backend-discovery-watcher.yml
