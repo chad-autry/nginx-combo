@@ -124,8 +124,8 @@ The main playbook that deploys or updates a cluster
     - { role: etcd, proxy_etcd: True }
 
 # Create archive of frontend content on localhost to transfer
-- name: another play
-  hosts: all
+- name: archive source
+  hosts: localhost
   tasks:
     - archive:
         path: "{{frontend_src_path}}"
