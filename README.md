@@ -105,12 +105,6 @@ The main playbook that deploys or updates a cluster
   roles:
     - coreos-python
 
-# 'install' rsync
-- hosts: all
-  become: true
-  roles:
-    - rsync
-
 # Place a full etcd on the etcd hosts
 - hosts: tag_etcd
   become: true
