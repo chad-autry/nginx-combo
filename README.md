@@ -128,8 +128,8 @@ The main playbook that deploys or updates a cluster
   hosts: all
   tasks:
     - archive:
-      path: "{{frontend_src_path}}"
-      dest: "{{frontend_src_path}}/../frontendsrc.tgz"
+        path: "{{frontend_src_path}}"
+        dest: "{{frontend_src_path}}/../frontendsrc.tgz"
 
 # nginx
 - hosts: tag_frontend
