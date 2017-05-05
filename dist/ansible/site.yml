@@ -28,7 +28,9 @@
   become: true
   roles:
     - { role: etcd, proxy_etcd: True }
-    
+
+# Create archive of frontend content on localhost to transfer
+
 # nginx
 - hosts: tag_frontend
   become: true

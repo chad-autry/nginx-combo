@@ -1,3 +1,0 @@
-#!/bin/bash
-
-sudo docker run --rm -i -t -v /var:/var -v ~:/home --net host chadautry/alpine-rsync:{{rsync_version}} "$@"

@@ -19,7 +19,6 @@ google_auth_secret: <google_auth_secret>
 frontend_src_path: /home/frontend/src
 
 # The container versions to use
-rsync_version: latest
 etcd_version: latest
 nginx_version: latest
 nginx_config_templater_version: latest
