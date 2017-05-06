@@ -14,7 +14,7 @@
     dest: /var/staging/www
     
 - name: Pull alpine-rsync image		
-   command: /usr/bin/docker pull chadautry/alpine-rsync:{{rsync_version}}
+  command: /usr/bin/docker pull chadautry/alpine-rsync:{{rsync_version}}
    
 - name: sync staging and /var/www	
-   command: /usr/bin/docker run -v /var/staging:/var/staging -v /var/www:/var:www -rm chadautry/alpine-rsync:{{rsync_version}} -a /var/staging/webapp /var/www
+  command: /usr/bin/docker run -v /var/staging:/var/staging -v /var/www:/var:www -rm chadautry/alpine-rsync:{{rsync_version}} -a /var/staging/webapp /var/www
