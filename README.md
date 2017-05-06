@@ -86,6 +86,7 @@ google_auth_secret: <google_auth_secret>
 frontend_src_path: /home/frontend/src
 
 # The container versions to use
+rsync_version: latest
 etcd_version: latest
 nginx_version: latest
 nginx_config_templater_version: latest
@@ -330,13 +331,7 @@ The front end playbook sets up the nginx unit, the nginx file watching & reloadi
 - include: ssl.yml
 
 # Import application push task
-- file:
-    path: /var/staging/www
-    state: absent
-
-- unarchive:
-    src: "{{frontend_src_path}}/../frontendsrc.tgz"
-    dest: /var/staging/www
+- include: application.yml
 ```
 
 #### nginx
@@ -485,7 +480,7 @@ Restart=always
 * Automatically restarted, causing a new watch and templater execution
 
 #### SSL
-This unit takes the acme challenge response from etcd, and templates it into the nginx config
+This role sets up the various SSL related units
 
 [roles/frontend/tasks/acme-response-watcher.yml](dist/ansible/roles/frontend/tasks/ssl.yml)
 ```yml
@@ -640,6 +635,32 @@ RandomizedDelaySec=60
 * Assuming this gets popular (yeah right), add a 1 minute randomized delay to not pound letsencrypt
 * Automagically executes the letsencrypt-renewal.service based on name
 
+#### Frontend Application
+This role takes the static front end application and pushes it across to instances
+
+[roles/frontend/tasks/application.yml](dist/ansible/roles/frontend/tasks/application.yml)
+```yml
+- name: Remove old webapp staging
+  file:
+    path: /var/staging/webapp
+    state: absent
+
+- name: Ensure staging dir exists
+  file:
+    path: /var/staging
+    state: directory
+
+- name: Transfer and unpack webapp to staging
+  unarchive:
+    src: "{{frontend_src_path}}/../frontendsrc.tgz"
+    dest: /var/staging/www
+    
+- name: Pull alpine-rsync image		
+   command: /usr/bin/docker pull chadautry/alpine-rsync:{{rsync_version}}
+   
+- name: sync staging and /var/www	
+   command: /usr/bin/docker run -v /var/staging:/var/staging -v /var/www:/var:www -rm chadautry/alpine-rsync:{{rsync_version}} -a /var/staging/webapp /var/www
+```
 ## API Backend
 These are the units for an api backend, including authentication. A cluster could have multiple backend processes, just change the tagging from 'backend' to some named process (and change the docker process name)
 
