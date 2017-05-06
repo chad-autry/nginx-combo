@@ -330,6 +330,13 @@ The front end playbook sets up the nginx unit, the nginx file watching & reloadi
 - include: ssl.yml
 
 # Import application push task
+- file:
+    path: /var/staging/www
+    state: absent
+
+- unarchive:
+    src: "{{frontend_src_path}}/../frontendsrc.tgz"
+    dest: /var/staging/www
 ```
 
 #### nginx
