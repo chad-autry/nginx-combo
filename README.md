@@ -653,13 +653,13 @@ This task include takes the static front end application and pushes it across to
 - name: Transfer and unpack webapp to staging
   unarchive:
     src: "{{frontend_src_path}}/../frontendsrc.tgz"
-    dest: /var/staging/www
+    dest: /var/staging
     
 - name: Pull alpine-rsync image		
   command: /usr/bin/docker pull chadautry/alpine-rsync:{{rsync_version}}
    
 - name: sync staging and /var/www	
-  command: /usr/bin/docker run -v /var/staging:/var/staging -v /var/www:/var:www -rm chadautry/alpine-rsync:{{rsync_version}} -a /var/staging/webapp /var/www
+  command: /usr/bin/docker run -v /var/staging:/var/staging -v /var/www:/var/www --rm chadautry/alpine-rsync:{{rsync_version}} -a /var/staging/webapp/ /var/www
 ```
 ## API Backend
 These are the units for an api backend, including authentication. A cluster could have multiple backend processes, just change the tagging from 'backend' to some named process (and change the docker process name)
