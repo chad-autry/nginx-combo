@@ -485,9 +485,9 @@ This role sets up the various SSL related units
 [roles/frontend/tasks/acme-response-watcher.yml](dist/ansible/roles/frontend/tasks/ssl.yml)
 ```yml
 # template out the systemd certificate-sync.service unit
-- name: acme-response-watcher.service template
+- name: certificate-sync.service template
   template:
-    src: acme-response-watcher.service
+    src: certificate-sync.service
     dest: /etc/systemd/system/certificate-sync.service
   register: certificate_sync_template
     
