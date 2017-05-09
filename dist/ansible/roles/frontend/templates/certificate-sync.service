@@ -6,8 +6,14 @@ Requires=etcd.service
 # Ordering
 After=etcd.service
 
+# Restart when dependency restarts
+PartOf=etcd.service
+
 [Service]
 ExecStartPre=-mkdir /var/ssl
+ExecStartPre=-/bin/sh -c '/usr/bin/etcdctl mk /ssl/server_chain $(cat /var/ssl/chain.pem)'
+ExecStartPre=-/bin/sh -c '/usr/bin/etcdctl mk /ssl/key $(cat /var/ssl/privkey.pem)'
+ExecStartPre=-/bin/sh -c '/usr/bin/etcdctl mk /ssl/server_pem $(cat /var/ssl/fullchain.pem)'
 ExecStart=/usr/bin/etcdctl watch /ssl/watched
 ExecStartPost=/bin/sh -c '/usr/bin/etcdctl get /ssl/server_chain > /var/ssl/chain.pem'
 ExecStartPost=/bin/sh -c '/usr/bin/etcdctl get /ssl/key > /var/ssl/privkey.pem'
