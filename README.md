@@ -533,7 +533,7 @@ This role sets up the various SSL related units
 ```
 
 ##### SSL Certificate Syncronization
-This unit takes the SSL certificates from etcd, and writes them to the local system
+This unit takes the SSL certificates from etcd, and writes them to the local system. It also sets the certificates into etcd whenever etcd is reset
 
 [certificate-sync.service](dist/ansible/roles/frontend/templates/certificate-sync.service)
 ```yaml
@@ -545,14 +545,21 @@ Requires=etcd.service
 # Ordering
 After=etcd.service
 
+# Restart when dependency restarts
+PartOf=etcd.service
+
 [Service]
 ExecStartPre=-mkdir /var/ssl
+ExecStartPre=-/bin/sh -c '/usr/bin/etcdctl mk /ssl/server_chain $(cat /var/ssl/chain.pem)'
+ExecStartPre=-/bin/sh -c '/usr/bin/etcdctl mk /ssl/key $(cat /var/ssl/privkey.pem)'
+ExecStartPre=-/bin/sh -c '/usr/bin/etcdctl mk /ssl/server_pem $(cat /var/ssl/fullchain.pem)'
 ExecStart=/usr/bin/etcdctl watch /ssl/watched
 ExecStartPost=/bin/sh -c '/usr/bin/etcdctl get /ssl/server_chain > /var/ssl/chain.pem'
 ExecStartPost=/bin/sh -c '/usr/bin/etcdctl get /ssl/key > /var/ssl/privkey.pem'
 ExecStartPost=/bin/sh -c '/usr/bin/etcdctl get /ssl/server_pem > /var/ssl/fullchain.pem'
 Restart=always
 ```
+* Sets the local certs into etcd if they don't exist there
 * Starts a watch for SSL cert changes to copy
 * Once the watch starts, copy the current certs
 * If the watch is ever satisfied, the unit will exit
