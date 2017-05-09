@@ -594,9 +594,7 @@ Restart=always
 * Automatically restarted, causing a new watch and templater execution
 
 ##### letsencrypt renewal units
-A pair of units are responsible for initiating the letsencrypt renewal process each month
-TODO Change container to put lock into etcd and then validate current cert before execution
-TODO Change to run daily after the above changes
+A pair of units are responsible for initiating the letsencrypt renewal process. It executes daily, the process executes daily but will not renew until there are less than 30 days remaining till it expires
 
 [letsencrypt-renewal.service](dist/ansible/roles/frontend/templates/letsencrypt-renewal.service)
 ```yaml
@@ -606,7 +604,7 @@ Description=Letsencrpyt renewal service
 [Service]
 ExecStartPre=-/usr/bin/docker pull chadautry/wac-acme:{{wac_acme_version}}
 ExecStartPre=-/usr/bin/docker rm acme
-ExecStart=-/usr/bin/docker run --net host --name acme chadautry/wac-acme:{{wac_acme_version}}
+ExecStart=-/usr/bin/docker run --net host -v /var/ssl:/var/ssl --name acme chadautry/wac-acme:{{wac_acme_version}}
 Type=oneshot
 ```
 * Calls the wac-acme container to create/renew the cert
@@ -625,7 +623,7 @@ Type=oneshot
 > ```
 > * Manually run the wac-acme container once to obtain certificates the first time
 > ```
-> sudo docker run --net host --name acme chadautry/wac-acme
+> sudo docker run --net host -v /var/ssl:/var/ssl --name acme chadautry/wac-acme
 > ```
 
 [letsencrypt-renewal.timer](dist/ansible/roles/frontend/templates/letsencrypt-renewal.timer)
@@ -634,12 +632,11 @@ Type=oneshot
 Description=Letsencrpyt renewal timer
 
 [Timer]
-OnCalendar=*-*-01 05:00:00
-RandomizedDelaySec=60
+OnCalendar==*-*-* 05:00:00
+RandomizedDelaySec=1800
 ```
-* Executes once a month on the 1st at 5:00
-    * Avoid any DST confusions by avoiding the midnight hours
-* Assuming this gets popular (yeah right), add a 1 minute randomized delay to not pound letsencrypt
+* Executes daily at 5:00 (to avoid DST issues)
+* Has a 30 minute randomized delay, so multiple copies don't all try to execute at once (though the docker image itself will exit if another is already running)
 * Automagically executes the letsencrypt-renewal.service based on name
 
 #### Frontend Application
