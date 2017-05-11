@@ -2,5 +2,5 @@
 Description=Letsencrpyt renewal timer
 
 [Timer]
-OnCalendar==*-*-* 05:00:00
+OnCalendar=*-*-* 05:00:00
 RandomizedDelaySec=1800
