@@ -632,7 +632,7 @@ Type=oneshot
 Description=Letsencrpyt renewal timer
 
 [Timer]
-OnCalendar==*-*-* 05:00:00
+OnCalendar=*-*-* 05:00:00
 RandomizedDelaySec=1800
 ```
 * Executes daily at 5:00 (to avoid DST issues)
