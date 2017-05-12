@@ -549,10 +549,10 @@ After=etcd.service
 PartOf=etcd.service
 
 [Service]
-ExecStartPre=-mkdir /var/ssl
-ExecStartPre=-/bin/sh -c '/usr/bin/etcdctl mk /ssl/server_chain $(cat /var/ssl/chain.pem)'
-ExecStartPre=-/bin/sh -c '/usr/bin/etcdctl mk /ssl/key $(cat /var/ssl/privkey.pem)'
-ExecStartPre=-/bin/sh -c '/usr/bin/etcdctl mk /ssl/server_pem $(cat /var/ssl/fullchain.pem)'
+ExecStartPre=-/bin/sh -c '/usr/bin/etcdctl mk -- /ssl/server_chain "$(cat /var/ssl/chain.pem)"'
+ExecStartPre=-/bin/sh -c '/usr/bin/etcdctl mk -- /ssl/key "$(cat /var/ssl/privkey.pem)"'
+ExecStartPre=-/bin/sh -c '/usr/bin/etcdctl mk -- /ssl/server_pem "$(cat /var/ssl/fullchain.pem)"'
+ExecStartPre=-/bin/sh -c '/usr/bin/etcdctl mk /ssl/watched "$(date +%s%N)"'
 ExecStart=/usr/bin/etcdctl watch /ssl/watched
 ExecStartPost=/bin/sh -c '/usr/bin/etcdctl get /ssl/server_chain > /var/ssl/chain.pem'
 ExecStartPost=/bin/sh -c '/usr/bin/etcdctl get /ssl/key > /var/ssl/privkey.pem'
@@ -560,6 +560,8 @@ ExecStartPost=/bin/sh -c '/usr/bin/etcdctl get /ssl/server_pem > /var/ssl/fullch
 Restart=always
 ```
 * Sets the local certs into etcd if they don't exist there
+    * -- Means there are no more command options, needed since the cert files start with '-'
+* Creates /ssl/watched if it doesn't exist, so the unit has something to watch
 * Starts a watch for SSL cert changes to copy
 * Once the watch starts, copy the current certs
 * If the watch is ever satisfied, the unit will exit
@@ -594,7 +596,7 @@ Restart=always
 * Automatically restarted, causing a new watch and templater execution
 
 ##### letsencrypt renewal units
-A pair of units are responsible for initiating the letsencrypt renewal process. It executes daily, the process executes daily but will not renew until there are less than 30 days remaining till it expires
+A pair of units are responsible for initiating the letsencrypt renewal process. The process executes daily but will not renew until there are less than 30 days remaining till it expires
 
 [letsencrypt-renewal.service](dist/ansible/roles/frontend/templates/letsencrypt-renewal.service)
 ```yaml
