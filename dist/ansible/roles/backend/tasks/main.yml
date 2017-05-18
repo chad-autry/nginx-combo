@@ -1,0 +1,19 @@
+# Ensure the bakend directories are created
+- name: ensure www directory is present
+  file:
+    state: directory
+    path: /var/nodejs
+    
+- name: ensure nginx directory is present
+  file:
+    state: directory
+    path: /var/nginx
+    
+- name: ensure ssl directory is present
+  file:
+    state: directory
+    path: /var/ssl
+    
+# Import backend route configurator (creates config before nginx starts)
+- include: backend-discovery-watcher.yml
+

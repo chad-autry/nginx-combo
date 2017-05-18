@@ -36,3 +36,9 @@
   become: true
   roles:
     - frontend
+    
+# nodejs
+- hosts: tag_backend
+  become: true
+  roles:
+    - backend
