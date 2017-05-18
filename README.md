@@ -137,6 +137,12 @@ The main playbook that deploys or updates a cluster
   become: true
   roles:
     - frontend
+    
+# nodejs
+- hosts: tag_backend
+  become: true
+  roles:
+    - backend
 ```
 
 ## Roles
@@ -667,8 +673,33 @@ This task include takes the static front end application and pushes it across to
 - name: sync staging and /var/www	
   command: /usr/bin/docker run -v /var/staging:/var/staging -v /var/www:/var/www --rm chadautry/alpine-rsync:{{rsync_version}} -a /var/staging/webapp/ /var/www
 ```
+### backend
+The back end playbook sets up the nodejs unit, the discovery unit, and finally pushes the backend end application across (tagged so it can be executed alone)
+
+[roles/backend/tasks/main.yml](dist/ansible/roles/backend/tasks/main.yml)
+```yml
+# Ensure the bakend directories are created
+- name: ensure www directory is present
+  file:
+    state: directory
+    path: /var/nodejs
+    
+- name: ensure nginx directory is present
+  file:
+    state: directory
+    path: /var/nginx
+    
+- name: ensure ssl directory is present
+  file:
+    state: directory
+    path: /var/ssl
+    
+# Import backend route configurator (creates config before nginx starts)
+- include: backend-discovery-watcher.yml
+
+```
 ## API Backend
-These are the units for an api backend, including authentication. A cluster could have multiple backend processes, just change the tagging from 'backend' to some named process (and change the docker process name)
+These are the units for an api backend, 
 
 #### node config watcher
 This unit watches the node config values in etcd, and templates them to a file for the node app when they change
