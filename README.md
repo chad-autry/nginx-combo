@@ -82,8 +82,11 @@ google_client_id: <google_client_id>
 google_rediret_uri: <google_redirect_uri>
 google_auth_secret: <google_auth_secret>
 
-# Location of the frontend app on the controller, The home directory is mapped to /home in the rsync container
+# Location of the frontend app on the controller.
 frontend_src_path: /home/frontend/src
+
+# Location of the backend nodejs app on the controller.
+backend_src_path: /home/backend/src
 
 # The container versions to use
 rsync_version: latest
@@ -91,6 +94,7 @@ etcd_version: latest
 nginx_version: latest
 nginx_config_templater_version: latest
 wac_acme_version: latest
+nodejs_version: latest
 ```
 
 ## Playbooks
@@ -137,7 +141,15 @@ The main playbook that deploys or updates a cluster
   become: true
   roles:
     - frontend
-    
+
+# Create archive of backendend content on localhost to transfer
+- name: archive backend source
+  hosts: localhost
+  tasks:
+    - archive:
+        path: "{{backend_src_path}}"
+        dest: "{{backend_src_path}}/../backendsrc.tgz"
+
 # nodejs
 - hosts: tag_backend
   become: true
@@ -678,25 +690,42 @@ The back end playbook sets up the nodejs unit, the discovery unit, and finally p
 
 [roles/backend/tasks/main.yml](dist/ansible/roles/backend/tasks/main.yml)
 ```yml
-# Ensure the bakend directories are created
+# Ensure the backend directories are created
 - name: ensure www directory is present
   file:
     state: directory
     path: /var/nodejs
-    
-- name: ensure nginx directory is present
-  file:
-    state: directory
-    path: /var/nginx
-    
-- name: ensure ssl directory is present
-  file:
-    state: directory
-    path: /var/ssl
-    
+
 # Import backend route configurator (creates config before nginx starts)
 - include: backend-discovery-watcher.yml
 
+```
+
+#### Backend Application
+This task include takes the static front end application and pushes it across to instances
+
+[roles/backend/tasks/application.yml](dist/ansible/roles/backend/tasks/application.yml)
+```yml
+- name: Remove old webapp staging
+  file:
+    path: /var/staging/backend
+    state: absent
+
+- name: Ensure staging dir exists
+  file:
+    path: /var/staging
+    state: directory
+
+- name: Transfer and unpack webapp to staging
+  unarchive:
+    src: "{{backend_src_path}}/../backendsrc.tgz"
+    dest: /var/backend
+    
+- name: Pull alpine-rsync image		
+  command: /usr/bin/docker pull chadautry/alpine-rsync:{{rsync_version}}
+   
+- name: sync staging and /var/www	
+  command: /usr/bin/docker run -v /var/staging:/var/staging -v /var/nodejs:/var/nodejs --rm chadautry/alpine-rsync:{{rsync_version}} -a /var/staging/backend/ /var/www
 ```
 ## API Backend
 These are the units for an api backend, 
