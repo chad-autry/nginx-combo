@@ -36,7 +36,15 @@
   become: true
   roles:
     - frontend
-    
+
+# Create archive of backendend content on localhost to transfer
+- name: archive backend source
+  hosts: localhost
+  tasks:
+    - archive:
+        path: "{{backend_src_path}}"
+        dest: "{{backend_src_path}}/../backendsrc.tgz"
+
 # nodejs
 - hosts: tag_backend
   become: true
