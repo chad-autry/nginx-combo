@@ -703,9 +703,34 @@ The back end playbook sets up the nodejs unit, the discovery unit, and finally p
     state: directory
     path: /var/nodejs
 
-# Import backend route configurator (creates config before nginx starts)
-- include: backend-discovery-watcher.yml
+# Deploy the backend application
+- include: application.yml
 
+# Template out the nodejs systemd unit
+- name: nodejs.service template
+  template:
+    src: nodejs.service
+    dest: /etc/systemd/system/nodejs.service
+
+# Always restart the nodejs server
+- name: start/restart the nodejs.service
+  systemd:
+    daemon_reload: yes
+    state: restarted
+    name: nodejs.service
+    
+# Template out the nodejs backend-publishing systemd unit
+- name: backend-publishing.service template
+  template:
+    src: backend-publishing.service
+    dest: /etc/systemd/system/backend-publishing.service
+
+# Start the backend publisher
+- name: start/restart the backend-publishing.service
+  systemd:
+    daemon_reload: yes
+    state: started
+    name: backend-publishing.service
 ```
 
 ### Backend Application
@@ -713,7 +738,7 @@ This task include takes the static front end application and pushes it across to
 
 [roles/backend/tasks/application.yml](dist/ansible/roles/backend/tasks/application.yml)
 ```yml
-- name: Remove old webapp staging
+- name: Remove old backend staging
   file:
     path: /var/staging/backend
     state: absent
@@ -726,76 +751,27 @@ This task include takes the static front end application and pushes it across to
 - name: Transfer and unpack webapp to staging
   unarchive:
     src: "{{backend_src_path}}/../backendsrc.tgz"
-    dest: /var/backend
+    dest: /var/staging
     
 - name: Pull alpine-rsync image		
   command: /usr/bin/docker pull chadautry/alpine-rsync:{{rsync_version}}
    
-- name: sync staging and /var/www	
-  command: /usr/bin/docker run -v /var/staging:/var/staging -v /var/nodejs:/var/nodejs --rm chadautry/alpine-rsync:{{rsync_version}} -a /var/staging/backend/ /var/www
+- name: sync staging and /var/nodejs	
+  command: /usr/bin/docker run -v /var/staging:/var/staging -v /var/nodejs:/var/nodejs --rm chadautry/alpine-rsync:{{rsync_version}} -a /var/staging/backend/ /var/nodejs
 ```
-## API Backend
-These are the units for an api backend, 
 
-#### node config watcher
-This unit watches the node config values in etcd, and templates them to a file for the node app when they change
-
-[node-config-watcher.service](dist/units/started/node-config-watcher.service)
-```yaml
-[Unit]
-Description=Watches for node config changes
-# Dependencies
-Requires=etcd2.service
-
-# Ordering
-After=etcd2.service
-
-[Service]
-ExecStartPre=-/usr/bin/docker pull chadautry/wac-node-config-templater
-ExecStartPre=-/usr/bin/docker rm node-templater
-ExecStart=/usr/bin/etcdctl watch --recursive /node/config
-ExecStartPost=-/usr/bin/docker run --name node-templater --net host \
--v /var/nodejs:/usr/var/nodejs -v /var/ssl:/etc/nginx/ssl:ro \
-chadautry/wac-node-config-templater
-ExecStartPost=-/usr/bin/docker stop backend-node-container
-Restart=always
-
-[X-Fleet]
-Global=true
-MachineMetadata=backend=true
-```
-* Starts a watch for changes in the top node config path
-* Once the watch starts, executes the config templating container
-    * Local volume mapped in for the templated config to be written to
-    * Doesn't error out
-* Once the config is templated, stops the node container (it will be restarted by its unit)
-* If the watch is ever satisfied, the unit will exit
-* Automatically restarted, causing a new watch and templater execution
-* Blindly runs on all backend tagged instances
-
-> Special Deployment Note:
-> * Put the node authorization config values into etcd
-> ```
-> /usr/bin/etcdctl set /node/config/token_secret <Created Private Key>
-> /usr/bin/etcdctl set /node/config/auth/google/client_id <Google Client ID>
-> /usr/bin/etcdctl set /node/config/auth/google/redirect_uri <Google Redirect URI>
-> /usr/bin/etcdctl set /node/config/auth/google/secret <Google OAuth Secret>
-> ```
-
-### nodejs unit
+### nodejs systemd unit template
 The main application unit, it is simply a docker container with Node.js installed and the code to be executed mounted inside
 
-[nodejs.service](dist/units/started/nodejs.service)
+[roles/backend/templates/nodejs.service](dist/ansible/roles/backend/templates/nodejs.service)
 ```yaml
 [Unit]
 Description=NodeJS Backend API
 # Dependencies
 Requires=docker.service
-Requires=node-config-watcher.service
 
 # Ordering
 After=docker.service
-After=node-config-watcher.service
 
 [Service]
 ExecStartPre=-/usr/bin/docker pull chadautry/wac-node
@@ -805,46 +781,38 @@ ExecStart=/usr/bin/docker run --name backend-node-container -p 8080:80 -p 4443:4
 chadautry/wac-node
 ExecStop=-/usr/bin/docker stop backend-node-container
 Restart=always
-
-[X-Fleet]
-Global=true
-MachineMetadata=backend=true
 ```
 * requires docker
-* requires the configuration templater
 * Starts a customized nodejs docker container
-    * Takes the app from local drive
-* Blindly runs on all backend tagged instances
+    * Takes the app and configuration from local drive
 
-### nodejs code update unit
-* Need to distribute code accross all backend instances
-* Need to restart the local Node server when new code is on the machine
-
-### backend publishing unit
+### nodejs backend-publishing systemd unit template
 Publishes the backend host into etcd at an expected path for the frontend to route to
 
-[backend-publishing.service](dist/units/started/backend-publishing.service)
+[roles/backend/templates/backend-publishing.service](dist/ansible/roles/backend/templates/backend-publishing.service)
 ```yaml
 [Unit]
 Description=Backend Publishing
 # Dependencies
-Requires=etcd2.service
+Requires=etcd.service
+Requires=nodejs.service
 
 # Ordering
-After=etcd2.service
+After=etcd.service
+Requires=nodejs.service
+
+# Restart when dependency restarts
+PartOf=etcd.service
+PartOf=nodejs.service
 
 [Service]
 ExecStart=/bin/sh -c "while true; do etcdctl set /discovery/backend/%H '%H' --ttl 60;sleep 45;done"
 ExecStop=/usr/bin/etcdctl rm /discovery/backend/%H
-
-[X-Fleet]
-Global=true
-MachineMetadata=backend=true
 ```
 * requires etcd
 * Publishes host into etcd every 45 seconds with a 60 second duration
 * Deletes host from etcd on stop
-* Blindly runs on all backend tagged instances
+* Is restarted if etcd or nodejs restarts
 
 ### rethinkdb proxy unit
 A rethinkdb proxy on localhost for nodejs units to connect to
