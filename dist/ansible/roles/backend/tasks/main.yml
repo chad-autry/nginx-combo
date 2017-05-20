@@ -4,6 +4,31 @@
     state: directory
     path: /var/nodejs
 
-# Import backend route configurator (creates config before nginx starts)
-- include: backend-discovery-watcher.yml
+# Deploy the backend application
+- include: application.yml
 
+# Template out the nodejs systemd unit
+- name: nodejs.service template
+  template:
+    src: nodejs.service
+    dest: /etc/systemd/system/nodejs.service
+
+# Always restart the nodejs server
+- name: start/restart the nodejs.service
+  systemd:
+    daemon_reload: yes
+    state: restarted
+    name: nodejs.service
+    
+# Template out the nodejs backend-publishing systemd unit
+- name: backend-publishing.service template
+  template:
+    src: backend-publishing.service
+    dest: /etc/systemd/system/backend-publishing.service
+
+# Start the backend publisher
+- name: start/restart the backend-publishing.service
+  systemd:
+    daemon_reload: yes
+    state: started
+    name: backend-publishing.service

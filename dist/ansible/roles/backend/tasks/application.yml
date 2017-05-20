@@ -1,4 +1,4 @@
-- name: Remove old webapp staging
+- name: Remove old backend staging
   file:
     path: /var/staging/backend
     state: absent
@@ -11,10 +11,10 @@
 - name: Transfer and unpack webapp to staging
   unarchive:
     src: "{{backend_src_path}}/../backendsrc.tgz"
-    dest: /var/backend
+    dest: /var/staging
     
 - name: Pull alpine-rsync image		
   command: /usr/bin/docker pull chadautry/alpine-rsync:{{rsync_version}}
    
-- name: sync staging and /var/www	
-  command: /usr/bin/docker run -v /var/staging:/var/staging -v /var/nodejs:/var/nodejs --rm chadautry/alpine-rsync:{{rsync_version}} -a /var/staging/backend/ /var/www
+- name: sync staging and /var/nodejs	
+  command: /usr/bin/docker run -v /var/staging:/var/staging -v /var/nodejs:/var/nodejs --rm chadautry/alpine-rsync:{{rsync_version}} -a /var/staging/backend/ /var/nodejs
