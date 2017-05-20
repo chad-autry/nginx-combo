@@ -77,9 +77,11 @@ machine_name: gce_name
 domain_name: <domain_name>
 domain_email: <domain_email>
 rethinkdb_web_password: <rethinkdb_web_password>
+
+# Variables templated into the backend nodejs config
 jwt_token_secret: <jwt_token_secret>
 google_client_id: <google_client_id>
-google_rediret_uri: <google_redirect_uri>
+google_redirect_uri: <google_redirect_uri>
 google_auth_secret: <google_auth_secret>
 
 # Location of the frontend app on the controller.
@@ -305,18 +307,6 @@ This role sets values into etcd from the Ansible config when the etcd cluster ha
   
 - name: /usr/bin/etcdctl set /rethinkdb/pwd <Web Authorization Password>
   command: /usr/bin/etcdctl set /rethinkdb/pwd {{rethinkdb_web_password}}
-  
-- name: /usr/bin/etcdctl set /node/config/token_secret <Created Private Key>
-  command: /usr/bin/etcdctl set /node/config/token_secret {{jwt_token_secret}}
-
-- name: /usr/bin/etcdctl set /node/config/auth/google/client_id <Google Client ID>
-  command: /usr/bin/etcdctl set /node/config/auth/google/client_id {{google_client_id}}
-  
-- name: /usr/bin/etcdctl set /node/config/auth/google/redirect_uri <Google Redirect URI>
-  command: /usr/bin/etcdctl set /node/config/auth/google/redirect_uri {{google_rediret_uri}}
-  
-- name: /usr/bin/etcdctl set /node/config/auth/google/secret <Google OAuth Secret>
-  command: /usr/bin/etcdctl set /node/config/auth/google/secret {{google_auth_secret}}
 ```
 
 ## frontend
@@ -706,6 +696,12 @@ The back end playbook sets up the nodejs unit, the discovery unit, and finally p
 # Deploy the backend application
 - include: application.yml
 
+# Template out the nodejs config
+- name: config.js template
+  template:
+    src: config.js
+    dest: /etc/systemd/system/config.js
+
 # Template out the nodejs systemd unit
 - name: nodejs.service template
   template:
@@ -758,6 +754,24 @@ This task include takes the static front end application and pushes it across to
    
 - name: sync staging and /var/nodejs	
   command: /usr/bin/docker run -v /var/staging:/var/staging -v /var/nodejs:/var/nodejs --rm chadautry/alpine-rsync:{{rsync_version}} -a /var/staging/backend/ /var/nodejs
+```
+
+### nodejs config.js template
+The template for the nodejs server's config
+[roles/backend/templates/config.js](dist/ansible/roles/backend/templates/config.js)
+```javascript
+module.exports = {
+  // App Settings
+  TOKEN_SECRET: '{{jwt_token_secret}}',
+  PORT: 80,
+
+  // OAuth 2.0
+  //TODO Make these parameters more generic. Just write out all params that exist at etcd path
+  // Google
+  GOOGLE_CLIENT_ID: '{{google_client_id}}',
+  GOOGLE_REDIRECT_URI: '{{google_redirect_uri}}',
+  GOOGLE_SECRET: '{{google_auth_secret}}'
+};
 ```
 
 ### nodejs systemd unit template
