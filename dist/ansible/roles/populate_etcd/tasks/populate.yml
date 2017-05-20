@@ -6,15 +6,3 @@
   
 - name: /usr/bin/etcdctl set /rethinkdb/pwd <Web Authorization Password>
   command: /usr/bin/etcdctl set /rethinkdb/pwd {{rethinkdb_web_password}}
-  
-- name: /usr/bin/etcdctl set /node/config/token_secret <Created Private Key>
-  command: /usr/bin/etcdctl set /node/config/token_secret {{jwt_token_secret}}
-
-- name: /usr/bin/etcdctl set /node/config/auth/google/client_id <Google Client ID>
-  command: /usr/bin/etcdctl set /node/config/auth/google/client_id {{google_client_id}}
-  
-- name: /usr/bin/etcdctl set /node/config/auth/google/redirect_uri <Google Redirect URI>
-  command: /usr/bin/etcdctl set /node/config/auth/google/redirect_uri {{google_rediret_uri}}
-  
-- name: /usr/bin/etcdctl set /node/config/auth/google/secret <Google OAuth Secret>
-  command: /usr/bin/etcdctl set /node/config/auth/google/secret {{google_auth_secret}}

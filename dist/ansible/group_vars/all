@@ -10,9 +10,11 @@ machine_name: gce_name
 domain_name: <domain_name>
 domain_email: <domain_email>
 rethinkdb_web_password: <rethinkdb_web_password>
+
+# Variables templated into the backend nodejs config
 jwt_token_secret: <jwt_token_secret>
 google_client_id: <google_client_id>
-google_rediret_uri: <google_redirect_uri>
+google_redirect_uri: <google_redirect_uri>
 google_auth_secret: <google_auth_secret>
 
 # Location of the frontend app on the controller.

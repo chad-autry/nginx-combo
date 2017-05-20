@@ -7,6 +7,12 @@
 # Deploy the backend application
 - include: application.yml
 
+# Template out the nodejs config
+- name: config.js template
+  template:
+    src: config.js
+    dest: /etc/systemd/system/config.js
+
 # Template out the nodejs systemd unit
 - name: nodejs.service template
   template:
