@@ -214,7 +214,7 @@ chmod +x /opt/bin/python
 ```
 
 ## etcd
-Deploys or redeploys the etcd instance on a host. Etcd is persistent, but if the cluster changes wac-bp blows it away instead of attempting to add/remove instances.
+Deploys or redeploys the etcd instance on a host. Etcd is persistent, but if the cluster changes wac-bp blows it away instead of attempting to add/remove instances. Deploys a full instance or proxy instance depending on the variable passed
 
 [roles/etcd/tasks/main.yml](dist/ansible/roles/etcd/tasks/main.yml)
 ```yml
@@ -245,7 +245,8 @@ Deploys or redeploys the etcd instance on a host. Etcd is persistent, but if the
   when: etcd_template | changed
 ```
 
-[etcd.service](dist/ansible/roles/etcd/templates/etcd.service)
+### etcd systemd unit template
+[roles/etcd/templates/etcd.service](dist/ansible/roles/etcd/templates/etcd.service)
 ```yaml
 [Unit]
 Description=etcd
@@ -283,7 +284,7 @@ Restart=always
 * uses the internal ip variable configured
 * walks the etcd hosts for the initial cluster
 
-### populate_etcd
+## populate_etcd
 This role sets values into etcd from the Ansible config when the etcd cluster has been recreated. It only needs to be executed from a single etcd machine.
 
 [roles/populate_etcd/tasks/main.yml](dist/ansible/roles/populate_etcd/tasks/main.yml)
