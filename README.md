@@ -4,17 +4,17 @@ Documentation and scripts for running a full web application in a micro-services
 ## Transitioning to Ansible
 Currentlly transitioning from fleet to ansible
 
-## Unit Files, Scripts, Playbooks
+# Unit Files, Scripts, Playbooks
 [![Build Status](https://travis-ci.org/chad-autry/wac-bp.svg?branch=master)](https://travis-ci.org/chad-autry/wac-bp)
 
 The unit files, scripts, and playbooks in the dist directory have been extracted from this document and pushed back to the repo.
 
-## Assumptions and Opinions
+# Assumptions and Opinions
 * Alpine Linux is my prefered containerized OS, and the choice I've made for images
 * CoreOS is the chosen host operating system
 * Ansible is used for orchestration
 
-## Requirements and Features
+# Requirements and Features
 * Dockerized nginx container to host static site
   * Forward's nginx logs to the docker service, [loggly logging strategy article](https://www.loggly.com/blog/top-5-docker-logging-methods-to-fit-your-container-deployment-strategy/)
   * Automatically reconfigures and refreshes nginx config based on routing configuration provided through etcd
@@ -30,17 +30,17 @@ The unit files, scripts, and playbooks in the dist directory have been extracted
 * Dockerized RethinkDB
 * Ansible based deployment and initialization
 
-## Externalities
+# Externalities
 * Configure DNS
 * Create tagged machine instances
 * Create Ansible inventory (or use dynamic inventory script!)
 * Firewall
 * Machine instance monitoring
 
-## Ansible Deployment
+# Ansible Deployment
 The machine used for a controller will need SSH access to all the machines being managed. You can use one of the instances being managed, on GCE [cloud shell](https://cloud.google.com/shell/docs/) is a handy resource to use. I'm personally running in GCE using [wac-gce-ansible](https://github.com/chad-autry/wac-gce-ansible)
 
-### Ansible Inventory
+## Ansible Inventory
 Here is an example inventory. wac-bp operates on machines based on the group they belong to. You can manually create the inventory file with the hosts to manage, or use a dynamic inventory script for your cloud provider.
 
 ```
@@ -60,7 +60,7 @@ hostnametwo
 hostnametwo
 ```
 
-### group_vars/all
+## group_vars/all
 The all variables file contains all the container versions to use.
 
 [group_vars/all](dist/ansible/group_vars/all)
@@ -97,8 +97,8 @@ wac_acme_version: latest
 nodejs_version: latest
 ```
 
-## Playbooks
-### site.yml
+# Playbooks
+## site.yml
 The main playbook that deploys or updates a cluster
 
 [site.yml](dist/ansible/site.yml)
@@ -157,10 +157,10 @@ The main playbook that deploys or updates a cluster
     - backend
 ```
 
-## Roles
+# Roles
 The roles used by the playbooks above
 
-### coreos-ansible
+## coreos-ansible
 Install Python onto CoreOS hosts
 
 [roles/coreos-python/tasks/main.yml](dist/ansible/roles/coreos-python/tasks/main.yml)
@@ -213,7 +213,7 @@ chmod +x /opt/bin/python
 /opt/bin/python --version
 ```
 
-### etcd
+## etcd
 Deploys or redeploys the etcd instance on a host. Etcd is persistent, but if the cluster changes wac-bp blows it away instead of attempting to add/remove instances.
 
 [roles/etcd/tasks/main.yml](dist/ansible/roles/etcd/tasks/main.yml)
@@ -318,7 +318,7 @@ This role sets values into etcd from the Ansible config when the etcd cluster ha
   command: /usr/bin/etcdctl set /node/config/auth/google/secret {{google_auth_secret}}
 ```
 
-### frontend
+## frontend
 The front end playbook sets up the nginx unit, the nginx file watching & reloading units, the letsencrypt renewal units, and finally pushes the front end application across (tagged so it can be executed alone)
 
 [roles/frontend/tasks/main.yml](dist/ansible/roles/frontend/tasks/main.yml)
@@ -352,9 +352,10 @@ The front end playbook sets up the nginx unit, the nginx file watching & reloadi
 - include: application.yml
 ```
 
-#### nginx
-Hosts static files, routes to backends, terminates SSL
+### nginx
+Nginx hosts static files, routes to instances (backends and databases), and terminates SSL according to its configuration
 
+#### nginx task include
 [roles/frontend/tasks/nginx.yml](dist/ansible/roles/frontend/tasks/nginx.yml)
 ```yml
 # template out the systemd nginx-reload.service unit
@@ -390,9 +391,9 @@ Hosts static files, routes to backends, terminates SSL
   when: nginx_template | changed
 ```
 
-The nginx service unit itself
+#### nginx systemd service unit template
 
-[nginx.service](dist/ansible/roles/frontend/templates/nginx.service)
+[roles/frontend/templates/nginx.service](dist/ansible/roles/frontend/templates/nginx.service)
 ```yaml
 [Unit]
 Description=NGINX
@@ -418,9 +419,10 @@ Restart=always
     * Takes html from local drive
     * Takes certs from local drive
 
-A pair of units are responsible for reloading the nginx instance on file changes
+#### nginx configuration watching
+A pair of units are responsible for watching the nginx configuration and reloading the service
 
-[nginx-reload.service](dist/ansible/roles/frontend/templates/nginx-reload.service)
+[roles/frontend/templates/nginx-reload.service](dist/ansible/roles/frontend/templates/nginx-reload.service)
 ```yaml
 [Unit]
 Description=NGINX reload service
@@ -433,7 +435,7 @@ Type=oneshot
 * Ignores errors
 * It is a one shot which expects to be called by other units
 
-[nginx-reload.path](dist/ansible/roles/frontend/templates/nginx-reload.path)
+[roles/frontend/templates/nginx-reload.path](dist/ansible/roles/frontend/templates/nginx-reload.path)
 ```yaml
 [Unit]
 Description=NGINX reload path
@@ -446,9 +448,11 @@ PathChanged=/var/ssl/fullchain.pem
 * Watches the (last copied) SSL cert file
 * Automatically calls nginx-reload.service on change (because of matching unit name)
 
-#### backend discovery
+### nginx route discovery
 Sets a watch on the backend discovery location, and when it changes templates out the nginx conf
 
+#### route-discovery-watcher task include
+TODO Why isn't this a part of the nginx task?
 [roles/frontend/tasks/backend-discovery-watcher.yml](dist/ansible/roles/frontend/tasks/backend-discovery-watcher.yml)
 ```yml
 # template out the systemd service unit
@@ -466,7 +470,8 @@ Sets a watch on the backend discovery location, and when it changes templates ou
   when: backend_discovery_watcher_template | changed
 ```
 
-[backend-discovery-watcher.service](dist/ansible/roles/frontend/templates/backend-discovery-watcher.service)
+#### route-discovery-watcher systemd unit template
+[roles/frontend/templates/backend-discovery-watcher.service](dist/ansible/roles/frontend/templates/backend-discovery-watcher.service)
 ```yaml
 [Unit]
 Description=Watches for backened instances
@@ -497,9 +502,10 @@ Restart=always
 * If the watch is ever satisfied, the unit will exit
 * Automatically restarted, causing a new watch and templater execution
 
-#### SSL
-This role sets up the various SSL related units
+### SSL
+The SSL certificate is requested from letsencrypt
 
+#### SSL task include
 [roles/frontend/tasks/acme-response-watcher.yml](dist/ansible/roles/frontend/tasks/ssl.yml)
 ```yml
 # template out the systemd certificate-sync.service unit
@@ -550,10 +556,10 @@ This role sets up the various SSL related units
   when: letsencrpyt_renewal_template | changed
 ```
 
-##### SSL Certificate Syncronization
-This unit takes the SSL certificates from etcd, and writes them to the local system. It also sets the certificates into etcd whenever etcd is reset
+#### SSL certificate-sync systemd unit template
+This unit takes the SSL certificates from etcd, and writes them to the local system. It also atempts to set the local certificate back into etcd (for whenever etcd is reset due to a cluster change)
 
-[certificate-sync.service](dist/ansible/roles/frontend/templates/certificate-sync.service)
+[roles/frontend/templates/certificate-sync.service](dist/ansible/roles/frontend/templates/certificate-sync.service)
 ```yaml
 [Unit]
 Description=SSL Certificate Syncronization
@@ -585,9 +591,9 @@ Restart=always
 * If the watch is ever satisfied, the unit will exit
 * Automatically restarted, causing a new watch and copy
 
-##### acme challenge response watcher
-
-[acme-response-watcher.service](dist/ansible/roles/frontend/templates/acme-response-watcher.service)
+#### SSL acme-response-watcher systemd unit template
+This unit watches etcd for the acme challenge response, and then calls the nginx-config-templater (the templater writes the response into the nginx config)
+[roles/frontend/templates/acme-response-watcher.service](dist/ansible/roles/frontend/templates/acme-response-watcher.service)
 ```yaml
 [Unit]
 Description=Watches for distributed acme challenge responses
@@ -613,10 +619,10 @@ Restart=always
 * If the watch is ever satisfied, the unit will exit
 * Automatically restarted, causing a new watch and templater execution
 
-##### letsencrypt renewal units
+#### letsencrypt renewal units
 A pair of units are responsible for initiating the letsencrypt renewal process. The process executes daily but will not renew until there are less than 30 days remaining till it expires
 
-[letsencrypt-renewal.service](dist/ansible/roles/frontend/templates/letsencrypt-renewal.service)
+[roles/frontend/templates/letsencrypt-renewal.service](dist/ansible/roles/frontend/templates/letsencrypt-renewal.service)
 ```yaml
 [Unit]
 Description=Letsencrpyt renewal service
@@ -646,7 +652,7 @@ Type=oneshot
 > sudo docker run --net host -v /var/ssl:/var/ssl --name acme chadautry/wac-acme
 > ```
 
-[letsencrypt-renewal.timer](dist/ansible/roles/frontend/templates/letsencrypt-renewal.timer)
+[roles/frontend/templates/letsencrypt-renewal.timer](dist/ansible/roles/frontend/templates/letsencrypt-renewal.timer)
 ```yaml
 [Unit]
 Description=Letsencrpyt renewal timer
@@ -659,7 +665,7 @@ RandomizedDelaySec=1800
 * Has a 30 minute randomized delay, so multiple copies don't all try to execute at once (though the docker image itself will exit if another is already running)
 * Automagically executes the letsencrypt-renewal.service based on name
 
-#### Frontend Application
+### Frontend Application
 This task include takes the static front end application and pushes it across to instances
 
 [roles/frontend/tasks/application.yml](dist/ansible/roles/frontend/tasks/application.yml)
@@ -685,7 +691,7 @@ This task include takes the static front end application and pushes it across to
 - name: sync staging and /var/www	
   command: /usr/bin/docker run -v /var/staging:/var/staging -v /var/www:/var/www --rm chadautry/alpine-rsync:{{rsync_version}} -a /var/staging/webapp/ /var/www
 ```
-### backend
+## backend
 The back end playbook sets up the nodejs unit, the discovery unit, and finally pushes the backend end application across (tagged so it can be executed alone)
 
 [roles/backend/tasks/main.yml](dist/ansible/roles/backend/tasks/main.yml)
@@ -701,7 +707,7 @@ The back end playbook sets up the nodejs unit, the discovery unit, and finally p
 
 ```
 
-#### Backend Application
+### Backend Application
 This task include takes the static front end application and pushes it across to instances
 
 [roles/backend/tasks/application.yml](dist/ansible/roles/backend/tasks/application.yml)
