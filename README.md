@@ -739,15 +739,15 @@ This task include takes the static front end application and pushes it across to
     path: /var/staging/backend
     state: absent
 
-- name: Ensure staging dir exists
+- name: Ensure backend staging dir exists
   file:
-    path: /var/staging
+    path: /var/staging/backend
     state: directory
 
 - name: Transfer and unpack webapp to staging
   unarchive:
     src: "{{backend_src_path}}/../backendsrc.tgz"
-    dest: /var/staging
+    dest: /var/staging/backend
     
 - name: Pull alpine-rsync image		
   command: /usr/bin/docker pull chadautry/alpine-rsync:{{rsync_version}}
