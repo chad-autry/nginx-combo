@@ -156,7 +156,7 @@ The main playbook that deploys or updates a cluster
 - hosts: tag_backend
   become: true
   roles:
-    - { role: nodejs, route: backend, strip_route: True, authenticate_route: False, config_key: backend, }
+    - { role: nodejs, identifier: backend, port: 8080, discoverable: True, route: backend, strip_route: True, authenticate_route: False, config_key: backend, }
 ```
 
 # Roles
@@ -691,42 +691,42 @@ This role sets up a nodejs unit, the discovery unit, and finally pushes the sour
 - name: ensure application directory is present
   file:
     state: directory
-    path: /var/nodejs
+    path: /var/nodejs/{{identifier}}
 
-# Deploy the backend application
+# Deploy the process's application source
 - include: application.yml
 
 # Template out the nodejs config
 - name: config.js template
   template:
     src: config.js
-    dest: /etc/systemd/system/config.js
+    dest: /var/nodes/{{identifier}}/config.js
 
 # Template out the nodejs systemd unit
 - name: nodejs.service template
   template:
     src: nodejs.service
-    dest: /etc/systemd/system/nodejs.service
+    dest: /etc/systemd/system/{{identifier}}_nodejs.service
 
 # Always restart the nodejs server
 - name: start/restart the nodejs.service
   systemd:
     daemon_reload: yes
     state: restarted
-    name: nodejs.service
+    name: {{identifier}}_nodejs.service
     
 # Template out the nodejs backend-publishing systemd unit
-- name: backend-publishing.service template
+- name: route-publishing.service template
   template:
     src: backend-publishing.service
-    dest: /etc/systemd/system/backend-publishing.service
+    dest: /etc/systemd/system/{{identfier}}_route-publishing.service
 
 # Start the discovery publisher
-- name: start/restart the backend-publishing.service
+- name: start/restart the route-publishing.service
   systemd:
     daemon_reload: yes
     state: started
-    name: backend-publishing.service
+    name: {{identfier}}_route-publishing.service
 ```
 
 ### Backend Application
@@ -736,24 +736,24 @@ This task include takes the static front end application and pushes it across to
 ```yml
 - name: Remove old backend staging
   file:
-    path: /var/staging/backend
+    path: /var/staging/{{identifier}}
     state: absent
 
 - name: Ensure backend staging dir exists
   file:
-    path: /var/staging/backend
+    path: /var/staging/{{identifier}}
     state: directory
 
 - name: Transfer and unpack webapp to staging
   unarchive:
-    src: "{{backend_src_path}}/../backendsrc.tgz"
-    dest: /var/staging/backend
+    src: "{{backend_src_path}}/../{{identifier}}src.tgz"
+    dest: /var/staging/{{identifier}}
     
 - name: Pull alpine-rsync image		
   command: /usr/bin/docker pull chadautry/alpine-rsync:{{rsync_version}}
    
 - name: sync staging and /var/nodejs	
-  command: /usr/bin/docker run -v /var/staging:/var/staging -v /var/nodejs:/var/nodejs --rm chadautry/alpine-rsync:{{rsync_version}} -a /var/staging/backend/ /var/nodejs
+  command: /usr/bin/docker run -v /var/staging/{{identifier}}:/var/staging/{{identifier}} -v /var/nodejs/{{identifier}}:/var/nodejs/{{identifier}} --rm chadautry/alpine-rsync:{{rsync_version}} -a /var/staging/{{identifier}}/ /var/nodejs/{{identifier}}
 ```
 
 ### nodejs config.js template
@@ -790,8 +790,8 @@ After=docker.service
 [Service]
 ExecStartPre=-/usr/bin/docker pull chadautry/wac-node
 ExecStartPre=-/usr/bin/docker rm -f backend-node-container
-ExecStart=/usr/bin/docker run --name backend-node-container -p 8080:80 -p 4443:443 \
--v /var/nodejs:/app:ro \
+ExecStart=/usr/bin/docker run --name backend-node-container -p {{http_port}}:80 -p {{https_port}}:443 \
+-v /var/nodejs/{{identifier}}:/app:ro \
 chadautry/wac-node
 ExecStop=-/usr/bin/docker stop backend-node-container
 Restart=always
@@ -809,18 +809,19 @@ Publishes the backend host into etcd at an expected path for the frontend to rou
 Description=Backend Publishing
 # Dependencies
 Requires=etcd.service
-Requires=nodejs.service
+Requires={{identifier}}_nodejs.service
 
 # Ordering
 After=etcd.service
-Requires=nodejs.service
+After={{identifier}}_nodejs.service
 
 # Restart when dependency restarts
 PartOf=etcd.service
-PartOf=nodejs.service
+PartOf={{identifier}}_nodejs.service
 
 [Service]
-ExecStart=/bin/sh -c "while true; do etcdctl set /discovery/{{route}}/hosts/%H '%H' --ttl 60 \
+ExecStart=/bin/sh -c "while true; do etcdctl set /discovery/{{route}}/hosts/%H/host '%H' --ttl 60 \
+etcdctl set /discovery/{{route}}/hosts/%H/port '{{http_port}}' --ttl 60 \
 etcdctl set /discovery/{{route}}/strip 'true' --ttl 60 \
 etcdctl set /discovery/{{route}}/private 'false' --ttl 60 \
 sleep 45 \
