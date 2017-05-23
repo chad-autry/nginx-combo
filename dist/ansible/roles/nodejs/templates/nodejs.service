@@ -9,8 +9,8 @@ After=docker.service
 [Service]
 ExecStartPre=-/usr/bin/docker pull chadautry/wac-node
 ExecStartPre=-/usr/bin/docker rm -f backend-node-container
-ExecStart=/usr/bin/docker run --name backend-node-container -p 8080:80 -p 4443:443 \
--v /var/nodejs:/app:ro \
+ExecStart=/usr/bin/docker run --name backend-node-container -p {{http_port}}:80 -p {{https_port}}:443 \
+-v /var/nodejs/{{identifier}}:/app:ro \
 chadautry/wac-node
 ExecStop=-/usr/bin/docker stop backend-node-container
 Restart=always

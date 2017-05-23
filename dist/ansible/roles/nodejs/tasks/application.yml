@@ -1,20 +1,20 @@
 - name: Remove old backend staging
   file:
-    path: /var/staging/backend
+    path: /var/staging/{{identifier}}
     state: absent
 
 - name: Ensure backend staging dir exists
   file:
-    path: /var/staging/backend
+    path: /var/staging/{{identifier}}
     state: directory
 
 - name: Transfer and unpack webapp to staging
   unarchive:
-    src: "{{backend_src_path}}/../backendsrc.tgz"
-    dest: /var/staging/backend
+    src: "{{backend_src_path}}/../{{identifier}}src.tgz"
+    dest: /var/staging/{{identifier}}
     
 - name: Pull alpine-rsync image		
   command: /usr/bin/docker pull chadautry/alpine-rsync:{{rsync_version}}
    
 - name: sync staging and /var/nodejs	
-  command: /usr/bin/docker run -v /var/staging:/var/staging -v /var/nodejs:/var/nodejs --rm chadautry/alpine-rsync:{{rsync_version}} -a /var/staging/backend/ /var/nodejs
+  command: /usr/bin/docker run -v /var/staging/{{identifier}}:/var/staging/{{identifier}} -v /var/nodejs/{{identifier}}:/var/nodejs/{{identifier}} --rm chadautry/alpine-rsync:{{rsync_version}} -a /var/staging/{{identifier}}/ /var/nodejs/{{identifier}}

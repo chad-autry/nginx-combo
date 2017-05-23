@@ -49,4 +49,4 @@
 - hosts: tag_backend
   become: true
   roles:
-    - { role: nodejs, route: backend, strip_route: True, authenticate_route: False, config_key: backend, }
+    - { role: nodejs, identifier: backend, port: 8080, discoverable: True, route: backend, strip_route: True, authenticate_route: False, config_key: backend, }

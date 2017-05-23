@@ -2,39 +2,39 @@
 - name: ensure application directory is present
   file:
     state: directory
-    path: /var/nodejs
+    path: /var/nodejs/{{identifier}}
 
-# Deploy the backend application
+# Deploy the process's application source
 - include: application.yml
 
 # Template out the nodejs config
 - name: config.js template
   template:
     src: config.js
-    dest: /etc/systemd/system/config.js
+    dest: /var/nodes/{{identifier}}/config.js
 
 # Template out the nodejs systemd unit
 - name: nodejs.service template
   template:
     src: nodejs.service
-    dest: /etc/systemd/system/nodejs.service
+    dest: /etc/systemd/system/{{identifier}}_nodejs.service
 
 # Always restart the nodejs server
 - name: start/restart the nodejs.service
   systemd:
     daemon_reload: yes
     state: restarted
-    name: nodejs.service
+    name: {{identifier}}_nodejs.service
     
 # Template out the nodejs backend-publishing systemd unit
-- name: backend-publishing.service template
+- name: route-publishing.service template
   template:
     src: backend-publishing.service
-    dest: /etc/systemd/system/backend-publishing.service
+    dest: /etc/systemd/system/{{identfier}}_route-publishing.service
 
 # Start the discovery publisher
-- name: start/restart the backend-publishing.service
+- name: start/restart the route-publishing.service
   systemd:
     daemon_reload: yes
     state: started
-    name: backend-publishing.service
+    name: {{identfier}}_route-publishing.service
