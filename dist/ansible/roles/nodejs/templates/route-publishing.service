@@ -1,0 +1,21 @@
+[Unit]
+Description=Backend Publishing
+# Dependencies
+Requires=etcd.service
+Requires=nodejs.service
+
+# Ordering
+After=etcd.service
+Requires=nodejs.service
+
+# Restart when dependency restarts
+PartOf=etcd.service
+PartOf=nodejs.service
+
+[Service]
+ExecStart=/bin/sh -c "while true; do etcdctl set /discovery/{{route}}/hosts/%H '%H' --ttl 60 \
+etcdctl set /discovery/{{route}}/strip 'true' --ttl 60 \
+etcdctl set /discovery/{{route}}/private 'false' --ttl 60 \
+sleep 45 \
+done"
+ExecStop=/usr/bin/etcdctl rm /discovery/{{route}}/hosts/%H

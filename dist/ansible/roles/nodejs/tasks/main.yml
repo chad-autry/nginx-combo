@@ -1,5 +1,5 @@
 # Ensure the backend directories are created
-- name: ensure www directory is present
+- name: ensure application directory is present
   file:
     state: directory
     path: /var/nodejs
@@ -32,7 +32,7 @@
     src: backend-publishing.service
     dest: /etc/systemd/system/backend-publishing.service
 
-# Start the backend publisher
+# Start the discovery publisher
 - name: start/restart the backend-publishing.service
   systemd:
     daemon_reload: yes
