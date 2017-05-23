@@ -144,7 +144,7 @@ The main playbook that deploys or updates a cluster
   roles:
     - frontend
 
-# Create archive of backendend content on localhost to transfer
+# Create archive of backendend content on localhost to transfer, copy and edit if there are additional backend processes
 - name: archive backend source
   hosts: localhost
   tasks:
@@ -152,11 +152,11 @@ The main playbook that deploys or updates a cluster
         path: "{{backend_src_path}}"
         dest: "{{backend_src_path}}/../backendsrc.tgz"
 
-# nodejs
+# Default Backend Process, copy and edit if there are additional backendprocesses
 - hosts: tag_backend
   become: true
   roles:
-    - backend
+    - { role: nodejs, route: backend, strip_route: True, authenticate_route: False, config_key: backend, }
 ```
 
 # Roles
@@ -682,13 +682,13 @@ This task include takes the static front end application and pushes it across to
 - name: sync staging and /var/www	
   command: /usr/bin/docker run -v /var/staging:/var/staging -v /var/www:/var/www --rm chadautry/alpine-rsync:{{rsync_version}} -a /var/staging/webapp/ /var/www
 ```
-## backend
-The back end playbook sets up the nodejs unit, the discovery unit, and finally pushes the backend end application across (tagged so it can be executed alone)
+## nodejs
+This role sets up a nodejs unit, the discovery unit, and finally pushes the source application across (tagged so it can be executed alone). Configureable for hosting multiple nodejs processes with multiple disocvered routes
 
-[roles/backend/tasks/main.yml](dist/ansible/roles/backend/tasks/main.yml)
+[roles/nodejs/tasks/main.yml](dist/ansible/roles/nodejs/tasks/main.yml)
 ```yml
 # Ensure the backend directories are created
-- name: ensure www directory is present
+- name: ensure application directory is present
   file:
     state: directory
     path: /var/nodejs
@@ -721,7 +721,7 @@ The back end playbook sets up the nodejs unit, the discovery unit, and finally p
     src: backend-publishing.service
     dest: /etc/systemd/system/backend-publishing.service
 
-# Start the backend publisher
+# Start the discovery publisher
 - name: start/restart the backend-publishing.service
   systemd:
     daemon_reload: yes
@@ -732,7 +732,7 @@ The back end playbook sets up the nodejs unit, the discovery unit, and finally p
 ### Backend Application
 This task include takes the static front end application and pushes it across to instances
 
-[roles/backend/tasks/application.yml](dist/ansible/roles/backend/tasks/application.yml)
+[roles/nodejs/tasks/application.yml](dist/ansible/roles/nodejs/tasks/application.yml)
 ```yml
 - name: Remove old backend staging
   file:
@@ -758,7 +758,7 @@ This task include takes the static front end application and pushes it across to
 
 ### nodejs config.js template
 The template for the nodejs server's config
-[roles/backend/templates/config.js](dist/ansible/roles/backend/templates/config.js)
+[roles/nodejs/templates/config.js](dist/ansible/roles/nodejs/templates/config.js)
 ```javascript
 module.exports = {
   // App Settings
@@ -777,7 +777,7 @@ module.exports = {
 ### nodejs systemd unit template
 The main application unit, it is simply a docker container with Node.js installed and the code to be executed mounted inside
 
-[roles/backend/templates/nodejs.service](dist/ansible/roles/backend/templates/nodejs.service)
+[roles/nodejs/templates/nodejs.service](dist/ansible/roles/nodejs/templates/nodejs.service)
 ```yaml
 [Unit]
 Description=NodeJS Backend API
@@ -800,10 +800,10 @@ Restart=always
 * Starts a customized nodejs docker container
     * Takes the app and configuration from local drive
 
-### nodejs backend-publishing systemd unit template
+### nodejs route-publishing systemd unit template
 Publishes the backend host into etcd at an expected path for the frontend to route to
 
-[roles/backend/templates/backend-publishing.service](dist/ansible/roles/backend/templates/backend-publishing.service)
+[roles/nodejs/templates/route-publishing.service](dist/ansible/roles/nodejs/templates/route-publishing.service)
 ```yaml
 [Unit]
 Description=Backend Publishing
@@ -820,12 +820,12 @@ PartOf=etcd.service
 PartOf=nodejs.service
 
 [Service]
-ExecStart=/bin/sh -c "while true; do etcdctl set /discovery/backend/hosts/%H '%H' --ttl 60 \
-etcdctl set /discovery/backend/strip 'true' --ttl 60 \
-etcdctl set /discovery/backend/private 'false' --ttl 60 \
+ExecStart=/bin/sh -c "while true; do etcdctl set /discovery/{{route}}/hosts/%H '%H' --ttl 60 \
+etcdctl set /discovery/{{route}}/strip 'true' --ttl 60 \
+etcdctl set /discovery/{{route}}/private 'false' --ttl 60 \
 sleep 45 \
 done"
-ExecStop=/usr/bin/etcdctl rm /discovery/backend/hosts/%H
+ExecStop=/usr/bin/etcdctl rm /discovery/{{route}}/hosts/%H
 ```
 * requires etcd
 * Publishes host into etcd every 45 seconds with a 60 second duration
