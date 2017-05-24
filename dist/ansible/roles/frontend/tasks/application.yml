@@ -4,6 +4,7 @@
   args:
     path: "{{frontend_src_path}}"
     dest: "{{controller_src_staging}}/frontendsrc.tgz"
+  become: false
   run_once: true
 
 - name: Remove old webapp staging

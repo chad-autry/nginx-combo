@@ -4,6 +4,7 @@
   args:
     path: "{{node_src_path[identifier]}}"
     dest: "{{controller_src_staging}}/{{identifier}}src.tgz"
+  become: false
   run_once: true
 
 - name: Remove old backend staging
