@@ -26,11 +26,12 @@
     state: restarted
     name: {{identifier}}_nodejs.service
     
-# Template out the nodejs backend-publishing systemd unit
+# Template out the nodejs route-publishing systemd unit
 - name: route-publishing.service template
   template:
     src: backend-publishing.service
     dest: /etc/systemd/system/{{identfier}}_route-publishing.service
+  when: discoverable
 
 # Start the discovery publisher
 - name: start/restart the route-publishing.service
@@ -38,3 +39,4 @@
     daemon_reload: yes
     state: started
     name: {{identfier}}_route-publishing.service
+  when: discoverable

@@ -11,17 +11,20 @@ domain_name: <domain_name>
 domain_email: <domain_email>
 rethinkdb_web_password: <rethinkdb_web_password>
 
-# Variables templated into the backend nodejs config
-jwt_token_secret: <jwt_token_secret>
-google_client_id: <google_client_id>
-google_redirect_uri: <google_redirect_uri>
-google_auth_secret: <google_auth_secret>
+# Variables templated into the backend node process(es)
+node_config:
+    backend:
+        jwt_token_secret: <jwt_token_secret>
+        google_client_id: <google_client_id>
+        google_redirect_uri: <google_redirect_uri>
+        google_auth_secret: <google_auth_secret>
 
 # Location of the frontend app on the controller.
 frontend_src_path: /home/frontend/src
 
-# Location of the backend nodejs app on the controller.
-backend_src_path: /home/backend/src
+# Location of source(s) for the nodejs process(es)
+node_src_path: 
+    backend: /home/backend/src
 
 # The container versions to use
 rsync_version: latest

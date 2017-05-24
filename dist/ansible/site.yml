@@ -42,11 +42,11 @@
   hosts: localhost
   tasks:
     - archive:
-        path: "{{backend_src_path}}"
-        dest: "{{backend_src_path}}/../backendsrc.tgz"
+        path: "{{node_src_path['backend']}}"
+        dest: "{{node_src_path['backend']}}/../backendsrc.tgz"
 
 # Default Backend Process, copy and edit if there are additional backendprocesses
 - hosts: tag_backend
   become: true
   roles:
-    - { role: nodejs, identifier: backend, port: 8080, discoverable: True, route: backend, strip_route: True, authenticate_route: False, config_key: backend, }
+    - { role: nodejs, identifier: backend, port: 8080, discoverable: True, route: backend, strip_route: True, authenticate_route: False }

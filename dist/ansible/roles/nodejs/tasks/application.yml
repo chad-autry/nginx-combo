@@ -10,7 +10,7 @@
 
 - name: Transfer and unpack webapp to staging
   unarchive:
-    src: "{{backend_src_path}}/../{{identifier}}src.tgz"
+    src: "{{node_src_path[identifier]}}/../{{identifier}}src.tgz"
     dest: /var/staging/{{identifier}}
     
 - name: Pull alpine-rsync image		
