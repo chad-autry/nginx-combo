@@ -1,9 +1,9 @@
 # Create archive of frontend content to transfer
 - name: archive frontend on localhost
-  archive:
+  local_action: archive
+  args:
     path: "{{frontend_src_path}}"
     dest: "{{controller_src_staging}}/frontendsrc.tgz"
-  delegate_to: 127.0.0.1
   run_once: true
 
 - name: Remove old webapp staging
