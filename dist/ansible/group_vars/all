@@ -26,7 +26,7 @@ frontend_src_path: /home/frontend/src
 node_src_path: 
     backend: /home/backend/src
 
-# THe controller machine directory to stage archives at
+# The controller machine directory to stage archives at
 controller_src_staging: /home/staging
 
 # The container versions to use

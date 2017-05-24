@@ -23,18 +23,20 @@
   roles:
     - { role: etcd, proxy_etcd: True }
 
-- hosts: localhost
-  name: Remove old staging directory
-  file:
-    path: "{{controller_src_staging}}"
-    state: absent
+- name: Remove old staging directory
+  hosts: localhost
+  tasks:
+    - file:
+        path: "{{controller_src_staging}}"
+        state: absent
     
 # Recreate localhost staging directory
-- hosts: localhost
-  name: Create local staging directory
-  file:
-    state: directory
-    path: "{{controller_src_staging}}"
+- name: Create local staging directory
+  hosts: localhost
+  tasks:
+    - file:
+        state: directory
+        path: "{{controller_src_staging}}"
 
 # nginx
 - hosts: tag_frontend
