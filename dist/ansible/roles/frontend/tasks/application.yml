@@ -1,16 +1,24 @@
+# Create archive of frontend content to transfer
+- name: archive frontend on localhost
+  archive:
+    path: "{{frontend_src_path}}"
+    dest: "{{controller_src_staging}}/frontendsrc.tgz"
+  delegate_to: 127.0.0.1
+  run_once: true
+
 - name: Remove old webapp staging
   file:
     path: /var/staging/webapp
     state: absent
 
-- name: Ensure staging dir exists
+- name: Ensure remote staging dir exists
   file:
     path: /var/staging
     state: directory
 
 - name: Transfer and unpack webapp to staging
   unarchive:
-    src: "{{frontend_src_path}}/../frontendsrc.tgz"
+    src: "{{controller_src_staging}}/frontendsrc.tgz"
     dest: /var/staging
     
 - name: Pull alpine-rsync image		

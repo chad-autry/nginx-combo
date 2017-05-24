@@ -23,13 +23,18 @@
   roles:
     - { role: etcd, proxy_etcd: True }
 
-# Create archive of frontend content on localhost to transfer
-- name: archive source
-  hosts: localhost
-  tasks:
-    - archive:
-        path: "{{frontend_src_path}}"
-        dest: "{{frontend_src_path}}/../frontendsrc.tgz"
+- hosts: localhost
+  name: Remove old staging directory
+  file:
+    path: "{{controller_src_staging}}"
+    state: absent
+    
+# Recreate localhost staging directory
+- hosts: localhost
+  name: Create local staging directory
+  file:
+    state: directory
+    path: "{{controller_src_staging}}"
 
 # nginx
 - hosts: tag_frontend
@@ -37,15 +42,7 @@
   roles:
     - frontend
 
-# Create archive of backendend content on localhost to transfer, copy and edit if there are additional backend processes
-- name: archive backend source
-  hosts: localhost
-  tasks:
-    - archive:
-        path: "{{node_src_path['backend']}}"
-        dest: "{{node_src_path['backend']}}/../backendsrc.tgz"
-
-# Default Backend Process, copy and edit if there are additional backendprocesses
+# Default Backend nodejs process. Role can be applied additional times to different hosts with different configuration
 - hosts: tag_backend
   become: true
   roles:

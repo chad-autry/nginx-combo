@@ -22,9 +22,12 @@ node_config:
 # Location of the frontend app on the controller.
 frontend_src_path: /home/frontend/src
 
-# Location of source(s) for the nodejs process(es)
+# Location of source(s) on the controller for the nodejs process(es)
 node_src_path: 
     backend: /home/backend/src
+
+# THe controller machine directory to stage archives at
+controller_src_staging: /home/staging
 
 # The container versions to use
 rsync_version: latest

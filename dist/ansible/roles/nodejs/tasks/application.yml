@@ -1,3 +1,11 @@
+# Create archive of application files to transfer
+- name: archive application on localhost
+  archive:
+    path: "{{node_src_path[identifier]}}"
+    dest: "{{controller_src_staging}}/{{identifier}}src.tgz"
+  delegate_to: 127.0.0.1
+  run_once: true
+
 - name: Remove old backend staging
   file:
     path: /var/staging/{{identifier}}
@@ -10,7 +18,7 @@
 
 - name: Transfer and unpack webapp to staging
   unarchive:
-    src: "{{node_src_path[identifier]}}/../{{identifier}}src.tgz"
+    src: "{{controller_src_staging}}/{{identifier}}src.tgz"
     dest: /var/staging/{{identifier}}
     
 - name: Pull alpine-rsync image		
