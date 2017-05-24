@@ -668,10 +668,10 @@ This task include takes the static front end application and pushes it across to
 ```yml
 # Create archive of frontend content to transfer
 - name: archive frontend on localhost
-  archive:
+  local_action: archive
+  args:
     path: "{{frontend_src_path}}"
     dest: "{{controller_src_staging}}/frontendsrc.tgz"
-  delegate_to: 127.0.0.1
   run_once: true
 
 - name: Remove old webapp staging
@@ -751,10 +751,10 @@ This task include takes the static application source and pushes it across to in
 ```yml
 # Create archive of application files to transfer
 - name: archive application on localhost
-  archive:
+  local_action: archive
+  args:
     path: "{{node_src_path[identifier]}}"
     dest: "{{controller_src_staging}}/{{identifier}}src.tgz"
-  delegate_to: 127.0.0.1
   run_once: true
 
 - name: Remove old backend staging
