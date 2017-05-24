@@ -672,6 +672,7 @@ This task include takes the static front end application and pushes it across to
   args:
     path: "{{frontend_src_path}}"
     dest: "{{controller_src_staging}}/frontendsrc.tgz"
+  become: false
   run_once: true
 
 - name: Remove old webapp staging
@@ -755,6 +756,7 @@ This task include takes the static application source and pushes it across to in
   args:
     path: "{{node_src_path[identifier]}}"
     dest: "{{controller_src_staging}}/{{identifier}}src.tgz"
+  become: false
   run_once: true
 
 - name: Remove old backend staging
