@@ -93,7 +93,7 @@ frontend_src_path: /home/frontend/src
 node_src_path: 
     backend: /home/backend/src
 
-# THe controller machine directory to stage archives at
+# The controller machine directory to stage archives at
 controller_src_staging: /home/staging
 
 # The container versions to use
@@ -136,18 +136,20 @@ The main playbook that deploys or updates a cluster
   roles:
     - { role: etcd, proxy_etcd: True }
 
-- hosts: localhost
-  name: Remove old staging directory
-  file:
-    path: "{{controller_src_staging}}"
-    state: absent
+- name: Remove old staging directory
+  hosts: localhost
+  tasks:
+    - file:
+        path: "{{controller_src_staging}}"
+        state: absent
     
 # Recreate localhost staging directory
-- hosts: localhost
-  name: Create local staging directory
-  file:
-    state: directory
-    path: "{{controller_src_staging}}"
+- name: Create local staging directory
+  hosts: localhost
+  tasks:
+    - file:
+        state: directory
+        path: "{{controller_src_staging}}"
 
 # nginx
 - hosts: tag_frontend
