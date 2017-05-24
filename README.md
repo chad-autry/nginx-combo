@@ -89,9 +89,12 @@ node_config:
 # Location of the frontend app on the controller.
 frontend_src_path: /home/frontend/src
 
-# Location of source(s) for the nodejs process(es)
+# Location of source(s) on the controller for the nodejs process(es)
 node_src_path: 
     backend: /home/backend/src
+
+# THe controller machine directory to stage archives at
+controller_src_staging: /home/staging
 
 # The container versions to use
 rsync_version: latest
@@ -133,13 +136,18 @@ The main playbook that deploys or updates a cluster
   roles:
     - { role: etcd, proxy_etcd: True }
 
-# Create archive of frontend content on localhost to transfer
-- name: archive source
-  hosts: localhost
-  tasks:
-    - archive:
-        path: "{{frontend_src_path}}"
-        dest: "{{frontend_src_path}}/../frontendsrc.tgz"
+- hosts: localhost
+  name: Remove old staging directory
+  file:
+    path: "{{controller_src_staging}}"
+    state: absent
+    
+# Recreate localhost staging directory
+- hosts: localhost
+  name: Create local staging directory
+  file:
+    state: directory
+    path: "{{controller_src_staging}}"
 
 # nginx
 - hosts: tag_frontend
@@ -147,15 +155,7 @@ The main playbook that deploys or updates a cluster
   roles:
     - frontend
 
-# Create archive of backendend content on localhost to transfer, copy and edit if there are additional backend processes
-- name: archive backend source
-  hosts: localhost
-  tasks:
-    - archive:
-        path: "{{node_src_path['backend']}}"
-        dest: "{{node_src_path['backend']}}/../backendsrc.tgz"
-
-# Default Backend Process, copy and edit if there are additional backendprocesses
+# Default Backend nodejs process. Role can be applied additional times to different hosts with different configuration
 - hosts: tag_backend
   become: true
   roles:
@@ -664,19 +664,27 @@ This task include takes the static front end application and pushes it across to
 
 [roles/frontend/tasks/application.yml](dist/ansible/roles/frontend/tasks/application.yml)
 ```yml
+# Create archive of frontend content to transfer
+- name: archive frontend on localhost
+  archive:
+    path: "{{frontend_src_path}}"
+    dest: "{{controller_src_staging}}/frontendsrc.tgz"
+  delegate_to: 127.0.0.1
+  run_once: true
+
 - name: Remove old webapp staging
   file:
     path: /var/staging/webapp
     state: absent
 
-- name: Ensure staging dir exists
+- name: Ensure remote staging dir exists
   file:
     path: /var/staging
     state: directory
 
 - name: Transfer and unpack webapp to staging
   unarchive:
-    src: "{{frontend_src_path}}/../frontendsrc.tgz"
+    src: "{{controller_src_staging}}/frontendsrc.tgz"
     dest: /var/staging
     
 - name: Pull alpine-rsync image		
@@ -689,7 +697,7 @@ This task include takes the static front end application and pushes it across to
 This role sets up a nodejs unit, the discovery unit, and finally pushes the source application across (tagged so it can be executed alone). Configureable for hosting multiple nodejs processes with multiple disocvered routes
 
 [roles/nodejs/tasks/main.yml](dist/ansible/roles/nodejs/tasks/main.yml)
-```yml
+```yml  
 # Ensure the backend directories are created
 - name: ensure application directory is present
   file:
@@ -739,6 +747,14 @@ This task include takes the static application source and pushes it across to in
 
 [roles/nodejs/tasks/application.yml](dist/ansible/roles/nodejs/tasks/application.yml)
 ```yml
+# Create archive of application files to transfer
+- name: archive application on localhost
+  archive:
+    path: "{{node_src_path[identifier]}}"
+    dest: "{{controller_src_staging}}/{{identifier}}src.tgz"
+  delegate_to: 127.0.0.1
+  run_once: true
+
 - name: Remove old backend staging
   file:
     path: /var/staging/{{identifier}}
@@ -751,7 +767,7 @@ This task include takes the static application source and pushes it across to in
 
 - name: Transfer and unpack webapp to staging
   unarchive:
-    src: "{{node_src_path[identifier]}}/../{{identifier}}src.tgz"
+    src: "{{controller_src_staging}}/{{identifier}}src.tgz"
     dest: /var/staging/{{identifier}}
     
 - name: Pull alpine-rsync image		
