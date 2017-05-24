@@ -78,17 +78,20 @@ domain_name: <domain_name>
 domain_email: <domain_email>
 rethinkdb_web_password: <rethinkdb_web_password>
 
-# Variables templated into the backend nodejs config
-jwt_token_secret: <jwt_token_secret>
-google_client_id: <google_client_id>
-google_redirect_uri: <google_redirect_uri>
-google_auth_secret: <google_auth_secret>
+# Variables templated into the backend node process(es)
+node_config:
+    backend:
+        jwt_token_secret: <jwt_token_secret>
+        google_client_id: <google_client_id>
+        google_redirect_uri: <google_redirect_uri>
+        google_auth_secret: <google_auth_secret>
 
 # Location of the frontend app on the controller.
 frontend_src_path: /home/frontend/src
 
-# Location of the backend nodejs app on the controller.
-backend_src_path: /home/backend/src
+# Location of source(s) for the nodejs process(es)
+node_src_path: 
+    backend: /home/backend/src
 
 # The container versions to use
 rsync_version: latest
@@ -149,14 +152,14 @@ The main playbook that deploys or updates a cluster
   hosts: localhost
   tasks:
     - archive:
-        path: "{{backend_src_path}}"
-        dest: "{{backend_src_path}}/../backendsrc.tgz"
+        path: "{{node_src_path['backend']}}"
+        dest: "{{node_src_path['backend']}}/../backendsrc.tgz"
 
 # Default Backend Process, copy and edit if there are additional backendprocesses
 - hosts: tag_backend
   become: true
   roles:
-    - { role: nodejs, identifier: backend, port: 8080, discoverable: True, route: backend, strip_route: True, authenticate_route: False, config_key: backend, }
+    - { role: nodejs, identifier: backend, port: 8080, discoverable: True, route: backend, strip_route: True, authenticate_route: False }
 ```
 
 # Roles
@@ -715,11 +718,12 @@ This role sets up a nodejs unit, the discovery unit, and finally pushes the sour
     state: restarted
     name: {{identifier}}_nodejs.service
     
-# Template out the nodejs backend-publishing systemd unit
+# Template out the nodejs route-publishing systemd unit
 - name: route-publishing.service template
   template:
     src: backend-publishing.service
     dest: /etc/systemd/system/{{identfier}}_route-publishing.service
+  when: discoverable
 
 # Start the discovery publisher
 - name: start/restart the route-publishing.service
@@ -727,10 +731,11 @@ This role sets up a nodejs unit, the discovery unit, and finally pushes the sour
     daemon_reload: yes
     state: started
     name: {{identfier}}_route-publishing.service
+  when: discoverable
 ```
 
-### Backend Application
-This task include takes the static front end application and pushes it across to instances
+### nodejs Application
+This task include takes the static application source and pushes it across to instances
 
 [roles/nodejs/tasks/application.yml](dist/ansible/roles/nodejs/tasks/application.yml)
 ```yml
@@ -746,7 +751,7 @@ This task include takes the static front end application and pushes it across to
 
 - name: Transfer and unpack webapp to staging
   unarchive:
-    src: "{{backend_src_path}}/../{{identifier}}src.tgz"
+    src: "{{node_src_path[identifier]}}/../{{identifier}}src.tgz"
     dest: /var/staging/{{identifier}}
     
 - name: Pull alpine-rsync image		
@@ -761,16 +766,10 @@ The template for the nodejs server's config
 [roles/nodejs/templates/config.js](dist/ansible/roles/nodejs/templates/config.js)
 ```javascript
 module.exports = {
-  // App Settings
-  TOKEN_SECRET: '{{jwt_token_secret}}',
   PORT: 80,
-
-  // OAuth 2.0
-  //TODO Make these parameters more generic. Just write out all params that exist at etcd path
-  // Google
-  GOOGLE_CLIENT_ID: '{{google_client_id}}',
-  GOOGLE_REDIRECT_URI: '{{google_redirect_uri}}',
-  GOOGLE_SECRET: '{{google_auth_secret}}'
+{%- for key in node_config[identifier] %}
+  {{key}}: '{{node_config[identifier][key]}}'{% if not loop.last %},{% endif %}
+{%- endfor %}
 };
 ```
 
@@ -790,7 +789,7 @@ After=docker.service
 [Service]
 ExecStartPre=-/usr/bin/docker pull chadautry/wac-node
 ExecStartPre=-/usr/bin/docker rm -f backend-node-container
-ExecStart=/usr/bin/docker run --name backend-node-container -p {{http_port}}:80 -p {{https_port}}:443 \
+ExecStart=/usr/bin/docker run --name backend-node-container -p {{port}}:80 \
 -v /var/nodejs/{{identifier}}:/app:ro \
 chadautry/wac-node
 ExecStop=-/usr/bin/docker stop backend-node-container
