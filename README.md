@@ -726,7 +726,7 @@ This role sets up a nodejs unit, the discovery unit, and finally pushes the sour
   systemd:
     daemon_reload: yes
     state: restarted
-    name: {{identifier}}_nodejs.service
+    name: "{{identifier}}_nodejs.service"
     
 # Template out the nodejs route-publishing systemd unit
 - name: route-publishing.service template
@@ -740,7 +740,7 @@ This role sets up a nodejs unit, the discovery unit, and finally pushes the sour
   systemd:
     daemon_reload: yes
     state: started
-    name: {{identfier}}_route-publishing.service
+    name: "{{identfier}}_route-publishing.service"
   when: discoverable
 ```
 
