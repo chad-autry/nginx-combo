@@ -714,7 +714,7 @@ This role sets up a nodejs unit, the discovery unit, and finally pushes the sour
 - name: config.js template
   template:
     src: config.js
-    dest: /var/nodes/{{identifier}}/config.js
+    dest: /var/nodejs/{{identifier}}/config.js
 
 # Template out the nodejs systemd unit
 - name: nodejs.service template
@@ -754,7 +754,7 @@ This task include takes the static application source and pushes it across to in
 - name: archive application on localhost
   local_action: archive
   args:
-    path: "{{node_src_path[identifier]}}"
+    path: "{{node_src_path[identifier]}}/*"
     dest: "{{controller_src_staging}}/{{identifier}}src.tgz"
   become: false
   run_once: true
@@ -769,10 +769,15 @@ This task include takes the static application source and pushes it across to in
     path: /var/staging/{{identifier}}
     state: directory
 
-- name: Transfer and unpack webapp to staging
-  unarchive:
+- name: Transfer nodejs application archive
+  - copy:
     src: "{{controller_src_staging}}/{{identifier}}src.tgz"
     dest: /var/staging/{{identifier}}
+    
+# Using the unarchive module caused errors. Presumably due to the large number of files in node_modules
+- name: Unpack nodejs application archive
+  command: /bin/tar --extract -C /var/staging/{{identifier}} -z -f /var/staging/{{identifier}}src.tgz
+  warn: no
     
 - name: Pull alpine-rsync image		
   command: /usr/bin/docker pull chadautry/alpine-rsync:{{rsync_version}}
