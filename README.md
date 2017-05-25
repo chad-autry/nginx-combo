@@ -759,12 +759,12 @@ This task include takes the static application source and pushes it across to in
   become: false
   run_once: true
 
-- name: Remove old backend staging
+- name: Remove old nodejs staging
   file:
     path: /var/staging/{{identifier}}
     state: absent
 
-- name: Ensure backend staging dir exists
+- name: Ensure nodejs staging dir exists
   file:
     path: /var/staging/{{identifier}}
     state: directory
@@ -772,7 +772,7 @@ This task include takes the static application source and pushes it across to in
 - name: Transfer nodejs application archive
   copy:
     src: "{{controller_src_staging}}/{{identifier}}src.tgz"
-    dest: /var/staging/{{identifier}}
+    dest: /var/staging
     
 # Using the unarchive module caused errors. Presumably due to the large number of files in node_modules
 - name: Unpack nodejs application archive
