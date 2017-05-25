@@ -11,7 +11,7 @@
 - name: config.js template
   template:
     src: config.js
-    dest: /var/nodes/{{identifier}}/config.js
+    dest: /var/nodejs/{{identifier}}/config.js
 
 # Template out the nodejs systemd unit
 - name: nodejs.service template
