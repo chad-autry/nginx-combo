@@ -18,7 +18,7 @@
     state: directory
 
 - name: Transfer nodejs application archive
-  - copy:
+  copy:
     src: "{{controller_src_staging}}/{{identifier}}src.tgz"
     dest: /var/staging/{{identifier}}
     
