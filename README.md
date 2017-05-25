@@ -777,7 +777,8 @@ This task include takes the static application source and pushes it across to in
 # Using the unarchive module caused errors. Presumably due to the large number of files in node_modules
 - name: Unpack nodejs application archive
   command: /bin/tar --extract -C /var/staging/{{identifier}} -z -f /var/staging/{{identifier}}src.tgz
-    warn: false
+  args:
+    warn: no
     
 - name: Pull alpine-rsync image		
   command: /usr/bin/docker pull chadautry/alpine-rsync:{{rsync_version}}
