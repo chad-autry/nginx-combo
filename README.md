@@ -770,7 +770,7 @@ This task include takes the static application source and pushes it across to in
     state: directory
 
 - name: Transfer nodejs application archive
-  - copy:
+  copy:
     src: "{{controller_src_staging}}/{{identifier}}src.tgz"
     dest: /var/staging/{{identifier}}
     
