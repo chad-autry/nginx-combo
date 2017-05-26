@@ -1,0 +1,13 @@
+# template out the systemd service unit
+- name: route-discovery-watcher.service template
+  template:
+    src: route-discovery-watcher.service
+    dest: /etc/systemd/system/route-discovery-watcher.service
+  register: route_discovery_watcher_template
+    
+- name: start/restart the service if template changed
+  systemd:
+    daemon_reload: yes
+    state: restarted
+    name: route-discovery-watcher.service
+  when: route_discovery_watcher_template | changed

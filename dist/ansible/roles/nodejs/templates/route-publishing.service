@@ -1,5 +1,5 @@
 [Unit]
-Description=Backend Publishing
+Description=Route Publishing
 # Dependencies
 Requires=etcd.service
 Requires={{identifier}}_nodejs.service
@@ -19,4 +19,5 @@ ExecStart=/bin/sh -c "while true; do etcdctl set /discovery/{{route}}/hosts/%H/h
                       etcdctl set /discovery/{{route}}/private 'false' --ttl 60; \
                       sleep 45; \
                       done"
+ExecStartPost=-/bin/sh -c '/usr/bin/etcdctl set /discovery/watched "$(date +%s%N)"'
 ExecStop=/usr/bin/etcdctl rm /discovery/{{route}}/hosts/%H
