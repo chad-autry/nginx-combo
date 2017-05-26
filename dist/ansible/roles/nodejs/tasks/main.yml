@@ -38,5 +38,5 @@
   systemd:
     daemon_reload: yes
     state: started
-    name: "{{identfier}}_route-publishing.service"
+    name: "{{identifier}}_route-publishing.service"
   when: discoverable
