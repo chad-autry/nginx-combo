@@ -161,7 +161,7 @@ The main playbook that deploys or updates a cluster
 - hosts: tag_backend
   become: true
   roles:
-    - { role: nodejs, identifier: backend, port: 8080, discoverable: True, route: backend, strip_route: True, authenticate_route: False }
+    - { role: nodejs, identifier: backend, nodejs_port: 8080, discoverable: True, route: backend, strip_route: True, authenticate_route: False }
 ```
 
 # Roles
@@ -815,7 +815,7 @@ After=docker.service
 [Service]
 ExecStartPre=-/usr/bin/docker pull chadautry/wac-node
 ExecStartPre=-/usr/bin/docker rm -f backend-node-container
-ExecStart=/usr/bin/docker run --name backend-node-container -p {{port}}:80 \
+ExecStart=/usr/bin/docker run --name backend-node-container -p {{nodejs_port}}:80 \
 -v /var/nodejs/{{identifier}}:/app:ro \
 chadautry/wac-node
 ExecStop=-/usr/bin/docker stop backend-node-container
@@ -846,7 +846,7 @@ PartOf={{identifier}}_nodejs.service
 
 [Service]
 ExecStart=/bin/sh -c "while true; do etcdctl set /discovery/{{route}}/hosts/%H/host '%H' --ttl 60 \
-etcdctl set /discovery/{{route}}/hosts/%H/port '{{http_port}}' --ttl 60 \
+etcdctl set /discovery/{{route}}/hosts/%H/port '{{nodejs_port}}' --ttl 60 \
 etcdctl set /discovery/{{route}}/strip 'true' --ttl 60 \
 etcdctl set /discovery/{{route}}/private 'false' --ttl 60 \
 sleep 45 \
