@@ -14,7 +14,7 @@ PartOf={{identifier}}_nodejs.service
 
 [Service]
 ExecStart=/bin/sh -c "while true; do etcdctl set /discovery/{{route}}/hosts/%H/host '%H' --ttl 60 \
-etcdctl set /discovery/{{route}}/hosts/%H/port '{{http_port}}' --ttl 60 \
+etcdctl set /discovery/{{route}}/hosts/%H/port '{{nodejs_port}}' --ttl 60 \
 etcdctl set /discovery/{{route}}/strip 'true' --ttl 60 \
 etcdctl set /discovery/{{route}}/private 'false' --ttl 60 \
 sleep 45 \
