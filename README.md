@@ -741,7 +741,7 @@ This role sets up a nodejs unit, the discovery unit, and finally pushes the sour
   systemd:
     daemon_reload: yes
     state: started
-    name: "{{identfier}}_route-publishing.service"
+    name: "{{identifier}}_route-publishing.service"
   when: discoverable
 ```
 
