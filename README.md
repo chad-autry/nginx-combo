@@ -336,7 +336,7 @@ The front end playbook sets up the nginx unit, the nginx file watching & reloadi
     path: /var/ssl
     
 # Import backend route configurator (creates config before nginx starts)
-- include: backend-discovery-watcher.yml
+- include: route-discovery-watcher.yml
 
 # Import nginx task file
 - include: nginx.yml
@@ -449,28 +449,28 @@ Sets a watch on the backend discovery location, and when it changes templates ou
 
 #### route-discovery-watcher task include
 TODO Why isn't this a part of the nginx task?
-[roles/frontend/tasks/backend-discovery-watcher.yml](dist/ansible/roles/frontend/tasks/backend-discovery-watcher.yml)
+[roles/frontend/tasks/route-discovery-watcher.yml](dist/ansible/roles/frontend/tasks/route-discovery-watcher.yml)
 ```yml
 # template out the systemd service unit
-- name: backend-discovery-watcher.service template
+- name: route-discovery-watcher.service template
   template:
-    src: backend-discovery-watcher.service
-    dest: /etc/systemd/system/backend-discovery-watcher.service
-  register: backend_discovery_watcher_template
+    src: route-discovery-watcher.service
+    dest: /etc/systemd/system/route-discovery-watcher.service
+  register: route_discovery_watcher_template
     
 - name: start/restart the service if template changed
   systemd:
     daemon_reload: yes
     state: restarted
-    name: backend-discovery-watcher.service
-  when: backend_discovery_watcher_template | changed
+    name: route-discovery-watcher.service
+  when: route_discovery_watcher_template | changed
 ```
 
 #### route-discovery-watcher systemd unit template
-[roles/frontend/templates/backend-discovery-watcher.service](dist/ansible/roles/frontend/templates/backend-discovery-watcher.service)
+[roles/frontend/templates/route-discovery-watcher.service](dist/ansible/roles/frontend/templates/route-discovery-watcher.service)
 ```yaml
 [Unit]
-Description=Watches for backened instances
+Description=Watches for nginx routes
 # Dependencies
 Requires=etcd.service
 
@@ -483,7 +483,8 @@ PartOf=etcd.service
 [Service]
 ExecStartPre=-/usr/bin/docker pull chadautry/wac-nginx-config-templater:{{nginx_config_templater_version}}
 ExecStartPre=-/usr/bin/docker rm nginx-templater
-ExecStart=/usr/bin/etcdctl watch /discovery/backend
+ExecStartPre=-/bin/sh -c '/usr/bin/etcdctl mk /discovery/watched "$(date +%s%N)"'
+ExecStart=/usr/bin/etcdctl watch /discovery/watched 
 ExecStartPost=-/usr/bin/docker run --name nginx-templater --net host \
 -v /var/nginx:/usr/var/nginx -v /var/ssl:/etc/nginx/ssl:ro \
 chadautry/wac-nginx-config-templater:{{nginx_config_templater_version}}
@@ -831,7 +832,7 @@ Publishes the backend host into etcd at an expected path for the frontend to rou
 [roles/nodejs/templates/route-publishing.service](dist/ansible/roles/nodejs/templates/route-publishing.service)
 ```yaml
 [Unit]
-Description=Backend Publishing
+Description=Route Publishing
 # Dependencies
 Requires=etcd.service
 Requires={{identifier}}_nodejs.service
@@ -851,6 +852,7 @@ ExecStart=/bin/sh -c "while true; do etcdctl set /discovery/{{route}}/hosts/%H/h
                       etcdctl set /discovery/{{route}}/private 'false' --ttl 60; \
                       sleep 45; \
                       done"
+ExecStartPost=-/bin/sh -c '/usr/bin/etcdctl set /discovery/watched "$(date +%s%N)"'
 ExecStop=/usr/bin/etcdctl rm /discovery/{{route}}/hosts/%H
 ```
 * requires etcd
