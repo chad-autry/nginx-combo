@@ -732,7 +732,7 @@ This role sets up a nodejs unit, the discovery unit, and finally pushes the sour
 # Template out the nodejs route-publishing systemd unit
 - name: route-publishing.service template
   template:
-    src: backend-publishing.service
+    src: route-publishing.service
     dest: /etc/systemd/system/{{identifier}}_route-publishing.service
   when: discoverable
 
