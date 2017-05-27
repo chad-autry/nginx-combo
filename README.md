@@ -103,6 +103,7 @@ nginx_version: latest
 nginx_config_templater_version: latest
 wac_acme_version: latest
 nodejs_version: latest
+rethinkdb_version: latest
 ```
 
 # Playbooks
@@ -167,13 +168,13 @@ The main playbook that deploys or updates a cluster
 - hosts: tag_rethinkdb
   become: true
   roles:
-    - { role: rehtinkdb, proxy_rethinkdb: False }
+    - { role: rethinkdb, proxy_rethinkdb: False }
 
 # Place a proxy RethinkDB alongside application instances (edit the hosts when there are various types)
 - hosts: tag_backend:!tag_rethinkdb
   become: true
   roles:
-    - { role: rehtinkdb, proxy_rethinkdb: True }
+    - { role: rethinkdb, proxy_rethinkdb: True }
 ```
 
 # Roles
@@ -948,13 +949,13 @@ After=docker.service
 After=etcd2.service
 
 [Service]
-ExecStartPre=-/usr/bin/docker pull chadautry/wac-rethinkdb
+ExecStartPre=-/usr/bin/docker pull chadautry/wac-rethinkdb:{{rethinkdb_version}}
 ExecStartPre=-/usr/bin/docker rm -f rethinkdb
 ExecStartPre=-rm /var/rethinkdb/pid_file
 ExecStart=/usr/bin/docker run --name rethinkdb \
 -v /var/rethinkdb:/usr/var/rethinkdb \
 -p 29015:29015 -p29016:29016 -p 8081:8080 \
-chadautry/wac-rethinkdb {% if not rethinkdb_proxy %}proxy{% endif %} --config-file /usr/var/rethinkdb/rethinkdb.conf
+chadautry/wac-rethinkdb:{{rethinkdb_version}} {% if not rethinkdb_proxy %}proxy{% endif %} --config-file /usr/var/rethinkdb/rethinkdb.conf
 Restart=always
 
 * requires docker
