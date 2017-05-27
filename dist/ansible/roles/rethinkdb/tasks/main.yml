@@ -1,0 +1,39 @@
+# Ensure the database directory is present
+- name: ensure database directory is present
+  file:
+    state: directory
+    path: /var/rethinkdb
+
+# Template out the database config
+- name: rethinkdb.conf template
+  template:
+    src: rethinkdb.conf
+    dest: /var/rethinkdb/rethinkdb.conf
+
+# Template out the rethinkdb systemd unit
+- name: rethinkdb.service template
+  template:
+    src: rethinkdb.service
+    dest: /etc/systemd/system/rethinkdb.service
+
+# Start the RethinkDB server, note doesn't need to be restarted even if config changed (new instances will connect to old)
+- name: Ensure RethinkDB is started
+  systemd:
+    daemon_reload: yes
+    state: started
+    name: rethinkdb.service
+    
+# Template out the RethinkDB route-publishing systemd unit (non-proxy)
+- name: route-publishing.service template
+  template:
+    src: rethinkdb-route-publishing.service
+    dest: /etc/systemd/system/rethinkd-route-publishing.service
+  when: !rethinkdb_proxy
+
+# Start the discovery publisher
+- name: start the rethinkdb-route-publishing.service
+  systemd:
+    daemon_reload: yes
+    state: started
+    name: rethinkdbroute-publishing.service
+  when: !rethinkdb_proxy

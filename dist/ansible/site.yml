@@ -49,3 +49,15 @@
   become: true
   roles:
     - { role: nodejs, identifier: backend, nodejs_port: 8080, discoverable: True, route: backend, strip_route: True, authenticate_route: False }
+
+# Place a full RethinkDB on the RethinkDB hosts
+- hosts: tag_rethinkdb
+  become: true
+  roles:
+    - { role: rehtinkdb, proxy_rethinkdb: False }
+
+# Place a proxy RethinkDB alongside application instances (edit the hosts when there are various types)
+- hosts: tag_backend:!tag_rethinkdb
+  become: true
+  roles:
+    - { role: rehtinkdb, proxy_rethinkdb: True }
