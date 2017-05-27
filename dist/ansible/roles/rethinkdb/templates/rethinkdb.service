@@ -1,0 +1,30 @@
+[Unit]
+Description=RethinkDB
+# Dependencies
+Requires=docker.service
+
+# Ordering
+After=docker.service
+After=etcd2.service
+
+[Service]
+ExecStartPre=-/usr/bin/docker pull chadautry/wac-rethinkdb
+ExecStartPre=-/usr/bin/docker rm -f rethinkdb
+ExecStartPre=-rm /var/rethinkdb/pid_file
+ExecStart=/usr/bin/docker run --name rethinkdb \
+-v /var/rethinkdb:/usr/var/rethinkdb \
+-p 29015:29015 -p29016:29016 -p 8081:8080 \
+chadautry/wac-rethinkdb {% if not rethinkdb_proxy %}proxy{% endif %} --config-file /usr/var/rethinkdb/rethinkdb.conf
+Restart=always
+
+* requires docker
+* Pulls the image
+* Removes the container
+* Starts a rethinkdb container
+  * Conditionally started in proxy mode based on role parameter
+* HTTP shifted to 8081 so it won't conflict with nginx if colocated
+
+### nodejs route-publishing systemd unit template
+Publishes the backend host into etcd at an expected path for the frontend to route to
+
+[roles/rethinkdb/templates/rethinkdb-route-publishing.service](dist/ansible/roles/rethinkdb/templates/rethinkdb-route-publishing.service)
