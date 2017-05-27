@@ -54,10 +54,10 @@
 - hosts: tag_rethinkdb
   become: true
   roles:
-    - { role: rehtinkdb, proxy_rethinkdb: False }
+    - { role: rethinkdb, proxy_rethinkdb: False }
 
 # Place a proxy RethinkDB alongside application instances (edit the hosts when there are various types)
 - hosts: tag_backend:!tag_rethinkdb
   become: true
   roles:
-    - { role: rehtinkdb, proxy_rethinkdb: True }
+    - { role: rethinkdb, proxy_rethinkdb: True }
