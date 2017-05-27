@@ -906,7 +906,7 @@ The RethinkDB role is used to install/update the database and its configurations
   template:
     src: rethinkdb-route-publishing.service
     dest: /etc/systemd/system/rethinkdb-route-publishing.service
-  when: not rethinkdb_proxy
+  when: not proxy_rethinkdb
 
 # Start the discovery publisher
 - name: start the rethinkdb-route-publishing.service
@@ -914,7 +914,7 @@ The RethinkDB role is used to install/update the database and its configurations
     daemon_reload: yes
     state: started
     name: rethinkdb-route-publishing.service
-  when: not rethinkdb_proxy
+  when: not proxy_rethinkdb
 ```
 
 ### rethinkd.conf template
@@ -927,7 +927,7 @@ pid-file=/usr/var/rethinkdb/pid_file
 directory=/usr/var/rethinkdb/data
 bind=all
 
-{% if not rethinkdb_proxy %}
+{% if not proxy_rethinkdb %}
 canonical-address={{hostvars[inventory_hostname][internal_ip_name]}}:29015
 {% endif %}
 
@@ -955,7 +955,7 @@ ExecStartPre=-rm /var/rethinkdb/pid_file
 ExecStart=/usr/bin/docker run --name rethinkdb \
 -v /var/rethinkdb:/usr/var/rethinkdb \
 -p 29015:29015 -p29016:29016 -p 8081:8080 \
-chadautry/wac-rethinkdb:{{rethinkdb_version}} {% if not rethinkdb_proxy %}proxy{% endif %} --config-file /usr/var/rethinkdb/rethinkdb.conf
+chadautry/wac-rethinkdb:{{rethinkdb_version}} {% if proxy_rethinkdb %}proxy{% endif %} --config-file /usr/var/rethinkdb/rethinkdb.conf
 Restart=always
 
 * requires docker
@@ -997,4 +997,4 @@ ExecStop=/usr/bin/etcdctl rm /discovery/rethinkdb/hosts/%H
 * requires etcd
 * Publishes host into etcd every 45 seconds with a 60 second duration
 * Deletes host from etcd on stop
-* Is restarted if etcd or nodejs restarts
+* Is restarted if etcd or rethinkdb restarts
