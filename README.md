@@ -957,6 +957,7 @@ ExecStart=/usr/bin/docker run --name rethinkdb \
 -p 29015:29015 -p29016:29016 -p 8081:8080 \
 chadautry/wac-rethinkdb:{{rethinkdb_version}} {% if proxy_rethinkdb %}proxy{% endif %} --config-file /usr/var/rethinkdb/rethinkdb.conf
 Restart=always
+```
 
 * requires docker
 * Pulls the image
