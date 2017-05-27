@@ -904,7 +904,7 @@ The RethinkDB role is used to install/update the database and its configurations
 - name: route-publishing.service template
   template:
     src: rethinkdb-route-publishing.service
-    dest: /etc/systemd/system/rethinkd-route-publishing.service
+    dest: /etc/systemd/system/rethinkdb-route-publishing.service
   when: !rethinkdb_proxy
 
 # Start the discovery publisher
@@ -912,102 +912,88 @@ The RethinkDB role is used to install/update the database and its configurations
   systemd:
     daemon_reload: yes
     state: started
-    name: rethinkdbroute-publishing.service
+    name: rethinkdb-route-publishing.service
   when: !rethinkdb_proxy
 ```
 
-
-
-A rethinkdb proxy on localhost for nodejs units to connect to
-
-[rethinkdb-proxy.service](dist/units/started/rethinkdb-proxy.service)
-```yaml
-[Unit]
-Description=RethinkDB Proxy
-# Dependencies
-Requires=docker.service
-Requires=etcd2.service
-
-# Ordering
-After=docker.service
-After=etcd2.service
-
-[Service]
-ExecStartPre=-mkdir /var/rethinkdbproxy
-ExecStartPre=-/usr/bin/docker pull chadautry/wac-rethinkdb-config-templater
-ExecStartPre=-/usr/bin/docker run \
---net host --rm \
--v /var/rethinkdbproxy:/usr/var/rethinkdb \
-chadautry/wac-rethinkdb-config-templater "emptyHost"
-ExecStartPre=-/usr/bin/docker pull chadautry/wac-rethinkdb
-ExecStartPre=-/usr/bin/docker rm -f rethinkdb-proxy
-ExecStartPre=-rm /var/rethinkdbproxy/pid_file
-ExecStart=/usr/bin/docker run --name rethinkdb-proxy \
--v /var/rethinkdbproxy:/usr/var/rethinkdb \
--p 29017:29015 -p29018:29016 -p 8082:8080 \
-chadautry/wac-rethinkdb proxy --config-file /usr/var/rethinkdb/rethinkdb.conf
-Restart=always
-
-[X-Fleet]
-Global=true
-MachineMetadata=backend=true
+### rethinkd.conf template
+The template for the configuration file. Contains the list of other hosts to connect to. If not a proxy, contains the hosts cannonical address other instances connect to it at
+[roles/rethinkdb/templates/rethinkdb.conf](dist/ansible/roles/rethinkdb/templates/rethinkdb.conf)
 ```
-* requires docker
-* Configures the instance, will not exclude any host from join list
-* Pulls the image
-* Removes the container
-* Starts a rethinkdb container in proxy mode
-* All ports shifted by 2, so it won't conflict with a non-proxy node
-* Blindly runs on all backend tagged instances
+runuser=root
+rungroup=root
+pid-file=/usr/var/rethinkdb/pid_file
+directory=/usr/var/rethinkdb/data
+bind=all
 
-## Database
+{% if not rethinkdb_proxy %}
+canonical-address={{hostvars[inventory_hostname][internal_ip_name]}}:29015
+{% endif %}
 
-### rethinkdb unit
-A rethinkdb node
+{% for host in groups['tag_rethinkdb']  %}
+join={{hostvars[host][machine_name]}}={{hostvars[host][internal_ip_name]}}:29015
+{% endfor %}
+```
 
-[rethinkdb.service](dist/units/started/rethinkdb.service)
+### RethinkDB systemd unit template
+[roles/rethinkdb/templates/rethinkdb.service](dist/ansible/roles/rethinkdb/templates/rethinkdb.service)
 ```yaml
 [Unit]
 Description=RethinkDB
 # Dependencies
 Requires=docker.service
-Requires=etcd2.service
 
 # Ordering
 After=docker.service
 After=etcd2.service
 
 [Service]
-ExecStartPre=-mkdir /var/rethinkdb
-ExecStartPre=-/usr/bin/docker pull chadautry/wac-rethinkdb-config-templater
-ExecStartPre=-/usr/bin/docker run \
---net host --rm \
--v /var/rethinkdb:/usr/var/rethinkdb \
-chadautry/wac-rethinkdb-config-templater %H
 ExecStartPre=-/usr/bin/docker pull chadautry/wac-rethinkdb
 ExecStartPre=-/usr/bin/docker rm -f rethinkdb
 ExecStartPre=-rm /var/rethinkdb/pid_file
 ExecStart=/usr/bin/docker run --name rethinkdb \
 -v /var/rethinkdb:/usr/var/rethinkdb \
 -p 29015:29015 -p29016:29016 -p 8081:8080 \
-chadautry/wac-rethinkdb --config-file /usr/var/rethinkdb/rethinkdb.conf
+chadautry/wac-rethinkdb {% if not rethinkdb_proxy %}proxy{% endif %} --config-file /usr/var/rethinkdb/rethinkdb.conf
 Restart=always
 
-[X-Fleet]
-Global=true
-MachineMetadata=database=true
-```
 * requires docker
-* Configures the instance, will exclude its own host from the join list
 * Pulls the image
 * Removes the container
 * Starts a rethinkdb container
+  * Conditionally started in proxy mode based on role parameter
 * HTTP shifted to 8081 so it won't conflict with nginx if colocated
-* Blindly runs on all database tagged instances
 
-> DB Instance Prep:
-> There is some prep that needs to be done manually on each DB instance
-> ```
-> docker run --rm -v /var/rethinkdb:/usr/var/rethinkdb chadautry/wac-rethinkdb create -d /var/rethinkdb/data
-> sudo etcd set /discovery/database/<host> <host>
-> ```
+### nodejs route-publishing systemd unit template
+Publishes the backend host into etcd at an expected path for the frontend to route to
+
+[roles/rethinkdb/templates/rethinkdb-route-publishing.service](dist/ansible/roles/rethinkdb/templates/rethinkdb-route-publishing.service)
+```yaml
+[Unit]
+Description=RethinkDB Route Publishing
+# Dependencies
+Requires=etcd.service
+Requires=rethinkdb.service
+
+# Ordering
+After=etcd.service
+After=rethinkdb.service
+
+# Restart when dependency restarts
+PartOf=etcd.service
+PartOf=rethinkdb.service
+
+[Service]
+ExecStart=/bin/sh -c "while true; do etcdctl set /discovery/{{route}}/hosts/%H/host '%H' --ttl 60; \
+                      etcdctl set /discovery/rethinkdb/hosts/%H/port 8081 --ttl 60; \
+                      etcdctl set /discovery/rethinkdb/strip 'true' --ttl 60; \
+                      etcdctl set /discovery/rethinkdb/private 'true' --ttl 60; \
+                      sleep 45; \
+                      done"
+ExecStartPost=-/bin/sh -c '/usr/bin/etcdctl set /discovery/watched "$(date +%s%N)"'
+ExecStop=/usr/bin/etcdctl rm /discovery/rethinkdb/hosts/%H
+```
+* requires etcd
+* Publishes host into etcd every 45 seconds with a 60 second duration
+* Deletes host from etcd on stop
+* Is restarted if etcd or nodejs restarts
