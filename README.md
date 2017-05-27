@@ -906,7 +906,7 @@ The RethinkDB role is used to install/update the database and its configurations
   template:
     src: rethinkdb-route-publishing.service
     dest: /etc/systemd/system/rethinkdb-route-publishing.service
-  when: !rethinkdb_proxy
+  when: not rethinkdb_proxy
 
 # Start the discovery publisher
 - name: start the rethinkdb-route-publishing.service
@@ -914,7 +914,7 @@ The RethinkDB role is used to install/update the database and its configurations
     daemon_reload: yes
     state: started
     name: rethinkdb-route-publishing.service
-  when: !rethinkdb_proxy
+  when: not rethinkdb_proxy
 ```
 
 ### rethinkd.conf template
