@@ -162,6 +162,18 @@ The main playbook that deploys or updates a cluster
   become: true
   roles:
     - { role: nodejs, identifier: backend, nodejs_port: 8080, discoverable: True, route: backend, strip_route: True, authenticate_route: False }
+
+# Place a full RethinkDB on the RethinkDB hosts
+- hosts: tag_rethinkdb
+  become: true
+  roles:
+    - { role: rehtinkdb, proxy_rethinkdb: False }
+
+# Place a proxy RethinkDB alongside application instances (edit the hosts when there are various types)
+- hosts: tag_backend:!tag_rethinkdb
+  become: true
+  roles:
+    - { role: rehtinkdb, proxy_rethinkdb: True }
 ```
 
 # Roles
@@ -858,7 +870,54 @@ ExecStop=/usr/bin/etcdctl rm /discovery/{{route}}/hosts/%H
 * Deletes host from etcd on stop
 * Is restarted if etcd or nodejs restarts
 
-### rethinkdb proxy unit
+## RethinkDB
+The RethinkDB role is used to install/update the database and its configurations
+
+[roles/rethinkdb/tasks/main.yml](dist/ansible/roles/rethinkdb/tasks/main.yml)
+```yml  
+# Ensure the database directory is present
+- name: ensure database directory is present
+  file:
+    state: directory
+    path: /var/rethinkdb
+
+# Template out the database config
+- name: rethinkdb.conf template
+  template:
+    src: rethinkdb.conf
+    dest: /var/rethinkdb/rethinkdb.conf
+
+# Template out the rethinkdb systemd unit
+- name: rethinkdb.service template
+  template:
+    src: rethinkdb.service
+    dest: /etc/systemd/system/rethinkdb.service
+
+# Start the RethinkDB server, note doesn't need to be restarted even if config changed (new instances will connect to old)
+- name: Ensure RethinkDB is started
+  systemd:
+    daemon_reload: yes
+    state: started
+    name: rethinkdb.service
+    
+# Template out the RethinkDB route-publishing systemd unit (non-proxy)
+- name: route-publishing.service template
+  template:
+    src: rethinkdb-route-publishing.service
+    dest: /etc/systemd/system/rethinkd-route-publishing.service
+  when: !rethinkdb_proxy
+
+# Start the discovery publisher
+- name: start the rethinkdb-route-publishing.service
+  systemd:
+    daemon_reload: yes
+    state: started
+    name: rethinkdbroute-publishing.service
+  when: !rethinkdb_proxy
+```
+
+
+
 A rethinkdb proxy on localhost for nodejs units to connect to
 
 [rethinkdb-proxy.service](dist/units/started/rethinkdb-proxy.service)
