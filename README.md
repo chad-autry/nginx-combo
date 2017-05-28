@@ -986,7 +986,7 @@ PartOf=etcd.service
 PartOf=rethinkdb.service
 
 [Service]
-ExecStart=/bin/sh -c "while true; do etcdctl set /discovery/{{route}}/hosts/%H/host '%H' --ttl 60; \
+ExecStart=/bin/sh -c "while true; do etcdctl set /discovery/rethinkdb/hosts/%H/host '%H' --ttl 60; \
                       etcdctl set /discovery/rethinkdb/hosts/%H/port 8081 --ttl 60; \
                       etcdctl set /discovery/rethinkdb/strip 'true' --ttl 60; \
                       etcdctl set /discovery/rethinkdb/private 'true' --ttl 60; \
