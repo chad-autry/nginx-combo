@@ -162,7 +162,7 @@ The main playbook that deploys or updates a cluster
 - hosts: tag_backend
   become: true
   roles:
-    - { role: nodejs, identifier: backend, nodejs_port: 8080, discoverable: True, route: backend, strip_route: True, authenticate_route: False }
+    - { role: nodejs, identifier: backend, nodejs_port: 8080, discoverable: True, route: backend, strip_route: false, authenticate_route: false }
 
 # Place a full RethinkDB on the RethinkDB hosts
 - hosts: tag_rethinkdb
