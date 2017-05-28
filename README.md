@@ -859,8 +859,8 @@ PartOf={{identifier}}_nodejs.service
 [Service]
 ExecStart=/bin/sh -c "while true; do etcdctl set /discovery/{{route}}/hosts/%H/host '%H' --ttl 60; \
                       etcdctl set /discovery/{{route}}/hosts/%H/port '{{nodejs_port}}' --ttl 60; \
-                      etcdctl set /discovery/{{route}}/strip 'true' --ttl 60; \
-                      etcdctl set /discovery/{{route}}/private 'false' --ttl 60; \
+                      etcdctl set /discovery/{{route}}/strip '{{strip_route}}' --ttl 60; \
+                      etcdctl set /discovery/{{route}}/private '{{authenticate_route}}' --ttl 60; \
                       sleep 45; \
                       done"
 ExecStartPost=-/bin/sh -c '/usr/bin/etcdctl set /discovery/watched "$(date +%s%N)"'
