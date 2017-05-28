@@ -743,20 +743,21 @@ This role sets up a nodejs unit, the discovery unit, and finally pushes the sour
     state: restarted
     name: "{{identifier}}_nodejs.service"
     
-# Template out the nodejs route-publishing systemd unit
-- name: route-publishing.service template
+# Template out the nodejs route-publishing systemd unit for {{identifier}}
+- name: {{identifier}}_route-publishing.service template
   template:
     src: route-publishing.service
     dest: /etc/systemd/system/{{identifier}}_route-publishing.service
+  register: node_route_publishing_template
   when: discoverable
 
 # Start the discovery publisher
 - name: start/restart the route-publishing.service
   systemd:
     daemon_reload: yes
-    state: started
+    state: restarted
     name: "{{identifier}}_route-publishing.service"
-  when: discoverable
+  when: discoverable and (node_route_publishing_template | changed)
 ```
 
 ### nodejs Application
@@ -906,6 +907,7 @@ The RethinkDB role is used to install/update the database and its configurations
   template:
     src: rethinkdb-route-publishing.service
     dest: /etc/systemd/system/rethinkdb-route-publishing.service
+  register: rethink_route_publishing_template
   when: not proxy_rethinkdb
 
 # Start the discovery publisher
@@ -914,7 +916,7 @@ The RethinkDB role is used to install/update the database and its configurations
     daemon_reload: yes
     state: started
     name: rethinkdb-route-publishing.service
-  when: not proxy_rethinkdb
+  when: not proxy_rethinkdb and (rethink_route_publishing_template | changed)
 ```
 
 ### rethinkd.conf template
