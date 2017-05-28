@@ -28,6 +28,7 @@
   template:
     src: rethinkdb-route-publishing.service
     dest: /etc/systemd/system/rethinkdb-route-publishing.service
+  register: rethink_route_publishing_template
   when: not proxy_rethinkdb
 
 # Start the discovery publisher
@@ -36,4 +37,4 @@
     daemon_reload: yes
     state: started
     name: rethinkdb-route-publishing.service
-  when: not proxy_rethinkdb
+  when: not proxy_rethinkdb and (rethink_route_publishing_template | changed)
