@@ -932,7 +932,9 @@ canonical-address={{hostvars[inventory_hostname][internal_ip_name]}}:29015
 {% endif %}
 
 {% for host in groups['tag_rethinkdb']  %}
-join={{hostvars[host][machine_name]}}={{hostvars[host][internal_ip_name]}}:29015
+{% if hostvars[host][internal_ip_name] != hostvars[inventory_hostname][internal_ip_name] %}
+join={{hostvars[host][internal_ip_name]}}:29015
+{% endif %}
 {% endfor %}
 ```
 
