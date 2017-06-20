@@ -18,7 +18,6 @@
   template:
     src: nodejs.service
     dest: /etc/systemd/system/{{identifier}}_nodejs.service
-  tags: "{{identifier}}_application"
 
 # Always restart the nodejs server
 - name: start/restart the nodejs.service
@@ -26,7 +25,6 @@
     daemon_reload: yes
     state: restarted
     name: "{{identifier}}_nodejs.service"
-  tags: "{{identifier}}_application"
     
 # Template out the nodejs route-publishing systemd unit for {{identifier}}
 - name: "{{identifier}}_route-publishing.service template"
