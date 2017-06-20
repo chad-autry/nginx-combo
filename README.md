@@ -741,6 +741,7 @@ This role sets up a nodejs unit, the discovery unit, and finally pushes the sour
   template:
     src: nodejs.service
     dest: /etc/systemd/system/{{identifier}}_nodejs.service
+  tags: "{{identifier}}_application"
 
 # Always restart the nodejs server
 - name: start/restart the nodejs.service
@@ -748,6 +749,7 @@ This role sets up a nodejs unit, the discovery unit, and finally pushes the sour
     daemon_reload: yes
     state: restarted
     name: "{{identifier}}_nodejs.service"
+  tags: "{{identifier}}_application"
     
 # Template out the nodejs route-publishing systemd unit for {{identifier}}
 - name: "{{identifier}}_route-publishing.service template"
@@ -779,33 +781,40 @@ This task include takes the static application source and pushes it across to in
     dest: "{{controller_src_staging}}/{{identifier}}src.tgz"
   become: false
   run_once: true
+  tags: "{{identifier}}_application"
 
 - name: Remove old nodejs staging
   file:
     path: /var/staging/{{identifier}}
     state: absent
+  tags: "{{identifier}}_application"
 
 - name: Ensure nodejs staging dir exists
   file:
     path: /var/staging/{{identifier}}
     state: directory
+  tags: "{{identifier}}_application"
 
 - name: Transfer nodejs application archive
   copy:
     src: "{{controller_src_staging}}/{{identifier}}src.tgz"
     dest: /var/staging
+  tags: "{{identifier}}_application"
     
 # Using the unarchive module caused errors. Presumably due to the large number of files in node_modules
 - name: Unpack nodejs application archive
   command: /bin/tar --extract -C /var/staging/{{identifier}} -z -f /var/staging/{{identifier}}src.tgz
   args:
     warn: no
+  tags: "{{identifier}}_application"
     
 - name: Pull alpine-rsync image		
   command: /usr/bin/docker pull chadautry/alpine-rsync:{{rsync_version}}
+  tags: "{{identifier}}_application"
    
 - name: sync staging and /var/nodejs	
   command: /usr/bin/docker run -v /var/staging/{{identifier}}:/var/staging/{{identifier}} -v /var/nodejs/{{identifier}}:/var/nodejs/{{identifier}} --rm chadautry/alpine-rsync:{{rsync_version}} -a /var/staging/{{identifier}}/ /var/nodejs/{{identifier}}
+  tags: "{{identifier}}_application"
 ```
 
 ### nodejs config.js template
