@@ -976,8 +976,8 @@ Restart=always
   * Conditionally started in proxy mode based on role parameter
 * HTTP shifted to 8081 so it won't conflict with nginx if colocated
 
-### nodejs route-publishing systemd unit template
-Publishes the backend host into etcd at an expected path for the frontend to route to
+### RethinkDB route-publishing systemd unit template
+Publishes the rethinkdb host into etcd at an expected path for the frontend to route to
 
 [roles/rethinkdb/templates/rethinkdb-route-publishing.service](dist/ansible/roles/rethinkdb/templates/rethinkdb-route-publishing.service)
 ```yaml
