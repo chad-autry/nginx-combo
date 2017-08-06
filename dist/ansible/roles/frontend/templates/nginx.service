@@ -14,3 +14,6 @@ ExecStart=/usr/bin/docker run --name nginx -p 80:80 -p 443:443 \
 -v /var/nginx:/usr/var/nginx:ro \
 chadautry/wac-nginx:{{nginx_version}}
 Restart=always
+
+[Install]
+WantedBy=multi-user.target

@@ -4,3 +4,6 @@ Description=Letsencrpyt renewal timer
 [Timer]
 OnCalendar=*-*-* 05:00:00
 RandomizedDelaySec=1800
+
+[Install]
+WantedBy=multi-user.target

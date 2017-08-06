@@ -27,3 +27,6 @@ chadautry/wac-etcdv2:{{etcd_version}} \
 --initial-cluster {% for host in groups['tag_etcd']  %}{{hostvars[host][machine_name]}}=http://{{hostvars[host][internal_ip_name]}}:2380{% if not loop.last %},{% endif %}{% endfor %}
 
 Restart=always
+
+[Install]
+WantedBy=multi-user.target

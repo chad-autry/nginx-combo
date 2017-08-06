@@ -4,3 +4,6 @@ Description=NGINX reload path
 [Path]
 PathChanged=/var/nginx/nginx.conf
 PathChanged=/var/ssl/fullchain.pem
+
+[Install]
+WantedBy=multi-user.target
