@@ -297,6 +297,9 @@ chadautry/wac-etcdv2:{{etcd_version}} \
 --initial-cluster {% for host in groups['tag_etcd']  %}{{hostvars[host][machine_name]}}=http://{{hostvars[host][internal_ip_name]}}:2380{% if not loop.last %},{% endif %}{% endfor %}
 
 Restart=always
+
+[Install]
+WantedBy=multi-user.target
 ````
 * requires docker
 * takes version from etcd_version variable
@@ -420,6 +423,9 @@ ExecStart=/usr/bin/docker run --name nginx -p 80:80 -p 443:443 \
 -v /var/nginx:/usr/var/nginx:ro \
 chadautry/wac-nginx:{{nginx_version}}
 Restart=always
+
+[Install]
+WantedBy=multi-user.target
 ```
 * requires docker
 * Starts a customized nginx docker container
@@ -452,6 +458,9 @@ Description=NGINX reload path
 [Path]
 PathChanged=/var/nginx/nginx.conf
 PathChanged=/var/ssl/fullchain.pem
+
+[Install]
+WantedBy=multi-user.target
 ```
 * Watches config file
 * Watches the (last copied) SSL cert file
@@ -502,6 +511,9 @@ ExecStartPost=-/usr/bin/docker run --name nginx-templater --net host \
 -v /var/nginx:/usr/var/nginx -v /var/ssl:/etc/nginx/ssl:ro \
 chadautry/wac-nginx-config-templater:{{nginx_config_templater_version}}
 Restart=always
+
+[Install]
+WantedBy=multi-user.target
 ```
 * Restarted if etcd restarts
 * Starts a watch for changes in the backend discovery path
@@ -592,6 +604,9 @@ ExecStartPost=/bin/sh -c '/usr/bin/etcdctl get /ssl/server_chain > /var/ssl/chai
 ExecStartPost=/bin/sh -c '/usr/bin/etcdctl get /ssl/key > /var/ssl/privkey.pem'
 ExecStartPost=/bin/sh -c '/usr/bin/etcdctl get /ssl/server_pem > /var/ssl/fullchain.pem'
 Restart=always
+
+[Install]
+WantedBy=multi-user.target
 ```
 * Sets the local certs into etcd if they don't exist there
     * -- Means there are no more command options, needed since the cert files start with '-'
@@ -621,6 +636,9 @@ ExecStartPost=-/usr/bin/docker run --name nginx-templater --net host \
 -v /var/nginx:/usr/var/nginx -v /var/ssl:/etc/nginx/ssl:ro \
 chadautry/wac-nginx-config-templater:{{nginx_config_templater_version}}
 Restart=always
+
+[Install]
+WantedBy=multi-user.target
 ```
 * Starts a watch for changes in the acme challenge response
 * Once the watch starts, executes the config templating container
@@ -670,6 +688,9 @@ Description=Letsencrpyt renewal timer
 [Timer]
 OnCalendar=*-*-* 05:00:00
 RandomizedDelaySec=1800
+
+[Install]
+WantedBy=multi-user.target
 ```
 * Executes daily at 5:00 (to avoid DST issues)
 * Has a 30 minute randomized delay, so multiple copies don't all try to execute at once (though the docker image itself will exit if another is already running)
@@ -839,6 +860,9 @@ ExecStart=/usr/bin/docker run --name backend-node-container -p {{nodejs_port}}:8
 chadautry/wac-node '%H'
 ExecStop=-/usr/bin/docker stop backend-node-container
 Restart=always
+
+[Install]
+WantedBy=multi-user.target
 ```
 * requires docker
 * Starts a customized nodejs docker container
@@ -872,6 +896,9 @@ ExecStart=/bin/sh -c "while true; do etcdctl set /discovery/{{route}}/hosts/%H/h
                       done"
 ExecStartPost=-/bin/sh -c '/usr/bin/etcdctl set /discovery/watched "$(date +%s%N)"'
 ExecStop=/usr/bin/etcdctl rm /discovery/{{route}}/hosts/%H
+
+[Install]
+WantedBy=multi-user.target
 ```
 * requires etcd
 * Publishes host into etcd every 45 seconds with a 60 second duration
@@ -967,6 +994,9 @@ ExecStart=/usr/bin/docker run --name rethinkdb \
 -p 29015:29015 -p28015:28015 -p 8081:8080 \
 chadautry/wac-rethinkdb:{{rethinkdb_version}} {% if proxy_rethinkdb %}proxy{% endif %} --config-file /usr/var/rethinkdb/rethinkdb.conf
 Restart=always
+
+[Install]
+WantedBy=multi-user.target
 ```
 
 * requires docker
@@ -1004,6 +1034,9 @@ ExecStart=/bin/sh -c "while true; do etcdctl set /discovery/rethinkdb/hosts/%H/h
                       done"
 ExecStartPost=-/bin/sh -c '/usr/bin/etcdctl set /discovery/watched "$(date +%s%N)"'
 ExecStop=/usr/bin/etcdctl rm /discovery/rethinkdb/hosts/%H
+
+[Install]
+WantedBy=multi-user.target
 ```
 * requires etcd
 * Publishes host into etcd every 45 seconds with a 60 second duration
