@@ -260,6 +260,7 @@ Deploys or redeploys the etcd instance on a host. Etcd is persistent, but if the
 - name: start/restart the etcd.service if template changed
   systemd:
     daemon_reload: yes
+    enabled: yes
     state: restarted
     name: etcd.service
   when: etcd_template | changed
@@ -385,6 +386,7 @@ Nginx hosts static files, routes to instances (backends and databases), and term
 - name: Start nginx-reload.path
   systemd:
     daemon_reload: yes
+    enabled: yes
     state: restarted
     name: nginx-reload.path
 
@@ -398,6 +400,7 @@ Nginx hosts static files, routes to instances (backends and databases), and term
 - name: start/restart nginx.service if template changed
   systemd:
     daemon_reload: yes
+    enabled: yes
     state: restarted
     name: nginx.service
   when: nginx_template | changed
@@ -483,6 +486,7 @@ TODO Why isn't this a part of the nginx task?
 - name: start/restart the service if template changed
   systemd:
     daemon_reload: yes
+    enabled: yes
     state: restarted
     name: route-discovery-watcher.service
   when: route_discovery_watcher_template | changed
@@ -540,6 +544,7 @@ The SSL certificate is requested from letsencrypt
 - name: start/restart the certificate-sync.service if template changed
   systemd:
     daemon_reload: yes
+    enabled: yes
     state: restarted
     name: certificate-sync.service
   when: certificate_sync_template | changed
@@ -554,6 +559,7 @@ The SSL certificate is requested from letsencrypt
 - name: start/restart the acme-response-watcher.service if template changed
   systemd:
     daemon_reload: yes
+    enabled: yes
     state: restarted
     name: acme-response-watcher.service
   when: acme_response_watcher_template | changed
@@ -573,6 +579,7 @@ The SSL certificate is requested from letsencrypt
 - name: start/restart the letsencrypt-renewal.timer if template changed
   systemd:
     daemon_reload: yes
+    enabled: yes
     state: restarted
     name: letsencrypt-renewal.timer
   when: letsencrpyt_renewal_template | changed
@@ -767,6 +774,7 @@ This role sets up a nodejs unit, the discovery unit, and finally pushes the sour
 - name: start/restart the nodejs.service
   systemd:
     daemon_reload: yes
+    enabled: yes
     state: restarted
     name: "{{identifier}}_nodejs.service"
     
@@ -782,6 +790,7 @@ This role sets up a nodejs unit, the discovery unit, and finally pushes the sour
 - name: start/restart the route-publishing.service
   systemd:
     daemon_reload: yes
+    enabled: yes
     state: restarted
     name: "{{identifier}}_route-publishing.service"
   when: discoverable and (node_route_publishing_template | changed)
@@ -932,6 +941,7 @@ The RethinkDB role is used to install/update the database and its configurations
 - name: Ensure RethinkDB is started
   systemd:
     daemon_reload: yes
+    enabled: yes
     state: started
     name: rethinkdb.service
     
@@ -947,6 +957,7 @@ The RethinkDB role is used to install/update the database and its configurations
 - name: start the rethinkdb-route-publishing.service
   systemd:
     daemon_reload: yes
+    enabled: yes
     state: started
     name: rethinkdb-route-publishing.service
   when: not proxy_rethinkdb and (rethink_route_publishing_template | changed)
