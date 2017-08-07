@@ -13,6 +13,7 @@
 - name: Start nginx-reload.path
   systemd:
     daemon_reload: yes
+    enabled: yes
     state: restarted
     name: nginx-reload.path
 
@@ -26,6 +27,7 @@
 - name: start/restart nginx.service if template changed
   systemd:
     daemon_reload: yes
+    enabled: yes
     state: restarted
     name: nginx.service
   when: nginx_template | changed

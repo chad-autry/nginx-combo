@@ -20,6 +20,7 @@
 - name: start/restart the etcd.service if template changed
   systemd:
     daemon_reload: yes
+    enabled: yes
     state: restarted
     name: etcd.service
   when: etcd_template | changed

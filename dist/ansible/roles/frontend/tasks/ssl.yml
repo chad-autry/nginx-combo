@@ -8,6 +8,7 @@
 - name: start/restart the certificate-sync.service if template changed
   systemd:
     daemon_reload: yes
+    enabled: yes
     state: restarted
     name: certificate-sync.service
   when: certificate_sync_template | changed
@@ -22,6 +23,7 @@
 - name: start/restart the acme-response-watcher.service if template changed
   systemd:
     daemon_reload: yes
+    enabled: yes
     state: restarted
     name: acme-response-watcher.service
   when: acme_response_watcher_template | changed
@@ -41,6 +43,7 @@
 - name: start/restart the letsencrypt-renewal.timer if template changed
   systemd:
     daemon_reload: yes
+    enabled: yes
     state: restarted
     name: letsencrypt-renewal.timer
   when: letsencrpyt_renewal_template | changed

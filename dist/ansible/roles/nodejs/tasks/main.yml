@@ -23,6 +23,7 @@
 - name: start/restart the nodejs.service
   systemd:
     daemon_reload: yes
+    enabled: yes
     state: restarted
     name: "{{identifier}}_nodejs.service"
     
@@ -38,6 +39,7 @@
 - name: start/restart the route-publishing.service
   systemd:
     daemon_reload: yes
+    enabled: yes
     state: restarted
     name: "{{identifier}}_route-publishing.service"
   when: discoverable and (node_route_publishing_template | changed)

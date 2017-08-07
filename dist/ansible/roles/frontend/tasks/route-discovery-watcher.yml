@@ -8,6 +8,7 @@
 - name: start/restart the service if template changed
   systemd:
     daemon_reload: yes
+    enabled: yes
     state: restarted
     name: route-discovery-watcher.service
   when: route_discovery_watcher_template | changed

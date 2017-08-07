@@ -20,6 +20,7 @@
 - name: Ensure RethinkDB is started
   systemd:
     daemon_reload: yes
+    enabled: yes
     state: started
     name: rethinkdb.service
     
@@ -35,6 +36,7 @@
 - name: start the rethinkdb-route-publishing.service
   systemd:
     daemon_reload: yes
+    enabled: yes
     state: started
     name: rethinkdb-route-publishing.service
   when: not proxy_rethinkdb and (rethink_route_publishing_template | changed)
