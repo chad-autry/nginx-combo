@@ -177,6 +177,39 @@ The main playbook that deploys or updates a cluster
     - { role: rethinkdb, proxy_rethinkdb: True }
 ```
 
+## status.yml
+A helper playbook that queries the systemctl status of all wac-bp deployed units and displays them locally
+
+[status.yml](dist/ansible/status.yml)
+```yml
+# check on etcd
+- hosts: all:!localhost
+  become: true
+  tasks:
+  - name: Check if etcd and etcd proxy is running
+    command: systemctl status etcd.service --lines=0
+    ignore_errors: yes
+    changed_when: false
+    register: service_etcd_status
+  - name: Report status of etcd
+    debug:
+      msg: "{{service_etcd_status.stdout.split('\n')}}"
+
+# check on frontend services
+- hosts: tag_frontend
+  become: true
+  tasks:
+  - name: Check if nginx is running
+    command: systemctl status nginx.service --lines=0
+    ignore_errors: yes
+    changed_when: false
+    register: service_nginx_status
+
+  - name: Report status of nginx
+    debug:
+      msg: "{{service_nginx_status.stdout.split('\n')}}"
+```
+
 # Roles
 The roles used by the playbooks above
 
