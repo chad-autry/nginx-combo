@@ -204,10 +204,49 @@ A helper playbook that queries the systemctl status of all wac-bp deployed units
     ignore_errors: yes
     changed_when: false
     register: service_nginx_status
-
   - name: Report status of nginx
     debug:
       msg: "{{service_nginx_status.stdout.split('\n')}}"
+  - name: Check if nginx-reload is running
+    command: systemctl status nginx-reload.path --lines=0
+    ignore_errors: yes
+    changed_when: false
+    register: service_nginx_reload_status
+  - name: Report status of nginx-reload
+    debug:
+      msg: "{{service_nginx_reload_status.stdout.split('\n')}}"
+  - name: Check if route-discovery-watcher is running
+    command: systemctl status route-discovery-watcher.service --lines=0
+    ignore_errors: yes
+    changed_when: false
+    register: service_route_discovery_watcher_status
+  - name: Report status of nginx-reload
+    debug:
+      msg: "{{service_route_discovery_watcher_status.stdout.split('\n')}}"
+  - name: Check if certificate-sync is running
+    command: systemctl status certificate-sync.service --lines=0
+    ignore_errors: yes
+    changed_when: false
+    register: service_certificate_sync_status
+  - name: Report status of certificate-sync
+    debug:
+      msg: "{{service_certificate_sync_status.stdout.split('\n')}}"
+  - name: Check if acme-response-watcher is running
+    command: systemctl status acme-response-watcher.service --lines=0
+    ignore_errors: yes
+    changed_when: false
+    register: service_acme_response_watcher_status
+  - name: Report status of acme-response-watcher
+    debug:
+      msg: "{{service_acme_response_watcher_status.stdout.split('\n')}}"
+  - name: Check if letsencrypt-renewal.timer is running
+    command: systemctl status letsencrypt-renewal.timer
+    ignore_errors: yes
+    changed_when: false
+    register: service_letsencrypt_renewal_status
+  - name: Report status of letsencrypt-renewal.timer
+    debug:
+      msg: "{{service_letsencrypt_renewal_status.stdout.split('\n')}}"
 ```
 
 # Roles
