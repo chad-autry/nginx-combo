@@ -63,3 +63,24 @@
   - name: Report status of letsencrypt-renewal.timer
     debug:
       msg: "{{service_letsencrypt_renewal_status.stdout.split('\n')}}"
+      
+# check on backend services
+- hosts: tag_backend
+  become: true
+  tasks:
+  - name: Check if nodejs is running
+    command: systemctl status backend_nodejs.service --lines=0
+    ignore_errors: yes
+    changed_when: false
+    register: service_backend_nodejs_status
+  - name: Report status of nodejs
+    debug:
+      msg: "{{service_backend_nodejs_status.stdout.split('\n')}}"
+  - name: Check if nodejs route-publishing is running
+    command: systemctl status backend_route-publishing.service --lines=0
+    ignore_errors: yes
+    changed_when: false
+    register: service_backend_route_publishing_status
+  - name: Report status of nodejs route-publishing
+    debug:
+      msg: "{{service_backend_route_publishing_status.stdout.split('\n')}}"
