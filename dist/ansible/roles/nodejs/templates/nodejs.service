@@ -12,7 +12,7 @@ ExecStartPre=-/usr/bin/docker rm -f {{identifier}}-node-container
 ExecStart=/usr/bin/docker run --name {{identifier}}-node-container -p {{nodejs_port}}:80 \
 -v /var/nodejs/{{identifier}}:/app:ro \
 chadautry/wac-node '%H'
-ExecStop=-/usr/bin/docker stop backend-node-container
+ExecStop=-/usr/bin/docker stop {{identifier}}-node-container
 Restart=always
 
 [Install]
