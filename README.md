@@ -956,8 +956,8 @@ After=docker.service
 
 [Service]
 ExecStartPre=-/usr/bin/docker pull chadautry/wac-node
-ExecStartPre=-/usr/bin/docker rm -f backend-node-container
-ExecStart=/usr/bin/docker run --name backend-node-container -p {{nodejs_port}}:80 \
+ExecStartPre=-/usr/bin/docker rm -f {{identifier}}-node-container
+ExecStart=/usr/bin/docker run --name {{identifier}}-node-container -p {{nodejs_port}}:80 \
 -v /var/nodejs/{{identifier}}:/app:ro \
 chadautry/wac-node '%H'
 ExecStop=-/usr/bin/docker stop backend-node-container
