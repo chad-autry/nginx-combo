@@ -123,19 +123,19 @@ The main playbook that deploys or updates a cluster
 - hosts: tag_etcd
   become: true
   roles:
-    - { role: etcd, proxy_etcd: False }
+    - { role: etcd, proxy_etcd: False, tags: [ 'etcd' ] }
 
 # Set the etcd values (if required) from the first etcd host
 - hosts: tag_etcd[0]
   become: true
   roles:
-    - populate_etcd
+    - { role: populate_etcd, tags: [ 'etcd' ] }
 
 # Place a proxy etcd everywhere except the etcd hosts
 - hosts: all:!tag_etcd:!localhost
   become: true
   roles:
-    - { role: etcd, proxy_etcd: True }
+    - { role: etcd, proxy_etcd: True, tags: [ 'etcd' ] }
 
 - name: Remove old staging directory
   hosts: localhost
