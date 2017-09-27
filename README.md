@@ -357,6 +357,13 @@ Deploys or redeploys the etcd instance on a host. Etcd is persistent, but if the
     state: restarted
     name: etcd.service
   when: etcd_template | changed
+  
+- name: Ensure etcd is started, even if the template didn't change
+  systemd:
+    daemon_reload: yes
+    enabled: yes
+    state: started
+    name: etcd.service
 ```
 
 ### etcd systemd unit template
