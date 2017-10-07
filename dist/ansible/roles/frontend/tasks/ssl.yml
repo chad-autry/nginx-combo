@@ -13,13 +13,20 @@
     name: certificate-sync.service
   when: certificate_sync_template | changed
 
+- name: Ensure certificate-sync.service is started, even if the template didn't change
+  systemd:
+    daemon_reload: yes
+    enabled: yes
+    state: started
+    name: certificate-sync.service
+
 # template out the systemd acme-response-watcher.service unit
 - name: acme-response-watcher.service template
   template:
     src: acme-response-watcher.service
     dest: /etc/systemd/system/acme-response-watcher.service
   register: acme_response_watcher_template
-    
+
 - name: start/restart the acme-response-watcher.service if template changed
   systemd:
     daemon_reload: yes
@@ -27,6 +34,13 @@
     state: restarted
     name: acme-response-watcher.service
   when: acme_response_watcher_template | changed
+
+- name: Ensure acme-response-watcher.service is started, even if the template didn't change
+  systemd:
+    daemon_reload: yes
+    enabled: yes
+    state: started
+    name: acme-response-watcher.service
  
  # template out the systemd letsencrypt renewal units
 - name: letsencrypt-renewal.service template
@@ -47,3 +61,10 @@
     state: restarted
     name: letsencrypt-renewal.timer
   when: letsencrpyt_renewal_template | changed
+
+- name: Ensure letsencrypt-renewal.timer is started, even if the template didn't change
+  systemd:
+    daemon_reload: yes
+    enabled: yes
+    state: started
+    name: letsencrypt-renewal.timer

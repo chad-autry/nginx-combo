@@ -12,3 +12,10 @@
     state: restarted
     name: route-discovery-watcher.service
   when: route_discovery_watcher_template | changed
+  
+- name: Ensure the service is started, even if the template didn't change
+  systemd:
+    daemon_reload: yes
+    enabled: yes
+    state: started
+    name: route-discovery-watcher.service

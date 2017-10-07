@@ -31,3 +31,10 @@
     state: restarted
     name: nginx.service
   when: nginx_template | changed
+  
+- name: Ensure nginx.service is started, even if the template didn't change
+  systemd:
+    daemon_reload: yes
+    enabled: yes
+    state: started
+    name: nginx.service
