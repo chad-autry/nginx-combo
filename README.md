@@ -504,6 +504,13 @@ Nginx hosts static files, routes to instances (backends and databases), and term
     state: restarted
     name: nginx.service
   when: nginx_template | changed
+  
+- name: Ensure nginx.service is started, even if the template didn't change
+  systemd:
+    daemon_reload: yes
+    enabled: yes
+    state: started
+    name: nginx.service
 ```
 
 #### nginx systemd service unit template
@@ -590,6 +597,13 @@ TODO Why isn't this a part of the nginx task?
     state: restarted
     name: route-discovery-watcher.service
   when: route_discovery_watcher_template | changed
+  
+- name: Ensure the service is started, even if the template didn't change
+  systemd:
+    daemon_reload: yes
+    enabled: yes
+    state: started
+    name: route-discovery-watcher.service
 ```
 
 #### route-discovery-watcher systemd unit template
@@ -649,13 +663,20 @@ The SSL certificate is requested from letsencrypt
     name: certificate-sync.service
   when: certificate_sync_template | changed
 
+- name: Ensure certificate-sync.service is started, even if the template didn't change
+  systemd:
+    daemon_reload: yes
+    enabled: yes
+    state: started
+    name: certificate-sync.service
+
 # template out the systemd acme-response-watcher.service unit
 - name: acme-response-watcher.service template
   template:
     src: acme-response-watcher.service
     dest: /etc/systemd/system/acme-response-watcher.service
   register: acme_response_watcher_template
-    
+
 - name: start/restart the acme-response-watcher.service if template changed
   systemd:
     daemon_reload: yes
@@ -663,6 +684,13 @@ The SSL certificate is requested from letsencrypt
     state: restarted
     name: acme-response-watcher.service
   when: acme_response_watcher_template | changed
+
+- name: Ensure acme-response-watcher.service is started, even if the template didn't change
+  systemd:
+    daemon_reload: yes
+    enabled: yes
+    state: started
+    name: acme-response-watcher.service
  
  # template out the systemd letsencrypt renewal units
 - name: letsencrypt-renewal.service template
@@ -683,6 +711,13 @@ The SSL certificate is requested from letsencrypt
     state: restarted
     name: letsencrypt-renewal.timer
   when: letsencrpyt_renewal_template | changed
+
+- name: Ensure letsencrypt-renewal.timer is started, even if the template didn't change
+  systemd:
+    daemon_reload: yes
+    enabled: yes
+    state: started
+    name: letsencrypt-renewal.timer
 ```
 
 #### SSL certificate-sync systemd unit template
@@ -877,7 +912,7 @@ This role sets up a nodejs unit, the discovery unit, and finally pushes the sour
     enabled: yes
     state: restarted
     name: "{{identifier}}_nodejs.service"
-    
+
 # Template out the nodejs route-publishing systemd unit for {{identifier}}
 - name: "{{identifier}}_route-publishing.service template"
   template:
@@ -886,7 +921,7 @@ This role sets up a nodejs unit, the discovery unit, and finally pushes the sour
   register: node_route_publishing_template
   when: discoverable
 
-# Start the discovery publisher
+# Start/restart the discovery publisher when discoverable and template changed
 - name: start/restart the route-publishing.service
   systemd:
     daemon_reload: yes
@@ -894,6 +929,15 @@ This role sets up a nodejs unit, the discovery unit, and finally pushes the sour
     state: restarted
     name: "{{identifier}}_route-publishing.service"
   when: discoverable and (node_route_publishing_template | changed)
+  
+# Ensure the discovery publisher is started even if template did not change
+- name: start/restart the route-publishing.service
+  systemd:
+    daemon_reload: yes
+    enabled: yes
+    state: started
+    name: "{{identifier}}_route-publishing.service"
+  when: discoverable
 ```
 
 ### nodejs Application
