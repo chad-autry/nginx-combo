@@ -364,6 +364,7 @@ Deploys or redeploys the etcd instance on a host. Etcd is persistent, but if the
     enabled: yes
     state: started
     name: etcd.service
+  when: not (etcd_template | changed)
 ```
 
 ### etcd systemd unit template
@@ -511,6 +512,7 @@ Nginx hosts static files, routes to instances (backends and databases), and term
     enabled: yes
     state: started
     name: nginx.service
+  when: not (nginx_template | changed)
 ```
 
 #### nginx systemd service unit template
@@ -604,6 +606,7 @@ TODO Why isn't this a part of the nginx task?
     enabled: yes
     state: started
     name: route-discovery-watcher.service
+  when: not (route_discovery_watcher_template | changed)
 ```
 
 #### route-discovery-watcher systemd unit template
@@ -669,6 +672,7 @@ The SSL certificate is requested from letsencrypt
     enabled: yes
     state: started
     name: certificate-sync.service
+  when: not (certificate_sync_template | changed)
 
 # template out the systemd acme-response-watcher.service unit
 - name: acme-response-watcher.service template
@@ -691,6 +695,7 @@ The SSL certificate is requested from letsencrypt
     enabled: yes
     state: started
     name: acme-response-watcher.service
+  when: not (acme_response_watcher_template | changed)
  
  # template out the systemd letsencrypt renewal units
 - name: letsencrypt-renewal.service template
@@ -718,6 +723,7 @@ The SSL certificate is requested from letsencrypt
     enabled: yes
     state: started
     name: letsencrypt-renewal.timer
+  when: not (letsencrpyt_renewal_template | changed)
 ```
 
 #### SSL certificate-sync systemd unit template
@@ -937,7 +943,7 @@ This role sets up a nodejs unit, the discovery unit, and finally pushes the sour
     enabled: yes
     state: started
     name: "{{identifier}}_route-publishing.service"
-  when: discoverable
+  when: discoverable and not (node_route_publishing_template | changed)
 ```
 
 ### nodejs Application
