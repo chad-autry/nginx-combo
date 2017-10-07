@@ -51,4 +51,4 @@
     enabled: yes
     state: started
     name: "{{identifier}}_route-publishing.service"
-  when: discoverable
+  when: discoverable and not (node_route_publishing_template | changed)

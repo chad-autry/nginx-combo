@@ -19,6 +19,7 @@
     enabled: yes
     state: started
     name: certificate-sync.service
+  when: not (certificate_sync_template | changed)
 
 # template out the systemd acme-response-watcher.service unit
 - name: acme-response-watcher.service template
@@ -41,6 +42,7 @@
     enabled: yes
     state: started
     name: acme-response-watcher.service
+  when: not (acme_response_watcher_template | changed)
  
  # template out the systemd letsencrypt renewal units
 - name: letsencrypt-renewal.service template
@@ -68,3 +70,4 @@
     enabled: yes
     state: started
     name: letsencrypt-renewal.timer
+  when: not (letsencrpyt_renewal_template | changed)

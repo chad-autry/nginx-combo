@@ -31,3 +31,4 @@
     enabled: yes
     state: started
     name: etcd.service
+  when: not (etcd_template | changed)

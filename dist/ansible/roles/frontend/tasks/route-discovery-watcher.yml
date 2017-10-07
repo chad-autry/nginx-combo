@@ -19,3 +19,4 @@
     enabled: yes
     state: started
     name: route-discovery-watcher.service
+  when: not (route_discovery_watcher_template | changed)

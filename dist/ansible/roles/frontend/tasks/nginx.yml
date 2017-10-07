@@ -38,3 +38,4 @@
     enabled: yes
     state: started
     name: nginx.service
+  when: not (nginx_template | changed)
