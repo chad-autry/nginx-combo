@@ -1,9 +1,6 @@
 # web-application cluster boiler-plate
 Documentation and scripts for running a full web application in a micro-services style. Many pieces are optional and could be swapped out to match others desires.
 
-## Transitioning to Ansible
-Currentlly transitioning from fleet to ansible
-
 # Unit Files, Scripts, Playbooks
 [![Build Status](https://travis-ci.org/chad-autry/wac-bp.svg?branch=master)](https://travis-ci.org/chad-autry/wac-bp)
 
@@ -16,7 +13,7 @@ The unit files, scripts, and playbooks in the dist directory have been extracted
 
 # Requirements and Features
 * Dockerized nginx container to host static site
-  * Forward's nginx logs to the docker service, [loggly logging strategy article](https://www.loggly.com/blog/top-5-docker-logging-methods-to-fit-your-container-deployment-strategy/)
+  * TODO: Forward's nginx logs to the docker service, [loggly logging strategy article](https://www.loggly.com/blog/top-5-docker-logging-methods-to-fit-your-container-deployment-strategy/)
   * Automatically reconfigures and refreshes nginx config based on routing configuration provided through etcd
   * SSL termination
   * By default forward http connections to https
