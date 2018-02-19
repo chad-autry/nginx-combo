@@ -12,6 +12,7 @@ The unit files, scripts, and playbooks in the dist directory have been extracted
 * Ansible is used for orchestration
 
 # Requirements and Features
+* Metrics gathered by Prometheus
 * Dockerized nginx container to host static site
   * TODO: Forward's nginx logs to the docker service, [loggly logging strategy article](https://www.loggly.com/blog/top-5-docker-logging-methods-to-fit-your-container-deployment-strategy/)
   * Automatically reconfigures and refreshes nginx config based on routing configuration provided through etcd
@@ -54,6 +55,9 @@ hostnameone
 hostnametwo
 
 [tag_backend]
+hostnametwo
+
+[tag_prometheus]
 hostnametwo
 ```
 
@@ -101,6 +105,7 @@ nginx_config_templater_version: latest
 wac_acme_version: latest
 nodejs_version: latest
 rethinkdb_version: latest
+prometheus_version: latest
 ```
 
 # Playbooks
@@ -133,6 +138,12 @@ The main playbook that deploys or updates a cluster
   become: true
   roles:
     - { role: etcd, proxy_etcd: True, tags: [ 'etcd' ] }
+
+# Place Prometheus on the Prometheus hosts
+- hosts: tag_prometheus
+  become: true
+  roles:
+    - { role: prometheus, tags: [ 'prometheus' ] }
 
 - name: Remove old staging directory
   hosts: localhost
@@ -428,6 +439,173 @@ This role sets values into etcd from the Ansible config when the etcd cluster ha
 - name: /usr/bin/etcdctl set /rethinkdb/pwd <Web Authorization Password>
   command: /usr/bin/etcdctl set /rethinkdb/pwd {{rethinkdb_web_password}}
 ```
+
+## prometheus
+The prometheus playbook templates out the prometheus config and sets up the prometheus unit
+
+[roles/prometheus/tasks/main.yml](dist/ansible/roles/prometheus/tasks/main.yml)
+```yml
+# Ensure the prometheus directories are created
+- name: ensure prometheus directory is present
+  file:
+    state: directory
+    path: /var/prometheus
+    
+- name: ensure prometheus config directory is present
+  file:
+    state: directory
+    path: /var/prometheus/config
+    
+- name: ensure prometheus data directory is present
+  file:
+    state: directory
+    path: /var/prometheus/data
+    
+# template out the prometheus config
+- name: prometheus/config template
+  template:
+    src: prometheus.yml
+    dest: /var/prometheus/prometheus.yml
+
+# template out the systemd prometheus.service unit
+- name: prometheus.service template
+  template:
+    src: prometheus.service
+    dest: /etc/systemd/system/prometheus.service
+  register: prometheus_template
+    
+- name: start/restart prometheus.service if template changed
+  systemd:
+    daemon_reload: yes
+    enabled: yes
+    state: restarted
+    name: prometheus.service
+  when: prometheus_template | changed
+  
+- name: Ensure prometheus.service is started, even if the template didn't change
+  systemd:
+    daemon_reload: yes
+    enabled: yes
+    state: started
+    name: prometheus.service
+  when: not (prometheus_template | changed)
+  
+# Template out the prometheus route-publishing systemd unit
+- name: "prometheus-route-publishing.service template"
+  template:
+    src: prometheus-route-publishing.service
+    dest: /etc/systemd/system/prometheus-route-publishing.service
+  register: prometheus_route_publishing_template
+
+# Start/restart the discovery publisher when template changed
+- name: start/restart the prometheus-route-publishing.service
+  systemd:
+    daemon_reload: yes
+    enabled: yes
+    state: restarted
+    name: "prometheus-route-publishing.service"
+  when: node_route_publishing_template | changed
+  
+# Ensure the discovery publisher is started even if template did not change
+- name: start/restart the prometheus-route-publishing.service
+  systemd:
+    daemon_reload: yes
+    enabled: yes
+    state: started
+    name: "prometheus-_route-publishing.service"
+  when: not (prometheus_route_publishing_template | changed)
+```
+
+### prometheus config template
+
+[roles/prometheus/templates/prometheus.yml](dist/ansible/roles/prometheus/templates/prometheus.yml)
+```yaml
+global:
+  scrape_interval:     15s # By default, scrape targets every 15 seconds.
+
+  # Attach these labels to any time series or alerts when communicating with
+  # external systems (federation, remote storage, Alertmanager).
+  external_labels:
+    monitor: 'codelab-monitor'
+
+# A scrape configuration containing exactly one endpoint to scrape:
+# Here it's Prometheus itself.
+scrape_configs:
+  # The job name is added as a label `job=<job_name>` to any timeseries scraped from this config.
+  - job_name: 'prometheus'
+
+    # Override the global default and scrape targets from this job every 5 seconds.
+    scrape_interval: 5s
+
+    static_configs:
+      - targets: ['localhost:9090']
+```
+
+### prometheus systemd service unit template
+
+[roles/prometheus/templates/prometheus.service](dist/ansible/roles/prometheus/templates/prometheus.service)
+```yaml
+[Unit]
+Description=Prometheus
+# Dependencies
+Requires=docker.service
+
+# Ordering
+After=docker.service
+
+[Service]
+ExecStartPre=-/usr/bin/docker pull chadautry/wac-prometheus:{{prometheus_version}}
+ExecStartPre=-/usr/bin/docker rm prometheus
+ExecStart=/usr/bin/docker run --name prometheus -p 9090:9090 \
+-v /var/prometheus:/var/prometheus \
+chadautry/wac-prometheus:{{prometheus_version}}
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
+```
+* requires docker
+* Starts a customized prometheus docker container
+    * Version comes from variables
+    * Takes config from local drive
+    * Saves data to local drive
+    
+### prometheus-route-publishing systemd unit template
+Publishes the backend host into etcd at an expected path for the frontend to route to
+
+[roles/prometheus/templates/prometheus-route-publishing.service](dist/ansible/roles/prometheus/templates/prometheus-route-publishing.service)
+```yaml
+[Unit]
+Description=Route Publishing
+# Dependencies
+Requires=etcd.service
+Requires=prometheus.service
+
+# Ordering
+After=etcd.service
+After=prometheus.service
+
+# Restart when dependency restarts
+PartOf=etcd.service
+PartOf=prometheus.service
+
+[Service]
+ExecStart=/bin/sh -c "while true; do etcdctl set /discovery/prometheus/hosts/%H/host '%H' --ttl 60; \
+                      etcdctl set /discovery/prometheus/hosts/%H/port '9090' --ttl 60; \
+                      etcdctl set /discovery/prometheus/strip 'true' --ttl 60; \
+                      etcdctl set /discovery/prometheus/private 'true' --ttl 60; \
+                      sleep 45; \
+                      done"
+ExecStartPost=-/bin/sh -c '/usr/bin/etcdctl set /discovery/watched "$(date +%s%N)"'
+ExecStop=/usr/bin/etcdctl rm /discovery/prometheus/hosts/%H
+
+[Install]
+WantedBy=multi-user.target
+```
+* requires etcd
+* Publishes host into etcd every 45 seconds with a 60 second duration
+* Deletes host from etcd on stop
+* Is restarted if etcd or nodejs restarts
 
 ## frontend
 The front end playbook sets up the nginx unit, the nginx file watching & reloading units, the letsencrypt renewal units, and finally pushes the front end application across (tagged so it can be executed alone)
