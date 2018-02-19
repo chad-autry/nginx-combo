@@ -1,0 +1,18 @@
+[Unit]
+Description=Prometheus
+# Dependencies
+Requires=docker.service
+
+# Ordering
+After=docker.service
+
+[Service]
+ExecStartPre=-/usr/bin/docker pull chadautry/wac-prometheus:{{prometheus_version}}
+ExecStartPre=-/usr/bin/docker rm prometheus
+ExecStart=/usr/bin/docker run --name prometheus -p 9090:9090 \
+-v /var/prometheus:/var/prometheus \
+chadautry/wac-prometheus:{{prometheus_version}}
+Restart=always
+
+[Install]
+WantedBy=multi-user.target

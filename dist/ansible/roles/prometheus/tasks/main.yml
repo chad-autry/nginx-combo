@@ -1,0 +1,69 @@
+# Ensure the prometheus directories are created
+- name: ensure prometheus directory is present
+  file:
+    state: directory
+    path: /var/prometheus
+    
+- name: ensure prometheus config directory is present
+  file:
+    state: directory
+    path: /var/prometheus/config
+    
+- name: ensure prometheus data directory is present
+  file:
+    state: directory
+    path: /var/prometheus/data
+    
+# template out the prometheus config
+- name: prometheus/config template
+  template:
+    src: prometheus.yml
+    dest: /var/prometheus/prometheus.yml
+
+# template out the systemd prometheus.service unit
+- name: prometheus.service template
+  template:
+    src: prometheus.service
+    dest: /etc/systemd/system/prometheus.service
+  register: prometheus_template
+    
+- name: start/restart prometheus.service if template changed
+  systemd:
+    daemon_reload: yes
+    enabled: yes
+    state: restarted
+    name: prometheus.service
+  when: prometheus_template | changed
+  
+- name: Ensure prometheus.service is started, even if the template didn't change
+  systemd:
+    daemon_reload: yes
+    enabled: yes
+    state: started
+    name: prometheus.service
+  when: not (prometheus_template | changed)
+  
+# Template out the prometheus route-publishing systemd unit
+- name: "prometheus-route-publishing.service template"
+  template:
+    src: prometheus-route-publishing.service
+    dest: /etc/systemd/system/prometheus-route-publishing.service
+  register: prometheus_route_publishing_template
+
+# Start/restart the discovery publisher when template changed
+- name: start/restart the prometheus-route-publishing.service
+  systemd:
+    daemon_reload: yes
+    enabled: yes
+    state: restarted
+    name: "prometheus-route-publishing.service"
+  when: node_route_publishing_template | changed
+  
+# Ensure the discovery publisher is started even if template did not change
+- name: start/restart the prometheus-route-publishing.service
+  systemd:
+    daemon_reload: yes
+    enabled: yes
+    state: started
+    name: "prometheus-_route-publishing.service"
+  when: not (prometheus_route_publishing_template | changed)

@@ -37,3 +37,4 @@ nginx_config_templater_version: latest
 wac_acme_version: latest
 nodejs_version: latest
 rethinkdb_version: latest
+prometheus_version: latest

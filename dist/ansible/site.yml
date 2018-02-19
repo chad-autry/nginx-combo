@@ -23,6 +23,12 @@
   roles:
     - { role: etcd, proxy_etcd: True, tags: [ 'etcd' ] }
 
+# Place Prometheus on the Prometheus hosts
+- hosts: tag_prometheus
+  become: true
+  roles:
+    - { role: prometheus, tags: [ 'prometheus' ] }
+
 - name: Remove old staging directory
   hosts: localhost
   tasks:
