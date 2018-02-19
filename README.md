@@ -203,11 +203,11 @@ A helper playbook that queries the systemctl status of all wac-bp deployed units
     debug:
       msg: "{{service_etcd_status.stdout.split('\n')}}"
 
-# check on etcd
-- hosts: all:!localhost
+# check on prometheus
+- hosts: tag_prometheus
   become: true
   tasks:
-  - name: Check if etcd and etcd proxy is running
+  - name: Check if prometheus is running
     command: systemctl status prometheus.service --lines=0
     ignore_errors: yes
     changed_when: false
@@ -215,6 +215,14 @@ A helper playbook that queries the systemctl status of all wac-bp deployed units
   - name: Report status of prometheus
     debug:
       msg: "{{service_prometheus_status.stdout.split('\n')}}"
+  - name: Check if prometheus route-publishing is running
+    command: systemctl status prometheus-route-publishing.service --lines=0
+    ignore_errors: yes
+    changed_when: false
+    register: prometheus_route_publishing_status
+  - name: Report status of prometheus-route-publishing
+    debug:
+      msg: "{{prometheus_route_publishing_status.stdout.split('\n')}}"
 
 # check on frontend services
 - hosts: tag_frontend
