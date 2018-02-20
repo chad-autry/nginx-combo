@@ -525,7 +525,7 @@ The prometheus playbook templates out the prometheus config and sets up the prom
     enabled: yes
     state: restarted
     name: "prometheus-route-publishing.service"
-  when: node_route_publishing_template | changed
+  when: prometheus_route_publishing_template | changed
   
 # Ensure the discovery publisher is started even if template did not change
 - name: start/restart the prometheus-route-publishing.service
