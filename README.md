@@ -533,7 +533,7 @@ The prometheus playbook templates out the prometheus config and sets up the prom
     daemon_reload: yes
     enabled: yes
     state: started
-    name: "prometheus-_route-publishing.service"
+    name: "prometheus-route-publishing.service"
   when: not (prometheus_route_publishing_template | changed)
 ```
 
