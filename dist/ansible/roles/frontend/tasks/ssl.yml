@@ -71,3 +71,10 @@
     state: started
     name: letsencrypt-renewal.timer
   when: not (letsencrpyt_renewal_template | changed)
+
+- name: Execute the renewal oneshot on deploy
+  systemd:
+    daemon_reload: yes
+    enabled: yes
+    state: started
+    name: letsencrypt-renewal.service
