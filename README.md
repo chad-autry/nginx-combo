@@ -924,7 +924,7 @@ The SSL certificate is requested from letsencrypt
 - name: Execute the renewal oneshot on deploy
   systemd:
     daemon_reload: yes
-    enabled: yes
+    enabled: no
     state: started
     name: letsencrypt-renewal.service
 ```
