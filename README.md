@@ -920,6 +920,13 @@ The SSL certificate is requested from letsencrypt
     state: started
     name: letsencrypt-renewal.timer
   when: not (letsencrpyt_renewal_template | changed)
+
+- name: Execute the renewal oneshot on deploy
+  systemd:
+    daemon_reload: yes
+    enabled: yes
+    state: started
+    name: letsencrypt-renewal.service
 ```
 
 #### SSL certificate-sync systemd unit template
@@ -1012,17 +1019,6 @@ Type=oneshot
 * It is a one shot which expects to be called by the timer unit
 * Metadata will cause it to be made available on all frontend servers when loaded
     * It technically could run anywhere with etcd, just limiting its loaded footprint
-
-> Special Deployment Note:
-> * Put the admin e-mail and domain into etcd
-> ```
-> /usr/bin/etcdctl set /domain/name <domain>
-> /usr/bin/etcdctl set /domain/email <email>
-> ```
-> * Manually run the wac-acme container once to obtain certificates the first time
-> ```
-> sudo docker run --net host -v /var/ssl:/var/ssl --name acme chadautry/wac-acme
-> ```
 
 [roles/frontend/templates/letsencrypt-renewal.timer](dist/ansible/roles/frontend/templates/letsencrypt-renewal.timer)
 ```yaml
