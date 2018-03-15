@@ -579,7 +579,8 @@ ExecStartPre=-/usr/bin/docker pull chadautry/wac-prometheus:{{prometheus_version
 ExecStartPre=-/usr/bin/docker rm prometheus
 ExecStart=/usr/bin/docker run --name prometheus -p 9090:9090 \
 -v /var/prometheus:/var/prometheus \
-chadautry/wac-prometheus:{{prometheus_version}}
+chadautry/wac-prometheus:{{prometheus_version}} \
+--web.external-url https://{{domain_name}}/prometheus
 Restart=always
 
 [Install]
