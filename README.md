@@ -486,7 +486,7 @@ The prometheus playbook templates out the prometheus config and sets up the prom
 - name: prometheus/config template
   template:
     src: prometheus.yml
-    dest: /var/prometheus/prometheus.yml
+    dest: /var/prometheus/config/prometheus.yml
 
 # template out the systemd prometheus.service unit
 - name: prometheus.service template
