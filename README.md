@@ -195,6 +195,7 @@ A helper playbook that queries the systemctl status of all wac-bp deployed units
   become: true
   tasks:
   - name: Check if etcd and etcd proxy is running
+    no_log: True
     command: systemctl status etcd.service --lines=0
     ignore_errors: yes
     changed_when: false
@@ -208,6 +209,7 @@ A helper playbook that queries the systemctl status of all wac-bp deployed units
   become: true
   tasks:
   - name: Check if prometheus is running
+    no_log: True
     command: systemctl status prometheus.service --lines=0
     ignore_errors: yes
     changed_when: false
@@ -216,6 +218,7 @@ A helper playbook that queries the systemctl status of all wac-bp deployed units
     debug:
       msg: "{{service_prometheus_status.stdout.split('\n')}}"
   - name: Check if prometheus route-publishing is running
+    no_log: True
     command: systemctl status prometheus-route-publishing.service --lines=0
     ignore_errors: yes
     changed_when: false
@@ -229,6 +232,7 @@ A helper playbook that queries the systemctl status of all wac-bp deployed units
   become: true
   tasks:
   - name: Check if nginx is running
+    no_log: True
     command: systemctl status nginx.service --lines=0
     ignore_errors: yes
     changed_when: false
@@ -237,6 +241,7 @@ A helper playbook that queries the systemctl status of all wac-bp deployed units
     debug:
       msg: "{{service_nginx_status.stdout.split('\n')}}"
   - name: Check if nginx-reload is running
+    no_log: True
     command: systemctl status nginx-reload.path --lines=0
     ignore_errors: yes
     changed_when: false
@@ -245,6 +250,7 @@ A helper playbook that queries the systemctl status of all wac-bp deployed units
     debug:
       msg: "{{service_nginx_reload_status.stdout.split('\n')}}"
   - name: Check if route-discovery-watcher is running
+    no_log: True
     command: systemctl status route-discovery-watcher.service --lines=0
     ignore_errors: yes
     changed_when: false
@@ -253,6 +259,7 @@ A helper playbook that queries the systemctl status of all wac-bp deployed units
     debug:
       msg: "{{service_route_discovery_watcher_status.stdout.split('\n')}}"
   - name: Check if certificate-sync is running
+    no_log: True
     command: systemctl status certificate-sync.service --lines=0
     ignore_errors: yes
     changed_when: false
@@ -261,6 +268,7 @@ A helper playbook that queries the systemctl status of all wac-bp deployed units
     debug:
       msg: "{{service_certificate_sync_status.stdout.split('\n')}}"
   - name: Check if acme-response-watcher is running
+    no_log: True
     command: systemctl status acme-response-watcher.service --lines=0
     ignore_errors: yes
     changed_when: false
@@ -269,6 +277,7 @@ A helper playbook that queries the systemctl status of all wac-bp deployed units
     debug:
       msg: "{{service_acme_response_watcher_status.stdout.split('\n')}}"
   - name: Check if letsencrypt-renewal.timer is running
+    no_log: True
     command: systemctl status letsencrypt-renewal.timer
     ignore_errors: yes
     changed_when: false
@@ -282,6 +291,7 @@ A helper playbook that queries the systemctl status of all wac-bp deployed units
   become: true
   tasks:
   - name: Check if nodejs is running
+    no_log: True
     command: systemctl status backend_nodejs.service --lines=0
     ignore_errors: yes
     changed_when: false
@@ -290,6 +300,7 @@ A helper playbook that queries the systemctl status of all wac-bp deployed units
     debug:
       msg: "{{service_backend_nodejs_status.stdout.split('\n')}}"
   - name: Check if nodejs route-publishing is running
+    no_log: True
     command: systemctl status backend_route-publishing.service --lines=0
     ignore_errors: yes
     changed_when: false
