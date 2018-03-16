@@ -503,7 +503,7 @@ The prometheus playbook templates out the prometheus config and sets up the prom
     name: prometheus.service
   when: prometheus_template | changed
   
-- name: Ensure prometheus.service is started, even if the template didn't change
+- name: ensure prometheus.service is started, even if the template didn't change
   systemd:
     daemon_reload: yes
     enabled: yes
@@ -518,7 +518,6 @@ The prometheus playbook templates out the prometheus config and sets up the prom
     dest: /etc/systemd/system/prometheus-route-publishing.service
   register: prometheus_route_publishing_template
 
-# Start/restart the discovery publisher when template changed
 - name: start/restart the prometheus-route-publishing.service
   systemd:
     daemon_reload: yes
@@ -527,8 +526,7 @@ The prometheus playbook templates out the prometheus config and sets up the prom
     name: "prometheus-route-publishing.service"
   when: prometheus_route_publishing_template | changed
   
-# Ensure the discovery publisher is started even if template did not change
-- name: start/restart the prometheus-route-publishing.service
+- name: ensure prometheus.service is started, even if the template didn't change
   systemd:
     daemon_reload: yes
     enabled: yes
