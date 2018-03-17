@@ -492,7 +492,19 @@ The prometheus playbook templates out the prometheus config and sets up the prom
   file:
     state: directory
     path: /var/prometheus/data
+
+# template out the systemd prometheus-reload.service unit
+- name: prometheus-reload.service template
+  template:
+    src: prometheus-reload.service
+    dest: /etc/systemd/system/prometheus-reload.service
     
+# template out the systemd prometheus-reload.path unit
+- name: prometheus-reload.path template
+  template:
+    src: prometheus-reload.path
+    dest: /etc/systemd/system/prometheus-reload.path
+
 # template out the prometheus config
 - name: prometheus/config template
   template:
@@ -639,6 +651,35 @@ WantedBy=multi-user.target
 * Publishes host into etcd every 45 seconds with a 60 second duration
 * Deletes host from etcd on stop
 * Is restarted if etcd or nodejs restarts
+
+### prometheus configuration watching
+A pair of units are responsible for watching the prometheus configuration and reloading the service
+
+[roles/prometheus/templates/prometheus-reload.service](dist/ansible/roles/prometheus/templates/prometheus-reload.service)
+```yaml
+[Unit]
+Description=Prometheus reload service
+
+[Service]
+ExecStart=-/usr/bin/docker kill -s HUP prometheus
+Type=oneshot
+```
+* Sends a signal to the named prometheus container to reload
+* Ignores errors
+* It is a one shot which expects to be called by other units
+
+[roles/prometheus/templates/prometheus-reload.path](dist/ansible/roles/prometheus/templates/prometheus-reload.path)
+```yaml
+[Unit]
+Description=Prometheus reload path
+
+[Path]
+PathChanged=/var/prometheus/config/prometheus.yml
+
+[Install]
+WantedBy=multi-user.target
+```
+* Watches config file
 
 ## frontend
 The front end playbook sets up the nginx unit, the nginx file watching & reloading units, the letsencrypt renewal units, and finally pushes the front end application across (tagged so it can be executed alone)
