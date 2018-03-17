@@ -505,6 +505,13 @@ The prometheus playbook templates out the prometheus config and sets up the prom
     src: prometheus-reload.path
     dest: /etc/systemd/system/prometheus-reload.path
 
+- name: Start prometheus-reload.path
+  systemd:
+    daemon_reload: yes
+    enabled: yes
+    state: restarted
+    name: prometheus-reload.path
+
 # template out the prometheus config
 - name: prometheus/config template
   template:
