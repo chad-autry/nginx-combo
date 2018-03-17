@@ -13,7 +13,19 @@
   file:
     state: directory
     path: /var/prometheus/data
+
+# template out the systemd prometheus-reload.service unit
+- name: prometheus-reload.service template
+  template:
+    src: prometheus-reload.service
+    dest: /etc/systemd/system/prometheus-reload.service
     
+# template out the systemd prometheus-reload.path unit
+- name: prometheus-reload.path template
+  template:
+    src: prometheus-reload.path
+    dest: /etc/systemd/system/prometheus-reload.path
+
 # template out the prometheus config
 - name: prometheus/config template
   template:
