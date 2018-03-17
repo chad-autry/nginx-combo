@@ -15,5 +15,8 @@ scrape_configs:
     # Override the global default and scrape targets from this job every 5 seconds.
     scrape_interval: 5s
 
+    # Prometheus sets its app context in response to setting web.external-url
+    metrics_path: /prometheus/metrics
+    
     static_configs:
       - targets: ['localhost:9090']
