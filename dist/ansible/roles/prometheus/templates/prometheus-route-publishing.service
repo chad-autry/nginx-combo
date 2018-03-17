@@ -15,7 +15,6 @@ PartOf=prometheus.service
 [Service]
 ExecStart=/bin/sh -c "while true; do etcdctl set /discovery/prometheus/hosts/%H/host '%H' --ttl 60; \
                       etcdctl set /discovery/prometheus/hosts/%H/port '9090' --ttl 60; \
-                      etcdctl set /discovery/prometheus/strip 'true' --ttl 60; \
                       etcdctl set /discovery/prometheus/private 'true' --ttl 60; \
                       sleep 45; \
                       done"
