@@ -1,6 +1,0 @@
-[Unit]
-Description=Prometheus reload service
-
-[Service]
-ExecStart=-/usr/bin/docker kill -s HUP prometheus
-Type=oneshot

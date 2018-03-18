@@ -1,8 +1,0 @@
-[Unit]
-Description=Prometheus reload path
-
-[Path]
-PathChanged=/var/prometheus/config/prometheus.yml
-
-[Install]
-WantedBy=multi-user.target
