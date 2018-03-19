@@ -573,11 +573,11 @@ scrape_configs:
     
     static_configs:
       - targets: ['localhost:9090']
+
   - job_name: 'etcd'
     static_configs:
       - targets: [{% for host in groups['all'] | difference(['localhost']) %}'{{hostvars[host][internal_ip_name]}}:2379'{% if not loop.last %},{% endif %}{% endfor %} ]
-EOF
-cat /tmp/test-etcd.yaml
+
 ```
 
 ### prometheus systemd service unit template
