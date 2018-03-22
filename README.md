@@ -106,6 +106,7 @@ wac_acme_version: latest
 nodejs_version: latest
 rethinkdb_version: latest
 prometheus_version: latest
+node_exporter_version: latest
 ```
 
 # Playbooks
@@ -144,6 +145,12 @@ The main playbook that deploys or updates a cluster
   become: true
   roles:
     - { role: prometheus, tags: [ 'prometheus' ] }
+
+# Place prometheus\node_exporter everywhere
+- hosts: all:!localhost
+  become: true
+  roles:
+    - { role: prometheus_node_exporter, tags: [ 'prometheus_node_exporter' ] }
 
 - name: Remove old staging directory
   hosts: localhost
@@ -226,6 +233,20 @@ A helper playbook that queries the systemctl status of all wac-bp deployed units
   - name: Report status of prometheus-route-publishing
     debug:
       msg: "{{prometheus_route_publishing_status.stdout.split('\n')}}"
+
+# check on prometheus-node_exporter
+- hosts: all:!localhost
+  become: true
+  tasks:
+  - name: Check if prometheus is running
+    no_log: True
+    command: systemctl status prometheus-node-exporter.service --lines=0
+    ignore_errors: yes
+    changed_when: false
+    register: service_prometheus_node_exporter_status
+  - name: Report status of prometheus-node_exporter
+    debug:
+      msg: "{{service_prometheus_node_exporter_status.stdout.split('\n')}}"
 
 # check on frontend services
 - hosts: tag_frontend
@@ -577,6 +598,10 @@ scrape_configs:
   - job_name: 'etcd'
     static_configs:
       - targets: [{% for host in groups['all'] | difference(['localhost']) %}'{{hostvars[host][internal_ip_name]}}:2379'{% if not loop.last %},{% endif %}{% endfor %} ]
+      
+  - job_name: 'node_exporter'
+    static_configs:
+      - targets: [{% for host in groups['all'] | difference(['localhost']) %}'{{hostvars[host][internal_ip_name]}}:9100'{% if not loop.last %},{% endif %}{% endfor %} ]
 
 ```
 
@@ -645,6 +670,60 @@ WantedBy=multi-user.target
 * Publishes host into etcd every 45 seconds with a 60 second duration
 * Deletes host from etcd on stop
 * Is restarted if etcd or nodejs restarts
+
+## prometheus/node_exporter
+Deploys or redeploys the prometheus/node_exporter instance on a host.
+
+[roles/prometheus-node-exporter/tasks/main.yml](dist/ansible/roles/prometheus-node-exporter/tasks/main.yml)
+```yml
+# template out the systemd prometheus-node-exporter.service unit on the etcd hosts
+- name: etcd template
+  template:
+    src: prometheus-node-exporter.service
+    dest: /etc/systemd/system/prometheus-node-exporter.service
+  register: node_exporter_template
+
+- name: start/restart the prometheus-node-exporter.service if template changed
+  systemd:
+    daemon_reload: yes
+    enabled: yes
+    state: restarted
+    name: prometheus-node-exporter.service
+  when: node_exporter_template | changed
+  
+- name: Ensure prometheus-node-exporter.service is started, even if the template didn't change
+  systemd:
+    daemon_reload: yes
+    enabled: yes
+    state: started
+    name: prometheus-node-exporter.service.service
+  when: not (node_exporter_template | changed)
+```
+
+### prometheus/node_exporter systemd unit template
+[roles/prometheus-node-exporter/templates/prometheus-node-exporter.service](dist/ansible/roles/prometheus-node-exporter/templates/prometheus-node-exporter.service)
+```yaml
+[Unit]
+Description=etcd
+# Dependencies
+Requires=docker.service
+
+# Ordering
+After=docker.service
+
+[Service]
+ExecStartPre=-/usr/bin/docker pull chadautry/wac-prometheus-node_exporter:{{node_exporter_version}}
+ExecStartPre=-/usr/bin/docker rm node_exporter
+ExecStart=/usr/bin/docker run --name node_exporter -p 9100:9100 -v "/proc:/host/proc" \
+-v "/sys:/host/sys" -v "/:/rootfs" --net="host" chadautry/wac-prometheus-node_exporter:{{node_exporter_version}}
+
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
+````
+* requires docker
+* takes version from node_exporter_version variable
 
 ## frontend
 The front end playbook sets up the nginx unit, the nginx file watching & reloading units, the letsencrypt renewal units, and finally pushes the front end application across (tagged so it can be executed alone)
