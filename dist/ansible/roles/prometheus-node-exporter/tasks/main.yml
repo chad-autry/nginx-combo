@@ -1,0 +1,22 @@
+# template out the systemd prometheus-node-exporter.service unit on the etcd hosts
+- name: etcd template
+  template:
+    src: prometheus-node-exporter.service
+    dest: /etc/systemd/system/prometheus-node-exporter.service
+  register: node_exporter_template
+
+- name: start/restart the prometheus-node-exporter.service if template changed
+  systemd:
+    daemon_reload: yes
+    enabled: yes
+    state: restarted
+    name: prometheus-node-exporter.service
+  when: node_exporter_template | changed
+  
+- name: Ensure prometheus-node-exporter.service is started, even if the template didn't change
+  systemd:
+    daemon_reload: yes
+    enabled: yes
+    state: started
+    name: prometheus-node-exporter.service.service
+  when: not (node_exporter_template | changed)

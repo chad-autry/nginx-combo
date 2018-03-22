@@ -35,6 +35,20 @@
     debug:
       msg: "{{prometheus_route_publishing_status.stdout.split('\n')}}"
 
+# check on prometheus-node_exporter
+- hosts: all:!localhost
+  become: true
+  tasks:
+  - name: Check if prometheus is running
+    no_log: True
+    command: systemctl status prometheus-node-exporter.service --lines=0
+    ignore_errors: yes
+    changed_when: false
+    register: service_prometheus_node_exporter_status
+  - name: Report status of prometheus-node_exporter
+    debug:
+      msg: "{{service_prometheus_node_exporter_status.stdout.split('\n')}}"
+
 # check on frontend services
 - hosts: tag_frontend
   become: true

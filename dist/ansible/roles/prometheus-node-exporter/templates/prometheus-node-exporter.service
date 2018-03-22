@@ -1,0 +1,18 @@
+[Unit]
+Description=etcd
+# Dependencies
+Requires=docker.service
+
+# Ordering
+After=docker.service
+
+[Service]
+ExecStartPre=-/usr/bin/docker pull chadautry/wac-prometheus-node_exporter:{{node_exporter_version}}
+ExecStartPre=-/usr/bin/docker rm node_exporter
+ExecStart=/usr/bin/docker run --name node_exporter -p 9100:9100 -v "/proc:/host/proc" \
+-v "/sys:/host/sys" -v "/:/rootfs" --net="host" chadautry/wac-prometheus-node_exporter:{{node_exporter_version}}
+
+Restart=always
+
+[Install]
+WantedBy=multi-user.target

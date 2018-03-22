@@ -24,4 +24,8 @@ scrape_configs:
   - job_name: 'etcd'
     static_configs:
       - targets: [{% for host in groups['all'] | difference(['localhost']) %}'{{hostvars[host][internal_ip_name]}}:2379'{% if not loop.last %},{% endif %}{% endfor %} ]
+      
+  - job_name: 'node_exporter'
+    static_configs:
+      - targets: [{% for host in groups['all'] | difference(['localhost']) %}'{{hostvars[host][internal_ip_name]}}:9100'{% if not loop.last %},{% endif %}{% endfor %} ]
 

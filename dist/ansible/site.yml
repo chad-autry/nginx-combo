@@ -29,6 +29,12 @@
   roles:
     - { role: prometheus, tags: [ 'prometheus' ] }
 
+# Place prometheus\node_exporter everywhere
+- hosts: all:!localhost
+  become: true
+  roles:
+    - { role: prometheus_node_exporter, tags: [ 'prometheus_node_exporter' ] }
+
 - name: Remove old staging directory
   hosts: localhost
   tasks:
