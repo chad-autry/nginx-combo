@@ -696,7 +696,7 @@ Deploys or redeploys the prometheus/node_exporter instance on a host.
     daemon_reload: yes
     enabled: yes
     state: started
-    name: prometheus-node-exporter.service.service
+    name: prometheus-node-exporter.service
   when: not (node_exporter_template | changed)
 ```
 
