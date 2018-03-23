@@ -150,7 +150,7 @@ The main playbook that deploys or updates a cluster
 - hosts: all:!localhost
   become: true
   roles:
-    - { role: prometheus_node_exporter, tags: [ 'prometheus_node_exporter' ] }
+    - { role: prometheus-node-exporter, tags: [ 'prometheus_node_exporter' ] }
 
 - name: Remove old staging directory
   hosts: localhost
