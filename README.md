@@ -598,7 +598,11 @@ scrape_configs:
   - job_name: 'etcd'
     static_configs:
       - targets: [{% for host in groups['all'] | difference(['localhost']) %}'{{hostvars[host][internal_ip_name]}}:2379'{% if not loop.last %},{% endif %}{% endfor %} ]
-      
+
+  - job_name: 'nginx'
+    static_configs:
+      - targets: [{% for host in groups['tag_frontend'] %}'{{hostvars[host][internal_ip_name]}}:9145'{% if not loop.last %},{% endif %}{% endfor %} ]
+
   - job_name: 'node_exporter'
     static_configs:
       - targets: [{% for host in groups['all'] | difference(['localhost']) %}'{{hostvars[host][internal_ip_name]}}:9100'{% if not loop.last %},{% endif %}{% endfor %} ]
@@ -823,7 +827,7 @@ After=docker.service
 [Service]
 ExecStartPre=-/usr/bin/docker pull chadautry/wac-nginx:{{nginx_version}}
 ExecStartPre=-/usr/bin/docker rm nginx
-ExecStart=/usr/bin/docker run --name nginx -p 80:80 -p 443:443 \
+ExecStart=/usr/bin/docker run --name nginx -p 80:80 -p 443:443 -p 9145:9145 \
 -v /var/www:/usr/share/nginx/html:ro -v /var/ssl:/etc/nginx/ssl:ro \
 -v /var/nginx:/usr/var/nginx:ro \
 chadautry/wac-nginx:{{nginx_version}}
