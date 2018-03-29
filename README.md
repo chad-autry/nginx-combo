@@ -171,7 +171,7 @@ The main playbook that deploys or updates a cluster
 - hosts: tag_frontend
   become: true
   roles:
-    - frontend
+    - { role: frontend, tags: [ 'frontend' ] }
 
 # Default Backend nodejs process. Role can be applied additional times to different hosts with different configuration
 - hosts: tag_backend
