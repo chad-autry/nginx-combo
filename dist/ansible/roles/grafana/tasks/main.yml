@@ -4,22 +4,34 @@
     state: directory
     path: /var/grafana
     
-- name: ensure grafana config provisioning is present
+- name: ensure /var/grafana/config is present
+  file:
+    state: directory
+    path: /var/grafana/config
+
+- name: ensure /var/grafana/provisioning is present
   file:
     state: directory
     path: /var/grafana/provisioning
 
-- name: ensure grafana datasoures directory is present
+- name: ensure /var/grafana/provisioning/datasources is present
   file:
     state: directory
     path: /var/grafana/provisioning/datasoures
+
+# template out the grafana config
+- name: grafana config template
+  template:
+    src: datasource.yml
+    dest: /var/grafana/config/config.ini
+  register: grafana_config
 
 # template out the prometheus datasource
 - name: grafana config template
   template:
     src: datasource.yml
     dest: /var/grafana/provisioning/datasoures/datasource.yml
-  register: grafana_config
+  register: grafana_datasource
 
 # template out the systemd grafana.service unit
 - name: grafana.service template
@@ -28,13 +40,13 @@
     dest: /etc/systemd/system/grafana.service
   register: grafana_service_template
     
-- name: start/restart grafana.service if template or config changed
+- name: start/restart grafana.service if template, config, or datasource changed
   systemd:
     daemon_reload: yes
     enabled: yes
     state: restarted
     name: grafana.service
-  when: (grafana_service_template | changed) or (grafana_config | changed)
+  when: (grafana_service_template | changed) or (grafana_config | changed) or (grafana_datasource | changed)
   
 - name: ensure grafana.service is started, even if the template or config didn't change
   systemd:
