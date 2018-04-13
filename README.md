@@ -13,6 +13,7 @@ The unit files, scripts, and playbooks in the dist directory have been extracted
 
 # Requirements and Features
 * Metrics gathered by Prometheus
+  * Displayed with Grafana
 * Dockerized nginx container to host static site
   * TODO: Forward's nginx logs to the docker service, [loggly logging strategy article](https://www.loggly.com/blog/top-5-docker-logging-methods-to-fit-your-container-deployment-strategy/)
   * Automatically reconfigures and refreshes nginx config based on routing configuration provided through etcd
@@ -33,7 +34,6 @@ The unit files, scripts, and playbooks in the dist directory have been extracted
 * Create tagged machine instances
 * Create Ansible inventory (or use dynamic inventory script!)
 * Firewall
-* Machine instance monitoring
 
 # Ansible Deployment
 The machine used for a controller will need SSH access to all the machines being managed. You can use one of the instances being managed, on GCE [cloud shell](https://cloud.google.com/shell/docs/) is a handy resource to use. I'm personally running in GCE using [wac-gce-ansible](https://github.com/chad-autry/wac-gce-ansible)
@@ -107,6 +107,7 @@ nodejs_version: latest
 rethinkdb_version: latest
 prometheus_version: latest
 node_exporter_version: latest
+grafana_version: latest
 ```
 
 # Playbooks
@@ -145,6 +146,12 @@ The main playbook that deploys or updates a cluster
   become: true
   roles:
     - { role: prometheus, tags: [ 'prometheus' ] }
+
+# Place Grafana as the frontend on the Prometheus hosts
+- hosts: tag_prometheus
+  become: true
+  roles:
+    - { role: grafana, tags: [ 'grafana' ] }
 
 # Place prometheus\node_exporter everywhere
 - hosts: all:!localhost
@@ -247,6 +254,20 @@ A helper playbook that queries the systemctl status of all wac-bp deployed units
   - name: Report status of prometheus-node_exporter
     debug:
       msg: "{{service_prometheus_node_exporter_status.stdout.split('\n')}}"
+
+# check on grafana
+- hosts: tag_prometheus
+  become: true
+  tasks:
+  - name: Check if grafana is running
+    no_log: True
+    command: systemctl status grafana.service --lines=0
+    ignore_errors: yes
+    changed_when: false
+    register: service_grafana_status
+  - name: Report status of grafana
+    debug:
+      msg: "{{service_grafana_status.stdout.split('\n')}}"
 
 # check on frontend services
 - hosts: tag_frontend
@@ -494,7 +515,7 @@ This role sets values into etcd from the Ansible config when the etcd cluster ha
 ```
 
 ## prometheus
-The prometheus playbook templates out the prometheus config and sets up the prometheus unit
+The prometheus playbook templates out the prometheus config and sets up the prometheus unit and route discovery
 
 [roles/prometheus/tasks/main.yml](dist/ansible/roles/prometheus/tasks/main.yml)
 ```yml
@@ -638,7 +659,7 @@ WantedBy=multi-user.target
     * Version comes from variables
     * Takes config from local drive
     * Saves data to local drive
-    
+
 ### prometheus-route-publishing systemd unit template
 Publishes the backend host into etcd at an expected path for the frontend to route to
 
@@ -666,6 +687,162 @@ ExecStart=/bin/sh -c "while true; do etcdctl set /discovery/prometheus/hosts/%H/
                       done"
 ExecStartPost=-/bin/sh -c '/usr/bin/etcdctl set /discovery/watched "$(date +%s%N)"'
 ExecStop=/usr/bin/etcdctl rm /discovery/prometheus/hosts/%H
+
+[Install]
+WantedBy=multi-user.target
+```
+* requires etcd
+* Publishes host into etcd every 45 seconds with a 60 second duration
+* Deletes host from etcd on stop
+* Is restarted if etcd or nodejs restarts
+
+## grafana
+The grafana playbook templates out the grafana config and sets up the grafana unit and route discovery
+
+[roles/grafana/tasks/main.yml](dist/ansible/roles/grafana/tasks/main.yml)
+```yml
+# Ensure the grafana directories are created
+- name: ensure grafana directory is present
+  file:
+    state: directory
+    path: /var/grafana
+    
+- name: ensure grafana config provisioning is present
+  file:
+    state: directory
+    path: /var/grafana/provisioning
+
+- name: ensure grafana datasoures directory is present
+  file:
+    state: directory
+    path: /var/grafana/provisioning/datasoures
+
+# template out the prometheus datasource
+- name: grafana config template
+  template:
+    src: datasource.yml
+    dest: /var/grafana/provisioning/datasoures/datasource.yml
+  register: grafana_config
+
+# template out the systemd grafana.service unit
+- name: grafana.service template
+  template:
+    src: grafana.service
+    dest: /etc/systemd/system/grafana.service
+  register: grafana_service_template
+    
+- name: start/restart grafana.service if template or config changed
+  systemd:
+    daemon_reload: yes
+    enabled: yes
+    state: restarted
+    name: grafana.service
+  when: (grafana_service_template | changed) or (grafana_config | changed)
+  
+- name: ensure grafana.service is started, even if the template or config didn't change
+  systemd:
+    daemon_reload: yes
+    enabled: yes
+    state: started
+    name: grafana.service
+  when: not ((grafana_service_template | changed) or (grafana_config | changed))
+  
+# Template out the grafana route-publishing systemd unit
+- name: "grafana-route-publishing.service template"
+  template:
+    src: grafana-route-publishing.service
+    dest: /etc/systemd/system/grafana-route-publishing.service
+  register: grafana_route_publishing_template
+
+- name: start/restart the grafana-route-publishing.service
+  systemd:
+    daemon_reload: yes
+    enabled: yes
+    state: restarted
+    name: "grafana-route-publishing.service"
+  when: grafana_route_publishing_template | changed
+  
+- name: ensure grafana.service is started, even if the template didn't change
+  systemd:
+    daemon_reload: yes
+    enabled: yes
+    state: started
+    name: "grafana-route-publishing.service"
+  when: not (grafana_route_publishing_template | changed)
+```
+
+### grafana datasource template
+
+[roles/grafana/templates/datasource.yml](dist/ansible/roles/grafana/templates/datasource.yml)
+```yaml
+datasources:
+-  access: 'proxy'
+   editable: true
+   is_default: true
+   name: 'prom1'
+   org_id: 1
+   type: 'prometheus'
+   url: 'http://localhost:9090' 
+   version: 1
+
+```
+
+### prometheus systemd service unit template
+
+[roles/grafana/templates/grafana.service](dist/ansible/roles/grafana/templates/grafana.service)
+```yaml
+[Unit]
+Description=Grafana
+# Dependencies
+Requires=docker.service
+
+# Ordering
+After=docker.service
+
+[Service]
+ExecStartPre=-/usr/bin/docker pull chadautry/wac-grafana:{{grafana_version}}
+ExecStartPre=-/usr/bin/docker rm grafana
+ExecStart=/usr/bin/docker run --name grafana -p 3000:3000 \
+-v /var/grafana:/var/grafana \
+chadautry/wac-grafana:{{grafana_version}}
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
+```
+* requires docker
+* Starts a customized grafana docker container
+    * Version comes from variables
+    * Takes config from local drive
+    * Saves data to local drive
+
+### grafana-route-publishing systemd unit template
+Publishes the grafana host into etcd at an expected path for the frontend to route to
+
+[roles/grafana/templates/grafana-route-publishing.service](dist/ansible/roles/grafana/templates/grafana-route-publishing.service)
+```yaml
+[Unit]
+Description=Route Publishing
+# Dependencies
+Requires=etcd.service
+Requires=grafana.service
+
+# Ordering
+After=etcd.service
+After=grafana.service
+
+# Restart when dependency restarts
+PartOf=etcd.service
+PartOf=grafana.service
+
+[Service]
+ExecStart=/bin/sh -c "while true; do etcdctl set /discovery/grafana/hosts/%H/host '%H' --ttl 60; \
+                      etcdctl set /discovery/grafana/hosts/%H/port '3000' --ttl 60; \
+                      etcdctl set /discovery/grafana/private 'true' --ttl 60; \
+                      sleep 45; \
+                      done"
+ExecStartPost=-/bin/sh -c '/usr/bin/etcdctl set /discovery/watched "$(date +%s%N)"'
+ExecStop=/usr/bin/etcdctl rm /discovery/grafana/hosts/%H
 
 [Install]
 WantedBy=multi-user.target
