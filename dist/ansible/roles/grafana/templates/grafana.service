@@ -1,0 +1,18 @@
+[Unit]
+Description=Grafana
+# Dependencies
+Requires=docker.service
+
+# Ordering
+After=docker.service
+
+[Service]
+ExecStartPre=-/usr/bin/docker pull chadautry/wac-grafana:{{grafana_version}}
+ExecStartPre=-/usr/bin/docker rm grafana
+ExecStart=/usr/bin/docker run --name grafana -p 3000:3000 \
+-v /var/grafana:/var/grafana \
+chadautry/wac-grafana:{{grafana_version}}
+Restart=always
+
+[Install]
+WantedBy=multi-user.target

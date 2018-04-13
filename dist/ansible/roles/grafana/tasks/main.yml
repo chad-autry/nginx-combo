@@ -1,0 +1,68 @@
+# Ensure the grafana directories are created
+- name: ensure grafana directory is present
+  file:
+    state: directory
+    path: /var/grafana
+    
+- name: ensure grafana config provisioning is present
+  file:
+    state: directory
+    path: /var/grafana/provisioning
+
+- name: ensure grafana datasoures directory is present
+  file:
+    state: directory
+    path: /var/grafana/provisioning/datasoures
+
+# template out the prometheus datasource
+- name: grafana config template
+  template:
+    src: datasource.yml
+    dest: /var/grafana/provisioning/datasoures/datasource.yml
+  register: grafana_config
+
+# template out the systemd grafana.service unit
+- name: grafana.service template
+  template:
+    src: grafana.service
+    dest: /etc/systemd/system/grafana.service
+  register: grafana_service_template
+    
+- name: start/restart grafana.service if template or config changed
+  systemd:
+    daemon_reload: yes
+    enabled: yes
+    state: restarted
+    name: grafana.service
+  when: (grafana_service_template | changed) or (grafana_config | changed)
+  
+- name: ensure grafana.service is started, even if the template or config didn't change
+  systemd:
+    daemon_reload: yes
+    enabled: yes
+    state: started
+    name: grafana.service
+  when: not ((grafana_service_template | changed) or (grafana_config | changed))
+  
+# Template out the grafana route-publishing systemd unit
+- name: "grafana-route-publishing.service template"
+  template:
+    src: grafana-route-publishing.service
+    dest: /etc/systemd/system/grafana-route-publishing.service
+  register: grafana_route_publishing_template
+
+- name: start/restart the grafana-route-publishing.service
+  systemd:
+    daemon_reload: yes
+    enabled: yes
+    state: restarted
+    name: "grafana-route-publishing.service"
+  when: grafana_route_publishing_template | changed
+  
+- name: ensure grafana.service is started, even if the template didn't change
+  systemd:
+    daemon_reload: yes
+    enabled: yes
+    state: started
+    name: "grafana-route-publishing.service"
+  when: not (grafana_route_publishing_template | changed)

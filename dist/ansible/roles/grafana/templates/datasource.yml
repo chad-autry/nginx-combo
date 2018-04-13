@@ -1,0 +1,10 @@
+datasources:
+-  access: 'proxy'
+   editable: true
+   is_default: true
+   name: 'prom1'
+   org_id: 1
+   type: 'prometheus'
+   url: 'http://localhost:9090' 
+   version: 1
+

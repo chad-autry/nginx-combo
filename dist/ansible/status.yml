@@ -49,6 +49,20 @@
     debug:
       msg: "{{service_prometheus_node_exporter_status.stdout.split('\n')}}"
 
+# check on grafana
+- hosts: tag_prometheus
+  become: true
+  tasks:
+  - name: Check if grafana is running
+    no_log: True
+    command: systemctl status grafana.service --lines=0
+    ignore_errors: yes
+    changed_when: false
+    register: service_grafana_status
+  - name: Report status of grafana
+    debug:
+      msg: "{{service_grafana_status.stdout.split('\n')}}"
+
 # check on frontend services
 - hosts: tag_frontend
   become: true

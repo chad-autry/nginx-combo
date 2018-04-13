@@ -29,6 +29,12 @@
   roles:
     - { role: prometheus, tags: [ 'prometheus' ] }
 
+# Place Grafana as the frontend on the Prometheus hosts
+- hosts: tag_prometheus
+  become: true
+  roles:
+    - { role: grafana, tags: [ 'grafana' ] }
+
 # Place prometheus\node_exporter everywhere
 - hosts: all:!localhost
   become: true
