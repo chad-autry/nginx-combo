@@ -707,22 +707,34 @@ The grafana playbook templates out the grafana config and sets up the grafana un
     state: directory
     path: /var/grafana
     
-- name: ensure grafana config provisioning is present
+- name: ensure /var/grafana/config is present
+  file:
+    state: directory
+    path: /var/grafana/config
+
+- name: ensure /var/grafana/provisioning is present
   file:
     state: directory
     path: /var/grafana/provisioning
 
-- name: ensure grafana datasoures directory is present
+- name: ensure /var/grafana/provisioning/datasources is present
   file:
     state: directory
     path: /var/grafana/provisioning/datasoures
+
+# template out the grafana config
+- name: grafana config template
+  template:
+    src: datasource.yml
+    dest: /var/grafana/config/config.ini
+  register: grafana_config
 
 # template out the prometheus datasource
 - name: grafana config template
   template:
     src: datasource.yml
     dest: /var/grafana/provisioning/datasoures/datasource.yml
-  register: grafana_config
+  register: grafana_datasource
 
 # template out the systemd grafana.service unit
 - name: grafana.service template
@@ -731,13 +743,13 @@ The grafana playbook templates out the grafana config and sets up the grafana un
     dest: /etc/systemd/system/grafana.service
   register: grafana_service_template
     
-- name: start/restart grafana.service if template or config changed
+- name: start/restart grafana.service if template, config, or datasource changed
   systemd:
     daemon_reload: yes
     enabled: yes
     state: restarted
     name: grafana.service
-  when: (grafana_service_template | changed) or (grafana_config | changed)
+  when: (grafana_service_template | changed) or (grafana_config | changed) or (grafana_datasource | changed)
   
 - name: ensure grafana.service is started, even if the template or config didn't change
   systemd:
@@ -787,6 +799,17 @@ datasources:
 
 ```
 
+### grafana config template
+
+[roles/grafana/templates/config.ini](dist/ansible/roles/grafana/templates/config.ini)
+```ini
+[paths]
+provisioning = /var/grafana/provisioning
+
+[server]
+root_url = %(protocol)s://%(domain)s:%(http_port)s/grafana/
+```
+
 ### prometheus systemd service unit template
 
 [roles/grafana/templates/grafana.service](dist/ansible/roles/grafana/templates/grafana.service)
@@ -804,7 +827,7 @@ ExecStartPre=-/usr/bin/docker pull chadautry/wac-grafana:{{grafana_version}}
 ExecStartPre=-/usr/bin/docker rm grafana
 ExecStart=/usr/bin/docker run --name grafana -p 3000:3000 \
 -v /var/grafana:/var/grafana \
-chadautry/wac-grafana:{{grafana_version}}
+chadautry/wac-grafana:{{grafana_version}} --config /var/grafana/config.ini
 Restart=always
 
 [Install]
