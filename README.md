@@ -757,7 +757,7 @@ The grafana playbook templates out the grafana config and sets up the grafana un
     enabled: yes
     state: started
     name: grafana.service
-  when: not ((grafana_service_template | changed) or (grafana_config | changed))
+  when: not ((grafana_service_template | changed) or (grafana_config | changed) or (grafana_datasource | changed))
   
 # Template out the grafana route-publishing systemd unit
 - name: "grafana-route-publishing.service template"
@@ -807,7 +807,14 @@ datasources:
 provisioning = /var/grafana/provisioning
 
 [server]
+domain = {{domain_name}}
 root_url = %(protocol)s://%(domain)s:%(http_port)s/grafana/
+
+[auth.proxy]
+enabled = true
+header_name = X-WEBAUTH-USER
+header_property = username
+auto_sign_up = true
 ```
 
 ### prometheus systemd service unit template
@@ -827,7 +834,7 @@ ExecStartPre=-/usr/bin/docker pull chadautry/wac-grafana:{{grafana_version}}
 ExecStartPre=-/usr/bin/docker rm grafana
 ExecStart=/usr/bin/docker run --name grafana -p 3000:3000 \
 -v /var/grafana:/var/grafana \
-chadautry/wac-grafana:{{grafana_version}} --config /var/grafana/config.ini
+chadautry/wac-grafana:{{grafana_version}} --config /var/grafana/config/config.ini
 Restart=always
 
 [Install]
