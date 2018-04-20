@@ -22,7 +22,7 @@
 # template out the grafana config
 - name: grafana config template
   template:
-    src: datasource.yml
+    src: config.ini
     dest: /var/grafana/config/config.ini
   register: grafana_config
 
