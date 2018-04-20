@@ -725,7 +725,7 @@ The grafana playbook templates out the grafana config and sets up the grafana un
 # template out the grafana config
 - name: grafana config template
   template:
-    src: datasource.yml
+    src: config.ini
     dest: /var/grafana/config/config.ini
   register: grafana_config
 
