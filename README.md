@@ -720,7 +720,12 @@ The grafana playbook templates out the grafana config and sets up the grafana un
 - name: ensure /var/grafana/provisioning/datasources is present
   file:
     state: directory
-    path: /var/grafana/provisioning/datasoures
+    path: /var/grafana/provisioning/datasources
+
+- name: ensure /var/grafana/provisioning/dashboards is present
+  file:
+    state: directory
+    path: /var/grafana/provisioning/dashboards
 
 # template out the grafana config
 - name: grafana config template
