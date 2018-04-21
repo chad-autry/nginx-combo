@@ -834,7 +834,7 @@ ExecStartPre=-/usr/bin/docker pull chadautry/wac-grafana:{{grafana_version}}
 ExecStartPre=-/usr/bin/docker rm grafana
 ExecStart=/usr/bin/docker run --name grafana -p 3000:3000 \
 -v /var/grafana:/var/grafana \
-chadautry/wac-grafana:{{grafana_version}} --config /var/grafana/config/config.ini
+chadautry/wac-grafana:{{grafana_version}} -config /var/grafana/config/config.ini
 Restart=always
 
 [Install]
@@ -868,6 +868,7 @@ PartOf=grafana.service
 [Service]
 ExecStart=/bin/sh -c "while true; do etcdctl set /discovery/grafana/hosts/%H/host '%H' --ttl 60; \
                       etcdctl set /discovery/grafana/hosts/%H/port '3000' --ttl 60; \
+                      etcdctl set /discovery/grafana/strip 'true' --ttl 60; \
                       etcdctl set /discovery/grafana/private 'true' --ttl 60; \
                       sleep 45; \
                       done"
