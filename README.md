@@ -738,7 +738,7 @@ The grafana playbook templates out the grafana config and sets up the grafana un
 - name: grafana config template
   template:
     src: datasource.yml
-    dest: /var/grafana/provisioning/datasoures/datasource.yml
+    dest: /var/grafana/provisioning/datasources/datasource.yml
   register: grafana_datasource
 
 # template out the systemd grafana.service unit
