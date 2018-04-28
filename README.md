@@ -799,7 +799,7 @@ datasources:
    name: 'prom1'
    org_id: 1
    type: 'prometheus'
-   url: 'http://localhost:9090' 
+   url: 'http://{{internal_ip_name}}:9090' 
    version: 1
 
 ```
