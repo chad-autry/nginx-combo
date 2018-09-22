@@ -27,22 +27,24 @@
     state: restarted
     name: "{{identifier}}_nodejs.service"
 
-# Template out the nodejs route-publishing systemd unit for {{identifier}}
+# Template out the nodejs discoverable-publishing systemd unit for {{identifier}}
 - name: "{{identifier}}_route-publishing.service template"
   template:
     src: route-publishing.service
-    dest: /etc/systemd/system/{{identifier}}_route-publishing.service
-  register: node_route_publishing_template
-  when: discoverable
+    dest: /etc/systemd/system/{{identifier}}_{{item.key}}-publishing.service
+  register: node_{{item.key}}_publishing_template
+  with_dict: discoverables
+  when: discoverables is defined
 
 # Start/restart the discovery publisher when discoverable and template changed
-- name: start/restart the route-publishing.service
+- name: start/restart the discoverable-publishing.service
   systemd:
     daemon_reload: yes
     enabled: yes
     state: restarted
-    name: "{{identifier}}_route-publishing.service"
-  when: discoverable and (node_route_publishing_template | changed)
+    name: "{{identifier}}_{{item.key}}-publishing.service"
+  with_dict: discoverables
+  when: discoverables is defined and (node_{{item.key}}_publishing_template | changed)
   
 # Ensure the discovery publisher is started even if template did not change
 - name: start/restart the route-publishing.service
@@ -51,4 +53,4 @@
     enabled: yes
     state: started
     name: "{{identifier}}_route-publishing.service"
-  when: discoverable and not (node_route_publishing_template | changed)
+  when: discoverable is defined and not (node_route_publishing_template | changed)

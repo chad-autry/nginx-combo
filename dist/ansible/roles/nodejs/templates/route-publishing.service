@@ -13,14 +13,16 @@ PartOf=etcd.service
 PartOf={{identifier}}_nodejs.service
 
 [Service]
-ExecStart=/bin/sh -c "while true; do etcdctl set /discovery/{{route}}/hosts/%H/host '%H' --ttl 60; \
-                      etcdctl set /discovery/{{route}}/hosts/%H/port '{{nodejs_port}}' --ttl 60; \
-                      etcdctl set /discovery/{{route}}/strip '{{strip_route}}' --ttl 60; \
-                      etcdctl set /discovery/{{route}}/private '{{authenticate_route}}' --ttl 60; \
+ExecStart=/bin/sh -c "while true; do etcdctl set /{{item.key}}/{{item.value.subpath}}/hosts/%H/host '%H' --ttl 60; \
+                      {% for tuple in item  %}
+                      {% if tuple.key != 'subpath' %}
+                      etcdctl set /{{item.key}}/{{item.value.subpath}}/hosts/%H/{{tuple.key}} '{{tuple.value}}' --ttl 60; \
+                      {% endif %}
+                      {% endfor %}
                       sleep 45; \
                       done"
-ExecStartPost=-/bin/sh -c '/usr/bin/etcdctl set /discovery/watched "$(date +%s%N)"'
-ExecStop=/usr/bin/etcdctl rm /discovery/{{route}}/hosts/%H
+ExecStartPost=-/bin/sh -c '/usr/bin/etcdctl set /{{item.key}}/watched "$(date +%s%N)"'
+ExecStop=/usr/bin/etcdctl rm /{{item.key}}/{{item.value.subpath}}/hosts/%H
 
 [Install]
 WantedBy=multi-user.target
