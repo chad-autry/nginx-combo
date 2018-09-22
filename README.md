@@ -184,7 +184,7 @@ The main playbook that deploys or updates a cluster
 - hosts: tag_backend
   become: true
   roles:
-    - { role: nodejs, identifier: backend, nodejs_port: 8080, discoverable: True, route: backend, strip_route: false, authenticate_route: false, tags: [ 'backend' ] }
+    - { role: nodejs, identifier: backend, nodejs_port: 8080, discoverables: {discovery: {subpath: backend, port: 8080, strip: false, private: false}}, tags: [ 'backend' ] }
 
 # Place a full RethinkDB on the RethinkDB hosts
 - hosts: tag_rethinkdb
@@ -1425,22 +1425,24 @@ This role sets up a nodejs unit, the discovery unit, and finally pushes the sour
     state: restarted
     name: "{{identifier}}_nodejs.service"
 
-# Template out the nodejs route-publishing systemd unit for {{identifier}}
+# Template out the nodejs discoverable-publishing systemd unit for {{identifier}}
 - name: "{{identifier}}_route-publishing.service template"
   template:
     src: route-publishing.service
-    dest: /etc/systemd/system/{{identifier}}_route-publishing.service
-  register: node_route_publishing_template
-  when: discoverable
+    dest: /etc/systemd/system/{{identifier}}_{{item.key}}-publishing.service
+  register: node_{{item.key}}_publishing_template
+  with_dict: discoverables
+  when: discoverables is defined
 
 # Start/restart the discovery publisher when discoverable and template changed
-- name: start/restart the route-publishing.service
+- name: start/restart the discoverable-publishing.service
   systemd:
     daemon_reload: yes
     enabled: yes
     state: restarted
-    name: "{{identifier}}_route-publishing.service"
-  when: discoverable and (node_route_publishing_template | changed)
+    name: "{{identifier}}_{{item.key}}-publishing.service"
+  with_dict: discoverables
+  when: discoverables is defined and (node_{{item.key}}_publishing_template | changed)
   
 # Ensure the discovery publisher is started even if template did not change
 - name: start/restart the route-publishing.service
@@ -1449,7 +1451,7 @@ This role sets up a nodejs unit, the discovery unit, and finally pushes the sour
     enabled: yes
     state: started
     name: "{{identifier}}_route-publishing.service"
-  when: discoverable and not (node_route_publishing_template | changed)
+  when: discoverable is defined and not (node_route_publishing_template | changed)
 ```
 
 ### nodejs Application
@@ -1553,14 +1555,16 @@ PartOf=etcd.service
 PartOf={{identifier}}_nodejs.service
 
 [Service]
-ExecStart=/bin/sh -c "while true; do etcdctl set /discovery/{{route}}/hosts/%H/host '%H' --ttl 60; \
-                      etcdctl set /discovery/{{route}}/hosts/%H/port '{{nodejs_port}}' --ttl 60; \
-                      etcdctl set /discovery/{{route}}/strip '{{strip_route}}' --ttl 60; \
-                      etcdctl set /discovery/{{route}}/private '{{authenticate_route}}' --ttl 60; \
+ExecStart=/bin/sh -c "while true; do etcdctl set /{{item.key}}/{{item.value.subpath}}/hosts/%H/host '%H' --ttl 60; \
+                      {% for tuple in item  %}
+                      {% if tuple.key != 'subpath' %}
+                      etcdctl set /{{item.key}}/{{item.value.subpath}}/hosts/%H/{{tuple.key}} '{{tuple.value}}' --ttl 60; \
+                      {% endif %}
+                      {% endfor %}
                       sleep 45; \
                       done"
-ExecStartPost=-/bin/sh -c '/usr/bin/etcdctl set /discovery/watched "$(date +%s%N)"'
-ExecStop=/usr/bin/etcdctl rm /discovery/{{route}}/hosts/%H
+ExecStartPost=-/bin/sh -c '/usr/bin/etcdctl set /{{item.key}}/watched "$(date +%s%N)"'
+ExecStop=/usr/bin/etcdctl rm /{{item.key}}/{{item.value.subpath}}/hosts/%H
 
 [Install]
 WantedBy=multi-user.target
