@@ -97,6 +97,19 @@ node_src_path:
 # The controller machine directory to stage archives at
 controller_src_staging: /home/staging
 
+# Ports map
+ports:
+    backend: 8080
+    etcd_peer: 2380
+    etcd_client: 2379
+    prometheus: 9090
+    grafana: 3000
+    node_exporter: 9100
+    nginx_prometheus_endpoint: 9145
+    rethinkdb_peer: 29015
+    rethinkdb_client: 28015
+    rethinkdb_admin: 8081
+
 # The container versions to use
 rsync_version: latest
 etcd_version: latest
