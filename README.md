@@ -527,6 +527,76 @@ This role sets values into etcd from the Ansible config when the etcd cluster ha
   command: /usr/bin/etcdctl set /rethinkdb/pwd {{rethinkdb_web_password}}
 ```
 
+## discovery publishing
+The discovery publishing role is used to publish other services into etcd
+It takes the service name, a parent path name, an optional group name, and a set of properties
+It publishes the info into etcd for disocovery by other services
+
+[roles/discovery/tasks/main.yml](dist/ansible/roles/discovery/tasks/main.yml)
+```yml
+# Template out the discovery publishing publishing systemd unit
+- name: "{{service}}_{{parent}}_{group}}-publishing.service template"
+  template:
+    src: publishing.service
+    dest: /etc/systemd/system/{{service}}_{{parent}}_{group}}-publishing.service
+  register: "{{service}}_{{parent}}_{group}}_publishing_template"
+
+# Start/restart the discovery publisher when discoverable and template changed
+- name: start/restart the discoverable-publishing.service
+  systemd:
+    daemon_reload: yes
+    enabled: yes
+    state: restarted
+    name: "{{service}}_{{parent}}_{group}}-publishing.service"
+  when: {{service}}_{{parent}}_{group}}_publishing_template | changed
+  
+# Ensure the discovery publisher is started even if template did not change
+- name: start/restart the route-publishing.service
+  systemd:
+    daemon_reload: yes
+    enabled: yes
+    state: started
+    name: "{{service}}_{{parent}}_{group}}-publishing.service"
+  when: not ({{service}}_{{parent}}_{group}}_publishing_template | changed)
+```
+
+### discovery publishing systemd unit template
+Publishes the backend host into etcd at an expected path for the frontend to route to
+
+[roles/discovery/templates/publishing.service](dist/ansible/roles/discovery/templates/publishing.service)
+```yaml
+[Unit]
+Description={{service}} {{parent}} {{group}} Discovery Publishing
+# Dependencies
+Requires=etcd.service
+Requires={{service}}.service
+
+# Ordering
+After=etcd.service
+After={{service}}.service
+
+# Restart when dependency restarts
+PartOf=etcd.service
+PartOf={{service}}.service
+
+[Service]
+ExecStart=/bin/sh -c "while true; do etcdctl set /{{parent}}/{{group}}/hosts/%H/host '%H' --ttl 60; \
+                      {% for item in properties  %}
+                      etcdctl set /{{item.key}}/{{item.value.subpath}}/hosts/%H/{{item.key}} '{{item.value}}' --ttl 60; \
+                      {% endfor %}
+                      sleep 45; \
+                      done"
+ExecStartPost=-/bin/sh -c '/usr/bin/etcdctl set /{{parent}}/watched "$(date +%s%N)"'
+ExecStop=/usr/bin/etcdctl rm /{{parent}}/{{group}}/hosts/%H
+
+[Install]
+WantedBy=multi-user.target
+```
+* requires etcd
+* Publishes service's info into etcd every 45 seconds with a 60 second duration
+* Deletes service info from etcd on stop
+* Is restarted if etcd or the service restarts
+
 ## prometheus
 The prometheus playbook templates out the prometheus config and sets up the prometheus unit and route discovery
 
