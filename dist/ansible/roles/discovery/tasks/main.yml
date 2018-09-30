@@ -1,0 +1,24 @@
+# Template out the discovery publishing publishing systemd unit
+- name: "{{service}}_{{parent}}_{group}}-publishing.service template"
+  template:
+    src: publishing.service
+    dest: /etc/systemd/system/{{service}}_{{parent}}_{group}}-publishing.service
+  register: "{{service}}_{{parent}}_{group}}_publishing_template"
+
+# Start/restart the discovery publisher when discoverable and template changed
+- name: start/restart the discoverable-publishing.service
+  systemd:
+    daemon_reload: yes
+    enabled: yes
+    state: restarted
+    name: "{{service}}_{{parent}}_{group}}-publishing.service"
+  when: {{service}}_{{parent}}_{group}}_publishing_template | changed
+  
+# Ensure the discovery publisher is started even if template did not change
+- name: start/restart the route-publishing.service
+  systemd:
+    daemon_reload: yes
+    enabled: yes
+    state: started
+    name: "{{service}}_{{parent}}_{group}}-publishing.service"
+  when: not ({{service}}_{{parent}}_{group}}_publishing_template | changed)
