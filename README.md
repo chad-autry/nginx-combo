@@ -535,11 +535,11 @@ It publishes the info into etcd for disocovery by other services
 [roles/discovery/tasks/main.yml](dist/ansible/roles/discovery/tasks/main.yml)
 ```yml
 # Template out the discovery publishing publishing systemd unit
-- name: "{{service}}_{{parent}}_{group}}-publishing.service template"
+- name: "{{service}}_{{parent}}_{group}}_{{port}}-publishing.service template"
   template:
     src: publishing.service
-    dest: /etc/systemd/system/{{service}}_{{parent}}_{group}}-publishing.service
-  register: "{{service}}_{{parent}}_{group}}_publishing_template"
+    dest: /etc/systemd/system/{{service}}_{{parent}}_{group}}_{{port}}-publishing.service
+  register: "{{service}}_{{parent}}_{{group}}_{{port}}_publishing_template"
 
 # Start/restart the discovery publisher when discoverable and template changed
 - name: start/restart the discoverable-publishing.service
@@ -547,8 +547,8 @@ It publishes the info into etcd for disocovery by other services
     daemon_reload: yes
     enabled: yes
     state: restarted
-    name: "{{service}}_{{parent}}_{group}}-publishing.service"
-  when: {{service}}_{{parent}}_{group}}_publishing_template | changed
+    name: "{{service}}_{{parent}}_{{group}}_{{port}}-publishing.service"
+  when: {{service}}_{{parent}}_{{group}}_{{port}}_publishing_template | changed
   
 # Ensure the discovery publisher is started even if template did not change
 - name: start/restart the route-publishing.service
@@ -556,8 +556,8 @@ It publishes the info into etcd for disocovery by other services
     daemon_reload: yes
     enabled: yes
     state: started
-    name: "{{service}}_{{parent}}_{group}}-publishing.service"
-  when: not ({{service}}_{{parent}}_{group}}_publishing_template | changed)
+    name: "{{service}}_{{parent}}_{{group}}_{{port}}-publishing.service"
+  when: not ({{service}}_{{parent}}_{{group}}_{{port}}_publishing_template | changed)
 ```
 
 ### discovery publishing systemd unit template
@@ -566,7 +566,7 @@ Publishes the backend host into etcd at an expected path for the frontend to rou
 [roles/discovery/templates/publishing.service](dist/ansible/roles/discovery/templates/publishing.service)
 ```yaml
 [Unit]
-Description={{service}} {{parent}} {{group}} Discovery Publishing
+Description={{service}} {{parent}} {{group}} {{port}} Discovery Publishing
 # Dependencies
 Requires=etcd.service
 Requires={{service}}.service
