@@ -14,8 +14,12 @@ PartOf={{service}}.service
 
 [Service]
 ExecStart=/bin/sh -c "while true; do etcdctl set /{{parent}}/{{group}}/services/%H_{{port}}/host '%H' --ttl 60; \
+                      etcdctl set /{{parent}}/{{group}}/services/%H_{{port}}/port '{{port}}' --ttl 60; \
                       {% for item in properties  %}
                       etcdctl set /{{parent}}/{{group}}/services/%H_{{port}}/{{item.key}} '{{item.value}}' --ttl 60; \
+                      {% endfor %}
+                      {% for item in group_properties  %}
+                      etcdctl set /{{parent}}/{{group}}/{{item.key}} '{{item.value}}' --ttl 60; \
                       {% endfor %}
                       sleep 45; \
                       done"
