@@ -114,7 +114,7 @@ ports:
 rsync_version: latest
 etcd_version: latest
 nginx_version: latest
-nginx_config_templater_version: v0.3.0
+nginx_config_templater_version: latest
 wac_acme_version: latest
 nodejs_version: latest
 rethinkdb_version: latest
