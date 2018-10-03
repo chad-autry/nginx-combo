@@ -197,7 +197,8 @@ The main playbook that deploys or updates a cluster
 - hosts: tag_backend
   become: true
   roles:
-    - { role: nodejs, identifier: backend, nodejs_port: 8080, discoverables: {discovery: {subpath: backend, port: 8080, strip: false, private: false}}, tags: [ 'backend' ] }
+    - { role: nodejs, identifier: backend, nodejs_port: {{ports['backend']}}, tags: [ 'backend' ] }
+    - { role: discovery, parent: 'route_discovery', service: backend, port: {{ports['backend']}}, service_properties: {strip: false, private: false}}, tags: [ 'backend' ] }
 
 # Place a full RethinkDB on the RethinkDB hosts
 - hosts: tag_rethinkdb
@@ -535,11 +536,11 @@ It publishes the info into etcd for disocovery by other services
 [roles/discovery/tasks/main.yml](dist/ansible/roles/discovery/tasks/main.yml)
 ```yml
 # Template out the discovery publishing publishing systemd unit
-- name: "{{service}}_{{parent}}_{group}}_{{port}}-publishing.service template"
+- name: "{{service}}_{{parent}}_{{port}}-publishing.service template"
   template:
     src: publishing.service
-    dest: /etc/systemd/system/{{service}}_{{parent}}_{group}}_{{port}}-publishing.service
-  register: "{{service}}_{{parent}}_{{group}}_{{port}}_publishing_template"
+    dest: /etc/systemd/system/{{service}}_{{parent}}_{{port}}-publishing.service
+  register: "{{service}}_{{parent}}_{{port}}_publishing_template"
 
 # Start/restart the discovery publisher when discoverable and template changed
 - name: start/restart the discoverable-publishing.service
@@ -547,8 +548,8 @@ It publishes the info into etcd for disocovery by other services
     daemon_reload: yes
     enabled: yes
     state: restarted
-    name: "{{service}}_{{parent}}_{{group}}_{{port}}-publishing.service"
-  when: {{service}}_{{parent}}_{{group}}_{{port}}_publishing_template | changed
+    name: "{{service}}_{{parent}}_{{port}}-publishing.service"
+  when: {{service}}_{{parent}}_{{port}}_publishing_template | changed
   
 # Ensure the discovery publisher is started even if template did not change
 - name: start/restart the route-publishing.service
@@ -556,8 +557,8 @@ It publishes the info into etcd for disocovery by other services
     daemon_reload: yes
     enabled: yes
     state: started
-    name: "{{service}}_{{parent}}_{{group}}_{{port}}-publishing.service"
-  when: not ({{service}}_{{parent}}_{{group}}_{{port}}_publishing_template | changed)
+    name: "{{service}}_{{parent}}_{{port}}-publishing.service"
+  when: not ({{service}}_{{parent}}_{{port}}_publishing_template | changed)
 ```
 
 ### discovery publishing systemd unit template
@@ -566,7 +567,7 @@ Publishes the backend host into etcd at an expected path for the frontend to rou
 [roles/discovery/templates/publishing.service](dist/ansible/roles/discovery/templates/publishing.service)
 ```yaml
 [Unit]
-Description={{service}} {{parent}} {{group}} {{port}} Discovery Publishing
+Description={{service}} {{parent}} {{port}} Discovery Publishing
 # Dependencies
 Requires=etcd.service
 Requires={{service}}.service
@@ -580,18 +581,18 @@ PartOf=etcd.service
 PartOf={{service}}.service
 
 [Service]
-ExecStart=/bin/sh -c "while true; do etcdctl set /{{parent}}/{{group}}/services/%H_{{port}}/host '%H' --ttl 60; \
-                      etcdctl set /{{parent}}/{{group}}/services/%H_{{port}}/port '{{port}}' --ttl 60; \
+ExecStart=/bin/sh -c "while true; do etcdctl set /{{parent}}/{{service}}/services/%H_{{port}}/host '%H' --ttl 60; \
+                      etcdctl set /{{parent}}/{{service}}/services/%H_{{port}}/port '{{port}}' --ttl 60; \
                       {% for item in properties  %}
-                      etcdctl set /{{parent}}/{{group}}/services/%H_{{port}}/{{item.key}} '{{item.value}}' --ttl 60; \
+                      etcdctl set /{{parent}}/{{service}}/services/%H_{{port}}/{{item.key}} '{{item.value}}' --ttl 60; \
                       {% endfor %}
-                      {% for item in group_properties  %}
-                      etcdctl set /{{parent}}/{{group}}/{{item.key}} '{{item.value}}' --ttl 60; \
+                      {% for item in service_properties  %}
+                      etcdctl set /{{parent}}/{{service}}/{{item.key}} '{{item.value}}' --ttl 60; \
                       {% endfor %}
                       sleep 45; \
                       done"
 ExecStartPost=-/bin/sh -c '/usr/bin/etcdctl set /{{parent}}/watched "$(date +%s%N)"'
-ExecStop=/usr/bin/etcdctl rm /{{parent}}/{{group}}/services/%H_{{port}}
+ExecStop=/usr/bin/etcdctl rm /{{parent}}/{{service}}/services/%H_{{port}}
 
 [Install]
 WantedBy=multi-user.target
@@ -651,29 +652,14 @@ The prometheus playbook templates out the prometheus config and sets up the prom
     state: started
     name: prometheus.service
   when: not ((prometheus_service_template | changed) or (prometheus_config | changed))
-  
-# Template out the prometheus route-publishing systemd unit
-- name: "prometheus-route-publishing.service template"
-  template:
-    src: prometheus-route-publishing.service
-    dest: /etc/systemd/system/prometheus-route-publishing.service
-  register: prometheus_route_publishing_template
+```
 
-- name: start/restart the prometheus-route-publishing.service
-  systemd:
-    daemon_reload: yes
-    enabled: yes
-    state: restarted
-    name: "prometheus-route-publishing.service"
-  when: prometheus_route_publishing_template | changed
-  
-- name: ensure prometheus.service is started, even if the template didn't change
-  systemd:
-    daemon_reload: yes
-    enabled: yes
-    state: started
-    name: "prometheus-route-publishing.service"
-  when: not (prometheus_route_publishing_template | changed)
+### prometheus role dependencies
+[roles/prometheus/meta/main.yml](dist/ansible/roles/prometheus/meta/main.yml)
+```yaml
+---
+dependencies:
+  - { role: discovery, parent: 'route_discovery', service: 'prometheus', port: {{ports['prometheus']}}, service_properties: {private: 'true'} }
 ```
 
 ### prometheus config template
@@ -747,42 +733,6 @@ WantedBy=multi-user.target
     * Takes config from local drive
     * Saves data to local drive
 
-### prometheus-route-publishing systemd unit template
-Publishes the backend host into etcd at an expected path for the frontend to route to
-
-[roles/prometheus/templates/prometheus-route-publishing.service](dist/ansible/roles/prometheus/templates/prometheus-route-publishing.service)
-```yaml
-[Unit]
-Description=Route Publishing
-# Dependencies
-Requires=etcd.service
-Requires=prometheus.service
-
-# Ordering
-After=etcd.service
-After=prometheus.service
-
-# Restart when dependency restarts
-PartOf=etcd.service
-PartOf=prometheus.service
-
-[Service]
-ExecStart=/bin/sh -c "while true; do etcdctl set /discovery/prometheus/hosts/%H/host '%H' --ttl 60; \
-                      etcdctl set /discovery/prometheus/hosts/%H/port '9090' --ttl 60; \
-                      etcdctl set /discovery/prometheus/private 'true' --ttl 60; \
-                      sleep 45; \
-                      done"
-ExecStartPost=-/bin/sh -c '/usr/bin/etcdctl set /discovery/watched "$(date +%s%N)"'
-ExecStop=/usr/bin/etcdctl rm /discovery/prometheus/hosts/%H
-
-[Install]
-WantedBy=multi-user.target
-```
-* requires etcd
-* Publishes host into etcd every 45 seconds with a 60 second duration
-* Deletes host from etcd on stop
-* Is restarted if etcd or nodejs restarts
-
 ## grafana
 The grafana playbook templates out the grafana config and sets up the grafana unit and route discovery
 
@@ -850,29 +800,14 @@ The grafana playbook templates out the grafana config and sets up the grafana un
     state: started
     name: grafana.service
   when: not ((grafana_service_template | changed) or (grafana_config | changed) or (grafana_datasource | changed))
-  
-# Template out the grafana route-publishing systemd unit
-- name: "grafana-route-publishing.service template"
-  template:
-    src: grafana-route-publishing.service
-    dest: /etc/systemd/system/grafana-route-publishing.service
-  register: grafana_route_publishing_template
+```
 
-- name: start/restart the grafana-route-publishing.service
-  systemd:
-    daemon_reload: yes
-    enabled: yes
-    state: restarted
-    name: "grafana-route-publishing.service"
-  when: grafana_route_publishing_template | changed
-  
-- name: ensure grafana.service is started, even if the template didn't change
-  systemd:
-    daemon_reload: yes
-    enabled: yes
-    state: started
-    name: "grafana-route-publishing.service"
-  when: not (grafana_route_publishing_template | changed)
+### grafana role dependencies
+[roles/grafana/meta/main.yml](dist/ansible/roles/grafana/meta/main.yml)
+```yaml
+---
+dependencies:
+  - { role: discovery, parent: 'route_discovery', service: 'grafana', port: {{ports['grafana']}}, service_properties: {strip: 'true', private: 'true'} }
 ```
 
 ### grafana datasource template
@@ -909,7 +844,7 @@ header_property = username
 auto_sign_up = true
 ```
 
-### prometheus systemd service unit template
+### grafana systemd service unit template
 
 [roles/grafana/templates/grafana.service](dist/ansible/roles/grafana/templates/grafana.service)
 ```yaml
@@ -937,43 +872,6 @@ WantedBy=multi-user.target
     * Version comes from variables
     * Takes config from local drive
     * Saves data to local drive
-
-### grafana-route-publishing systemd unit template
-Publishes the grafana host into etcd at an expected path for the frontend to route to
-
-[roles/grafana/templates/grafana-route-publishing.service](dist/ansible/roles/grafana/templates/grafana-route-publishing.service)
-```yaml
-[Unit]
-Description=Route Publishing
-# Dependencies
-Requires=etcd.service
-Requires=grafana.service
-
-# Ordering
-After=etcd.service
-After=grafana.service
-
-# Restart when dependency restarts
-PartOf=etcd.service
-PartOf=grafana.service
-
-[Service]
-ExecStart=/bin/sh -c "while true; do etcdctl set /discovery/grafana/hosts/%H/host '%H' --ttl 60; \
-                      etcdctl set /discovery/grafana/hosts/%H/port '3000' --ttl 60; \
-                      etcdctl set /discovery/grafana/strip 'true' --ttl 60; \
-                      etcdctl set /discovery/grafana/private 'true' --ttl 60; \
-                      sleep 45; \
-                      done"
-ExecStartPost=-/bin/sh -c '/usr/bin/etcdctl set /discovery/watched "$(date +%s%N)"'
-ExecStop=/usr/bin/etcdctl rm /discovery/grafana/hosts/%H
-
-[Install]
-WantedBy=multi-user.target
-```
-* requires etcd
-* Publishes host into etcd every 45 seconds with a 60 second duration
-* Deletes host from etcd on stop
-* Is restarted if etcd or nodejs restarts
 
 ## prometheus/node_exporter
 Deploys or redeploys the prometheus/node_exporter instance on a host.
@@ -1223,7 +1121,7 @@ PartOf=etcd.service
 [Service]
 ExecStartPre=-/usr/bin/docker pull chadautry/wac-nginx-config-templater:{{nginx_config_templater_version}}
 ExecStartPre=-/usr/bin/docker rm nginx-templater
-ExecStartPre=-/bin/sh -c '/usr/bin/etcdctl mk /discovery/watched "$(date +%s%N)"'
+ExecStartPre=-/bin/sh -c '/usr/bin/etcdctl mk /route_discovery/watched "$(date +%s%N)"'
 ExecStart=/usr/bin/etcdctl watch /discovery/watched 
 ExecStartPost=-/usr/bin/docker run --name nginx-templater --net host \
 -v /var/nginx:/usr/var/nginx -v /var/ssl:/etc/nginx/ssl:ro \
@@ -1511,34 +1409,6 @@ This role sets up a nodejs unit, the discovery unit, and finally pushes the sour
     enabled: yes
     state: restarted
     name: "{{identifier}}_nodejs.service"
-
-# Template out the nodejs discoverable-publishing systemd unit for {{identifier}}
-- name: "{{identifier}}_route-publishing.service template"
-  template:
-    src: route-publishing.service
-    dest: /etc/systemd/system/{{identifier}}_{{item.key}}-publishing.service
-  register: node_{{item.key}}_publishing_template
-  with_dict: discoverables
-  when: discoverables is defined
-
-# Start/restart the discovery publisher when discoverable and template changed
-- name: start/restart the discoverable-publishing.service
-  systemd:
-    daemon_reload: yes
-    enabled: yes
-    state: restarted
-    name: "{{identifier}}_{{item.key}}-publishing.service"
-  with_dict: discoverables
-  when: discoverables is defined and (node_{{item.key}}_publishing_template | changed)
-  
-# Ensure the discovery publisher is started even if template did not change
-- name: start/restart the route-publishing.service
-  systemd:
-    daemon_reload: yes
-    enabled: yes
-    state: started
-    name: "{{identifier}}_route-publishing.service"
-  when: discoverable is defined and not (node_route_publishing_template | changed)
 ```
 
 ### nodejs Application
@@ -1622,45 +1492,6 @@ WantedBy=multi-user.target
 * Starts a customized nodejs docker container
     * Takes the app and configuration from local drive
 
-### nodejs route-publishing systemd unit template
-Publishes the backend host into etcd at an expected path for the frontend to route to
-
-[roles/nodejs/templates/route-publishing.service](dist/ansible/roles/nodejs/templates/route-publishing.service)
-```yaml
-[Unit]
-Description=Route Publishing
-# Dependencies
-Requires=etcd.service
-Requires={{identifier}}_nodejs.service
-
-# Ordering
-After=etcd.service
-After={{identifier}}_nodejs.service
-
-# Restart when dependency restarts
-PartOf=etcd.service
-PartOf={{identifier}}_nodejs.service
-
-[Service]
-ExecStart=/bin/sh -c "while true; do etcdctl set /{{item.key}}/{{item.value.subpath}}/hosts/%H/host '%H' --ttl 60; \
-                      {% for tuple in item  %}
-                      {% if tuple.key != 'subpath' %}
-                      etcdctl set /{{item.key}}/{{item.value.subpath}}/hosts/%H/{{tuple.key}} '{{tuple.value}}' --ttl 60; \
-                      {% endif %}
-                      {% endfor %}
-                      sleep 45; \
-                      done"
-ExecStartPost=-/bin/sh -c '/usr/bin/etcdctl set /{{item.key}}/watched "$(date +%s%N)"'
-ExecStop=/usr/bin/etcdctl rm /{{item.key}}/{{item.value.subpath}}/hosts/%H
-
-[Install]
-WantedBy=multi-user.target
-```
-* requires etcd
-* Publishes host into etcd every 45 seconds with a 60 second duration
-* Deletes host from etcd on stop
-* Is restarted if etcd or nodejs restarts
-
 ## RethinkDB
 The RethinkDB role is used to install/update the database and its configurations
 
@@ -1691,23 +1522,14 @@ The RethinkDB role is used to install/update the database and its configurations
     enabled: yes
     state: started
     name: rethinkdb.service
-    
-# Template out the RethinkDB route-publishing systemd unit (non-proxy)
-- name: route-publishing.service template
-  template:
-    src: rethinkdb-route-publishing.service
-    dest: /etc/systemd/system/rethinkdb-route-publishing.service
-  register: rethink_route_publishing_template
-  when: not proxy_rethinkdb
+```
 
-# Start the discovery publisher
-- name: start the rethinkdb-route-publishing.service
-  systemd:
-    daemon_reload: yes
-    enabled: yes
-    state: started
-    name: rethinkdb-route-publishing.service
-  when: not proxy_rethinkdb and (rethink_route_publishing_template | changed)
+### rethinkdb role dependencies
+[roles/grafana/meta/main.yml](dist/ansible/roles/grafana/meta/main.yml)
+```yaml
+---
+dependencies:
+  - { role: discovery, when: not proxy_rethinkdb, parent: 'route_discovery', service: 'rethinkdb', port: {{ports['rethinkdb_admin']}}, service_properties: {strip: 'true', private: 'true'} }
 ```
 
 ### rethinkd.conf template
