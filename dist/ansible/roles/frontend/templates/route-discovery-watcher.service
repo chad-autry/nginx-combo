@@ -12,7 +12,7 @@ PartOf=etcd.service
 [Service]
 ExecStartPre=-/usr/bin/docker pull chadautry/wac-nginx-config-templater:{{nginx_config_templater_version}}
 ExecStartPre=-/usr/bin/docker rm nginx-templater
-ExecStartPre=-/bin/sh -c '/usr/bin/etcdctl mk /discovery/watched "$(date +%s%N)"'
+ExecStartPre=-/bin/sh -c '/usr/bin/etcdctl mk /route_discovery/watched "$(date +%s%N)"'
 ExecStart=/usr/bin/etcdctl watch /discovery/watched 
 ExecStartPost=-/usr/bin/docker run --name nginx-templater --net host \
 -v /var/nginx:/usr/var/nginx -v /var/ssl:/etc/nginx/ssl:ro \

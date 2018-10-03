@@ -60,26 +60,3 @@
     state: started
     name: grafana.service
   when: not ((grafana_service_template | changed) or (grafana_config | changed) or (grafana_datasource | changed))
-  
-# Template out the grafana route-publishing systemd unit
-- name: "grafana-route-publishing.service template"
-  template:
-    src: grafana-route-publishing.service
-    dest: /etc/systemd/system/grafana-route-publishing.service
-  register: grafana_route_publishing_template
-
-- name: start/restart the grafana-route-publishing.service
-  systemd:
-    daemon_reload: yes
-    enabled: yes
-    state: restarted
-    name: "grafana-route-publishing.service"
-  when: grafana_route_publishing_template | changed
-  
-- name: ensure grafana.service is started, even if the template didn't change
-  systemd:
-    daemon_reload: yes
-    enabled: yes
-    state: started
-    name: "grafana-route-publishing.service"
-  when: not (grafana_route_publishing_template | changed)

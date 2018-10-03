@@ -23,20 +23,3 @@
     enabled: yes
     state: started
     name: rethinkdb.service
-    
-# Template out the RethinkDB route-publishing systemd unit (non-proxy)
-- name: route-publishing.service template
-  template:
-    src: rethinkdb-route-publishing.service
-    dest: /etc/systemd/system/rethinkdb-route-publishing.service
-  register: rethink_route_publishing_template
-  when: not proxy_rethinkdb
-
-# Start the discovery publisher
-- name: start the rethinkdb-route-publishing.service
-  systemd:
-    daemon_reload: yes
-    enabled: yes
-    state: started
-    name: rethinkdb-route-publishing.service
-  when: not proxy_rethinkdb and (rethink_route_publishing_template | changed)

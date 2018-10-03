@@ -43,26 +43,3 @@
     state: started
     name: prometheus.service
   when: not ((prometheus_service_template | changed) or (prometheus_config | changed))
-  
-# Template out the prometheus route-publishing systemd unit
-- name: "prometheus-route-publishing.service template"
-  template:
-    src: prometheus-route-publishing.service
-    dest: /etc/systemd/system/prometheus-route-publishing.service
-  register: prometheus_route_publishing_template
-
-- name: start/restart the prometheus-route-publishing.service
-  systemd:
-    daemon_reload: yes
-    enabled: yes
-    state: restarted
-    name: "prometheus-route-publishing.service"
-  when: prometheus_route_publishing_template | changed
-  
-- name: ensure prometheus.service is started, even if the template didn't change
-  systemd:
-    daemon_reload: yes
-    enabled: yes
-    state: started
-    name: "prometheus-route-publishing.service"
-  when: not (prometheus_route_publishing_template | changed)
