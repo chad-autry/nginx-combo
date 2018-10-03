@@ -197,8 +197,8 @@ The main playbook that deploys or updates a cluster
 - hosts: tag_backend
   become: true
   roles:
-    - { role: nodejs, identifier: backend, nodejs_port: {{ports['backend']}}, tags: [ 'backend' ] }
-    - { role: discovery, parent: 'route_discovery', service: backend, port: {{ports['backend']}}, service_properties: {strip: false, private: false}}, tags: [ 'backend' ] }
+    - { role: nodejs, identifier: backend, nodejs_port: "{{ports['backend']}}", tags: [ 'backend' ] }
+    - { role: discovery, parent: 'route_discovery', service: backend, port: "{{ports['backend']}}", service_properties: {strip: false, private: false}}, tags: [ 'backend' ] }
 
 # Place a full RethinkDB on the RethinkDB hosts
 - hosts: tag_rethinkdb
@@ -549,7 +549,7 @@ It publishes the info into etcd for disocovery by other services
     enabled: yes
     state: restarted
     name: "{{service}}_{{parent}}_{{port}}-publishing.service"
-  when: {{service}}_{{parent}}_{{port}}_publishing_template | changed
+  when: "{{service}}_{{parent}}_{{port}}_publishing_template" | changed
   
 # Ensure the discovery publisher is started even if template did not change
 - name: start/restart the route-publishing.service
@@ -663,7 +663,7 @@ The prometheus playbook templates out the prometheus config and sets up the prom
 ```yaml
 ---
 dependencies:
-  - { role: discovery, parent: 'route_discovery', service: 'prometheus', port: {{ports['prometheus']}}, service_properties: {private: 'true'} }
+  - { role: discovery, parent: 'route_discovery', service: 'prometheus', port: "{{ports['prometheus']}}", service_properties: {private: 'true'} }
 ```
 
 ### prometheus config template
@@ -1533,7 +1533,7 @@ The RethinkDB role is used to install/update the database and its configurations
 ```yaml
 ---
 dependencies:
-  - { role: discovery, when: not proxy_rethinkdb, parent: 'route_discovery', service: 'rethinkdb', port: {{ports['rethinkdb_admin']}}, service_properties: {strip: 'true', private: 'true'} }
+  - { role: discovery, when: not proxy_rethinkdb, parent: 'route_discovery', service: 'rethinkdb', port: "{{ports['rethinkdb_admin']}}", service_properties: {strip: 'true', private: 'true'} }
 ```
 
 ### rethinkd.conf template
