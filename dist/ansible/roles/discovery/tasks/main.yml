@@ -12,7 +12,7 @@
     enabled: yes
     state: restarted
     name: "{{service}}_{{parent}}_{{port}}-publishing.service"
-  when: {{service}}_{{parent}}_{{port}}_publishing_template | changed
+  when: "{{service}}_{{parent}}_{{port}}_publishing_template" | changed
   
 # Ensure the discovery publisher is started even if template did not change
 - name: start/restart the route-publishing.service

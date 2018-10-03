@@ -66,8 +66,8 @@
 - hosts: tag_backend
   become: true
   roles:
-    - { role: nodejs, identifier: backend, nodejs_port: {{ports['backend']}}, tags: [ 'backend' ] }
-    - { role: discovery, parent: 'route_discovery', service: backend, port: {{ports['backend']}}, service_properties: {strip: false, private: false}}, tags: [ 'backend' ] }
+    - { role: nodejs, identifier: backend, nodejs_port: "{{ports['backend']}}", tags: [ 'backend' ] }
+    - { role: discovery, parent: 'route_discovery', service: backend, port: "{{ports['backend']}}", service_properties: {strip: false, private: false}}, tags: [ 'backend' ] }
 
 # Place a full RethinkDB on the RethinkDB hosts
 - hosts: tag_rethinkdb
