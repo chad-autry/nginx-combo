@@ -583,12 +583,16 @@ PartOf={{service}}.service
 [Service]
 ExecStart=/bin/sh -c "while true; do etcdctl set /{{parent}}/{{service}}/services/%H_{{port}}/host '%H' --ttl 60; \
                       etcdctl set /{{parent}}/{{service}}/services/%H_{{port}}/port '{{port}}' --ttl 60; \
-                      {% for item in properties  %}
+                      {% if service_local_properties is defined %}
+                      {% for item in service_local_properties  %}
                       etcdctl set /{{parent}}/{{service}}/services/%H_{{port}}/{{item.key}} '{{item.value}}' --ttl 60; \
                       {% endfor %}
+                      {% endif %}
                       {% for item in service_properties  %}
+                      {% if service_properties is defined %}
                       etcdctl set /{{parent}}/{{service}}/{{item.key}} '{{item.value}}' --ttl 60; \
                       {% endfor %}
+                      {% endif %}
                       sleep 45; \
                       done"
 ExecStartPost=-/bin/sh -c '/usr/bin/etcdctl set /{{parent}}/watched "$(date +%s%N)"'
