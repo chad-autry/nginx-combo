@@ -1372,11 +1372,11 @@ This task include takes the static front end application and pushes it across to
     dest: /var/staging
   tags: frontend_application
     
-- name: Pull alpine-rsync image		
+- name: Pull alpine-rsync image
   command: /usr/bin/docker pull chadautry/alpine-rsync:{{rsync_version}}
   tags: frontend_application
    
-- name: sync staging and /var/www	
+- name: sync staging and /var/www
   command: /usr/bin/docker run -v /var/staging:/var/staging -v /var/www:/var/www --rm chadautry/alpine-rsync:{{rsync_version}} -a /var/staging/webapp/ /var/www
   tags: frontend_application
 ```
@@ -1450,10 +1450,10 @@ This task include takes the static application source and pushes it across to in
   args:
     warn: no
     
-- name: Pull alpine-rsync image		
+- name: Pull alpine-rsync image
   command: /usr/bin/docker pull chadautry/alpine-rsync:{{rsync_version}}
    
-- name: sync staging and /var/nodejs	
+- name: sync staging and /var/nodejs
   command: /usr/bin/docker run -v /var/staging/{{identifier}}:/var/staging/{{identifier}} -v /var/nodejs/{{identifier}}:/var/nodejs/{{identifier}} --rm chadautry/alpine-rsync:{{rsync_version}} -a /var/staging/{{identifier}}/ /var/nodejs/{{identifier}}
 ```
 
