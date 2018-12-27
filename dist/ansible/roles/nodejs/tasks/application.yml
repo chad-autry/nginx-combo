@@ -28,8 +28,8 @@
   args:
     warn: no
     
-- name: Pull alpine-rsync image		
+- name: Pull alpine-rsync image
   command: /usr/bin/docker pull chadautry/alpine-rsync:{{rsync_version}}
    
-- name: sync staging and /var/nodejs	
+- name: sync staging and /var/nodejs
   command: /usr/bin/docker run -v /var/staging/{{identifier}}:/var/staging/{{identifier}} -v /var/nodejs/{{identifier}}:/var/nodejs/{{identifier}} --rm chadautry/alpine-rsync:{{rsync_version}} -a /var/staging/{{identifier}}/ /var/nodejs/{{identifier}}
