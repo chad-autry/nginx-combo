@@ -67,8 +67,6 @@ The all variables file contains all the container versions to use.
 [group_vars/all](dist/ansible/group_vars/all)
 ```yaml
 ---
-# CoreOS can't have python installed at the normal /etc/bin. Override in inventory for localhost (if not CoreOS)
-ansible_python_interpreter: /opt/bin/python
 # The host value which will be templated out for intra-machine connectivity. Match your manual inventory or dynamic inventory variable
 internal_ip_name: private_ip
 # The unique name of machine instances to be used in templates
