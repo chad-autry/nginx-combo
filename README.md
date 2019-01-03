@@ -8,7 +8,7 @@ The unit files, scripts, and playbooks in the dist directory have been extracted
 
 # Assumptions and Opinions
 * Alpine Linux is my prefered containerized OS, and the choice I've made for images
-* CoreOS is the chosen host operating system
+* CentOS is the chosen host operating system. Originally was CoreOS, but proved incompatible with Python for Ansible
 * Ansible is used for orchestration
 
 # Requirements and Features
@@ -129,12 +129,12 @@ The main playbook that deploys or updates a cluster
 
 [site.yml](dist/ansible/site.yml)
 ```yml
-# Make sure python is installed
+# Make sure Docker is installed
 - hosts: all:!localhost
   gather_facts: false
   become: true
   roles:
-    - coreos-python
+    - docker
 
 # Place a full etcd on the etcd hosts
 - hosts: tag_etcd
@@ -369,57 +369,20 @@ A helper playbook that queries the systemctl status of all wac-bp deployed units
 # Roles
 The roles used by the playbooks above
 
-## coreos-ansible
-Install Python onto CoreOS hosts
+## docker
+Install Docker onto remote hosts
 
-[roles/coreos-python/tasks/main.yml](dist/ansible/roles/coreos-python/tasks/main.yml)
+[roles/docker/tasks/main.yml](dist/ansible/roles/docker/tasks/main.yml)
 ```yml
-- name: Check if bootstrap is needed
-  raw: stat /opt/bin/python
-  register: need_bootstrap
-  ignore_errors: True
+- name: Install Docker
+  shell: curl -fsSL https://get.docker.com/ | sh
 
-- name: Run bootstrap.sh
-  script: bootstrap.sh
-  when: need_bootstrap | failed
-```
-
-[roles/coreos-python/files/bootstrap.sh](dist/ansible/roles/coreos-python/files/bootstrap.sh)
-```bash
-#/bin/bash
-
-set -e
-
-cd
-
-if [[ -e /opt/bin/python ]]; then
-  exit 0
-fi
-
-PYPY_VERSION=5.1.0
-
-if [[ -e $HOME/pypy-$PYPY_VERSION-linux64.tar.bz2 ]]; then
-  tar -xjf $HOME/pypy-$PYPY_VERSION-linux64.tar.bz2
-  rm -rf $HOME/pypy-$PYPY_VERSION-linux64.tar.bz2
-else
-  wget -O - https://bitbucket.org/pypy/pypy/downloads/pypy-$PYPY_VERSION-linux64.tar.bz2 |tar -xjf -
-fi
-
-mkdir -p /opt/bin
-
-mv -n pypy-$PYPY_VERSION-linux64 /opt/bin/pypy
-
-## library fixup
-mkdir -p /opt/bin/pypy/lib
-ln -snf /lib64/libncurses.so.5.9 /opt/bin/pypy/lib/libtinfo.so.5
-
-cat > /opt/bin/python <<EOF
-#!/bin/bash
-LD_LIBRARY_PATH=/opt/bin/pypy/lib:$LD_LIBRARY_PATH exec /opt/bin/pypy/bin/pypy "\$@"
-EOF
-
-chmod +x /opt/bin/python
-/opt/bin/python --version
+- name: Ensure Docker is started
+  systemd:
+    daemon_reload: yes
+    enabled: yes
+    state: started
+    name: docker.service
 ```
 
 ## etcd
