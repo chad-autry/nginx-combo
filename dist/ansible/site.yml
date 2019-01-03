@@ -1,9 +1,9 @@
-# Make sure python is installed
+# Make sure Docker is installed
 - hosts: all:!localhost
   gather_facts: false
   become: true
   roles:
-    - coreos-python
+    - docker
 
 # Place a full etcd on the etcd hosts
 - hosts: tag_etcd

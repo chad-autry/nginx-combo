@@ -1,0 +1,9 @@
+- name: Install Docker
+  shell: curl -fsSL https://get.docker.com/ | sh
+
+- name: Ensure Docker is started
+  systemd:
+    daemon_reload: yes
+    enabled: yes
+    state: started
+    name: docker.service
