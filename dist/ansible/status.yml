@@ -13,7 +13,7 @@
       msg: "{{service_etcd_status.stdout.split('\n')}}"
 
 # check on prometheus
-- hosts: tag_prometheus
+- hosts: prometheus
   become: true
   tasks:
   - name: Check if prometheus is running
@@ -50,7 +50,7 @@
       msg: "{{service_prometheus_node_exporter_status.stdout.split('\n')}}"
 
 # check on grafana
-- hosts: tag_prometheus
+- hosts: prometheus
   become: true
   tasks:
   - name: Check if grafana is running
@@ -64,7 +64,7 @@
       msg: "{{service_grafana_status.stdout.split('\n')}}"
 
 # check on frontend services
-- hosts: tag_frontend
+- hosts: frontend
   become: true
   tasks:
   - name: Check if nginx is running
@@ -123,7 +123,7 @@
       msg: "{{service_letsencrypt_renewal_status.stdout.split('\n')}}"
       
 # check on backend services
-- hosts: tag_backend
+- hosts: backend
   become: true
   tasks:
   - name: Check if nodejs is running

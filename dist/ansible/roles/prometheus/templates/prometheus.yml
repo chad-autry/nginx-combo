@@ -27,7 +27,7 @@ scrape_configs:
 
   - job_name: 'nginx'
     static_configs:
-      - targets: [{% for host in groups['tag_frontend'] %}'{{hostvars[host][internal_ip_name]}}:9145'{% if not loop.last %},{% endif %}{% endfor %} ]
+      - targets: [{% for host in groups['frontend'] %}'{{hostvars[host][internal_ip_name]}}:9145'{% if not loop.last %},{% endif %}{% endfor %} ]
 
   - job_name: 'node_exporter'
     static_configs:

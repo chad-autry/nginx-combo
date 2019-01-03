@@ -6,31 +6,31 @@
     - docker
 
 # Place a full etcd on the etcd hosts
-- hosts: tag_etcd
+- hosts: etcd
   become: true
   roles:
     - { role: etcd, proxy_etcd: False, tags: [ 'etcd' ] }
 
 # Set the etcd values (if required) from the first etcd host
-- hosts: tag_etcd[0]
+- hosts: etcd[0]
   become: true
   roles:
     - { role: populate_etcd, tags: [ 'etcd' ] }
 
 # Place a proxy etcd everywhere except the etcd hosts
-- hosts: all:!tag_etcd:!localhost
+- hosts: all:!etcd:!localhost
   become: true
   roles:
     - { role: etcd, proxy_etcd: True, tags: [ 'etcd' ] }
 
 # Place Prometheus on the Prometheus hosts
-- hosts: tag_prometheus
+- hosts: prometheus
   become: true
   roles:
     - { role: prometheus, tags: [ 'prometheus' ] }
 
 # Place Grafana as the frontend on the Prometheus hosts
-- hosts: tag_prometheus
+- hosts: prometheus
   become: true
   roles:
     - { role: grafana, tags: [ 'grafana' ] }
@@ -57,26 +57,26 @@
         path: "{{controller_src_staging}}"
 
 # nginx
-- hosts: tag_frontend
+- hosts: frontend
   become: true
   roles:
     - { role: frontend, tags: [ 'frontend' ] }
 
 # Default Backend nodejs process. Role can be applied additional times to different hosts with different configuration
-- hosts: tag_backend
+- hosts: backend
   become: true
   roles:
     - { role: nodejs, identifier: backend, nodejs_port: "{{ports['backend']}}", tags: [ 'backend' ] }
     - { role: discovery, parent: 'route_discovery', service: backend, port: "{{ports['backend']}}", service_properties: {strip: false, private: false}}, tags: [ 'backend' ] }
 
 # Place a full RethinkDB on the RethinkDB hosts
-- hosts: tag_rethinkdb
+- hosts: rethinkdb
   become: true
   roles:
     - { role: rethinkdb, proxy_rethinkdb: False }
 
 # Place a proxy RethinkDB alongside application instances (edit the hosts when there are various types)
-- hosts: tag_backend:!tag_rethinkdb
+- hosts: backend:!rethinkdb
   become: true
   roles:
     - { role: rethinkdb, proxy_rethinkdb: True }
