@@ -45,19 +45,19 @@ Here is an example inventory. wac-bp operates on machines based on the group the
 hostnameone
 hostnametwo
 
-[tag_etcd]
+[etcd]
 hostnameone
 
-[tag_rethinkdb]
+[rethinkdb]
 hostnameone
 
-[tag_frontend]
+[frontend]
 hostnametwo
 
-[tag_backend]
+[backend]
 hostnametwo
 
-[tag_prometheus]
+[prometheus]
 hostnametwo
 ```
 
@@ -137,31 +137,31 @@ The main playbook that deploys or updates a cluster
     - docker
 
 # Place a full etcd on the etcd hosts
-- hosts: tag_etcd
+- hosts: etcd
   become: true
   roles:
     - { role: etcd, proxy_etcd: False, tags: [ 'etcd' ] }
 
 # Set the etcd values (if required) from the first etcd host
-- hosts: tag_etcd[0]
+- hosts: etcd[0]
   become: true
   roles:
     - { role: populate_etcd, tags: [ 'etcd' ] }
 
 # Place a proxy etcd everywhere except the etcd hosts
-- hosts: all:!tag_etcd:!localhost
+- hosts: all:!etcd:!localhost
   become: true
   roles:
     - { role: etcd, proxy_etcd: True, tags: [ 'etcd' ] }
 
 # Place Prometheus on the Prometheus hosts
-- hosts: tag_prometheus
+- hosts: prometheus
   become: true
   roles:
     - { role: prometheus, tags: [ 'prometheus' ] }
 
 # Place Grafana as the frontend on the Prometheus hosts
-- hosts: tag_prometheus
+- hosts: prometheus
   become: true
   roles:
     - { role: grafana, tags: [ 'grafana' ] }
@@ -188,26 +188,26 @@ The main playbook that deploys or updates a cluster
         path: "{{controller_src_staging}}"
 
 # nginx
-- hosts: tag_frontend
+- hosts: frontend
   become: true
   roles:
     - { role: frontend, tags: [ 'frontend' ] }
 
 # Default Backend nodejs process. Role can be applied additional times to different hosts with different configuration
-- hosts: tag_backend
+- hosts: backend
   become: true
   roles:
     - { role: nodejs, identifier: backend, nodejs_port: "{{ports['backend']}}", tags: [ 'backend' ] }
     - { role: discovery, parent: 'route_discovery', service: backend, port: "{{ports['backend']}}", service_properties: {strip: false, private: false}}, tags: [ 'backend' ] }
 
 # Place a full RethinkDB on the RethinkDB hosts
-- hosts: tag_rethinkdb
+- hosts: rethinkdb
   become: true
   roles:
     - { role: rethinkdb, proxy_rethinkdb: False }
 
 # Place a proxy RethinkDB alongside application instances (edit the hosts when there are various types)
-- hosts: tag_backend:!tag_rethinkdb
+- hosts: backend:!rethinkdb
   become: true
   roles:
     - { role: rethinkdb, proxy_rethinkdb: True }
@@ -233,7 +233,7 @@ A helper playbook that queries the systemctl status of all wac-bp deployed units
       msg: "{{service_etcd_status.stdout.split('\n')}}"
 
 # check on prometheus
-- hosts: tag_prometheus
+- hosts: prometheus
   become: true
   tasks:
   - name: Check if prometheus is running
@@ -270,7 +270,7 @@ A helper playbook that queries the systemctl status of all wac-bp deployed units
       msg: "{{service_prometheus_node_exporter_status.stdout.split('\n')}}"
 
 # check on grafana
-- hosts: tag_prometheus
+- hosts: prometheus
   become: true
   tasks:
   - name: Check if grafana is running
@@ -284,7 +284,7 @@ A helper playbook that queries the systemctl status of all wac-bp deployed units
       msg: "{{service_grafana_status.stdout.split('\n')}}"
 
 # check on frontend services
-- hosts: tag_frontend
+- hosts: frontend
   become: true
   tasks:
   - name: Check if nginx is running
@@ -343,7 +343,7 @@ A helper playbook that queries the systemctl status of all wac-bp deployed units
       msg: "{{service_letsencrypt_renewal_status.stdout.split('\n')}}"
       
 # check on backend services
-- hosts: tag_backend
+- hosts: backend
   become: true
   tasks:
   - name: Check if nodejs is running
@@ -455,7 +455,7 @@ chadautry/wac-etcdv2:{{etcd_version}} \
 {% endif %}
 --name {{hostvars[inventory_hostname][machine_name]}} \
 --listen-client-urls http://{{hostvars[inventory_hostname][internal_ip_name]}}:2379,http://127.0.0.1:2379 \
---initial-cluster {% for host in groups['tag_etcd']  %}{{hostvars[host][machine_name]}}=http://{{hostvars[host][internal_ip_name]}}:2380{% if not loop.last %},{% endif %}{% endfor %}
+--initial-cluster {% for host in groups['etcd']  %}{{hostvars[host][machine_name]}}=http://{{hostvars[host][internal_ip_name]}}:2380{% if not loop.last %},{% endif %}{% endfor %}
 
 Restart=always
 
@@ -662,7 +662,7 @@ scrape_configs:
 
   - job_name: 'nginx'
     static_configs:
-      - targets: [{% for host in groups['tag_frontend'] %}'{{hostvars[host][internal_ip_name]}}:9145'{% if not loop.last %},{% endif %}{% endfor %} ]
+      - targets: [{% for host in groups['frontend'] %}'{{hostvars[host][internal_ip_name]}}:9145'{% if not loop.last %},{% endif %}{% endfor %} ]
 
   - job_name: 'node_exporter'
     static_configs:
@@ -1513,7 +1513,7 @@ bind=all
 canonical-address={{hostvars[inventory_hostname][internal_ip_name]}}:29015
 {% endif %}
 
-{% for host in groups['tag_rethinkdb']  %}
+{% for host in groups['rethinkdb']  %}
 {% if hostvars[host][internal_ip_name] != hostvars[inventory_hostname][internal_ip_name] %}
 join={{hostvars[host][internal_ip_name]}}:29015
 {% endif %}
