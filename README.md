@@ -510,7 +510,7 @@ It publishes the info into etcd for disocovery by other services
     enabled: yes
     state: restarted
     name: "{{service}}_{{parent}}_{{port}}-publishing.service"
-  when: "{{service}}_{{parent}}_{{port}}_publishing_template" | changed
+  when: "{{service}}_{{parent}}_{{port}}_publishing_template | changed"
   
 # Ensure the discovery publisher is started even if template did not change
 - name: start/restart the route-publishing.service
@@ -549,8 +549,8 @@ ExecStart=/bin/sh -c "while true; do etcdctl set /{{parent}}/{{service}}/service
                       etcdctl set /{{parent}}/{{service}}/services/%H_{{port}}/{{item.key}} '{{item.value}}' --ttl 60; \
                       {% endfor %}
                       {% endif %}
-                      {% for item in service_properties  %}
                       {% if service_properties is defined %}
+                      {% for item in service_properties  %}
                       etcdctl set /{{parent}}/{{service}}/{{item.key}} '{{item.value}}' --ttl 60; \
                       {% endfor %}
                       {% endif %}
