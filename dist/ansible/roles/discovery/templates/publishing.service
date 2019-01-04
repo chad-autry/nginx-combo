@@ -20,8 +20,8 @@ ExecStart=/bin/sh -c "while true; do etcdctl set /{{parent}}/{{service}}/service
                       etcdctl set /{{parent}}/{{service}}/services/%H_{{port}}/{{item.key}} '{{item.value}}' --ttl 60; \
                       {% endfor %}
                       {% endif %}
-                      {% for item in service_properties  %}
                       {% if service_properties is defined %}
+                      {% for item in service_properties  %}
                       etcdctl set /{{parent}}/{{service}}/{{item.key}} '{{item.value}}' --ttl 60; \
                       {% endfor %}
                       {% endif %}
