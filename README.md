@@ -502,7 +502,7 @@ It publishes the info into etcd for disocovery by other services
 
 [roles/discovery/tasks/main.yml](dist/ansible/roles/discovery/tasks/main.yml)
 ```yml
-# Template out the discovery publishing publishing systemd unit
+# Template out the discovery publishing systemd unit
 - name: "{{service}}_{{parent}}_{{port}}-publishing.service template"
   template:
     src: publishing.service
@@ -630,7 +630,13 @@ The prometheus playbook templates out the prometheus config and sets up the prom
 ```yaml
 ---
 dependencies:
-  - { role: discovery, parent: 'route_discovery', service: 'prometheus', port: "{{ports['prometheus']}}", service_properties: {private: 'true'} }
+  - role: discovery
+    vars:
+      parent: 'route_discovery'
+      service: 'prometheus'
+      port: "{{ports['prometheus']}}"
+      service_properties: 
+        private: 'true'
 ```
 
 ### prometheus config template
@@ -778,7 +784,14 @@ The grafana playbook templates out the grafana config and sets up the grafana un
 ```yaml
 ---
 dependencies:
-  - { role: discovery, parent: 'route_discovery', service: 'grafana', port: {{ports['grafana']}}, service_properties: {strip: 'true', private: 'true'} }
+  - role: discovery
+    vars:
+      parent: 'route_discovery'
+      service: 'grafana', 
+      port: "{{ports['grafana']}}" 
+      service_properties: 
+        strip: 'true'
+        private: 'true'
 ```
 
 ### grafana datasource template
@@ -1500,7 +1513,15 @@ The RethinkDB role is used to install/update the database and its configurations
 ```yaml
 ---
 dependencies:
-  - { role: discovery, when: not proxy_rethinkdb, parent: 'route_discovery', service: 'rethinkdb', port: "{{ports['rethinkdb_admin']}}", service_properties: {strip: 'true', private: 'true'} }
+  - role: discovery
+    when: not proxy_rethinkdb
+    vars:
+      parent: 'route_discovery'
+      service: 'rethinkdb'
+      port: "{{ports['rethinkdb_admin']}}"
+      service_properties:
+        strip: 'true'
+        private: 'true'
 ```
 
 ### rethinkd.conf template
