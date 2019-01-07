@@ -12,4 +12,4 @@
   shell: docker pull chadautry/wac-etcdv2:{{etcd_version}}
   
 - name: Install etcdctl from docker image
-  shell:  docker run --rm -v /usr/bin:/hostusrbin --entrypoint cp chadautry/wac-etcdv2:{{etcd_version}}  /usr/bin/etcdctl /hostusrbin
+  shell:  docker run --rm -v /usr/bin:/hostusrbin --entrypoint cp chadautry/wac-etcdv2:{{etcd_version}} /bin/etcdctl /hostusrbin
