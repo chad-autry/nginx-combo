@@ -551,13 +551,13 @@ PartOf={{service}}.service
 ExecStart=/bin/sh -c "while true; do etcdctl set /{{parent}}/{{service}}/services/%H_{{port}}/host '%H' --ttl 60; \
                       etcdctl set /{{parent}}/{{service}}/services/%H_{{port}}/port '{{port}}' --ttl 60; \
                       {% if service_local_properties is defined %}
-                      {% for item in service_local_properties  %}
-                      etcdctl set /{{parent}}/{{service}}/services/%H_{{port}}/{{item.key}} '{{item.value}}' --ttl 60; \
+                      {% for key, value in service_local_properties  %}
+                      etcdctl set /{{parent}}/{{service}}/services/%H_{{port}}/{{key}} '{{value}}' --ttl 60; \
                       {% endfor %}
                       {% endif %}
                       {% if service_properties is defined %}
-                      {% for item in service_properties  %}
-                      etcdctl set /{{parent}}/{{service}}/{{item.key}} '{{item.value}}' --ttl 60; \
+                      {% for key, value in service_properties  %}
+                      etcdctl set /{{parent}}/{{service}}/{{key}} '{{value}}' --ttl 60; \
                       {% endfor %}
                       {% endif %}
                       sleep 45; \
