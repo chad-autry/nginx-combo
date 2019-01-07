@@ -1,4 +1,4 @@
-# Template out the discovery publishing publishing systemd unit
+# Template out the discovery publishing systemd unit
 - name: "{{service}}_{{parent}}_{{port}}-publishing.service template"
   template:
     src: publishing.service
