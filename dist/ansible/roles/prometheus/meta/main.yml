@@ -1,9 +1,0 @@
----
-dependencies:
-  - role: discovery
-    vars:
-      parent: 'route_discovery'
-      service: 'prometheus'
-      port: "{{ports['prometheus']}}"
-      service_properties: 
-        private: 'true'

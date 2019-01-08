@@ -28,19 +28,21 @@
   become: true
   roles:
     - { role: prometheus, tags: [ 'prometheus' ] }
-
+    - { role: discovery, parent: 'route_discovery', service: prometheus, port: "{{ports['prometheus']}}", service_properties: {private: true}}, tags: [ 'prometheus' ] }
+ 
 # Place Grafana as the frontend on the Prometheus hosts
 - hosts: prometheus
   become: true
   roles:
     - { role: grafana, tags: [ 'grafana' ] }
+    - { role: discovery, parent: 'route_discovery', service: grafana, port: "{{ports['grafana']}}", service_properties: {strip: true, private: true}}, tags: [ 'grafana' ] }
 
 # Place prometheus\node_exporter everywhere
 - hosts: all:!localhost
   become: true
   roles:
     - { role: prometheus-node-exporter, tags: [ 'prometheus_node_exporter' ] }
-
+        
 - name: Remove old staging directory
   hosts: localhost
   tasks:
@@ -74,9 +76,11 @@
   become: true
   roles:
     - { role: rethinkdb, proxy_rethinkdb: False }
+    - { role: discovery, parent: 'route_discovery', service: backend, port: "{{ports['backend']}}", service_properties: {strip: false, private: false}}, tags: [ 'backend' ] }
 
 # Place a proxy RethinkDB alongside application instances (edit the hosts when there are various types)
 - hosts: backend:!rethinkdb
   become: true
   roles:
     - { role: rethinkdb, proxy_rethinkdb: True }
+    - { role: discovery, parent: 'route_discovery', service: rethinkdb, port: "{{ports['rethinkdb']}}", service_properties: {strip: true, private: true}}, tags: [ 'rethinkdb' ] }
