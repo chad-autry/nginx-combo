@@ -219,7 +219,8 @@ The main playbook that deploys or updates a cluster
         service: backend
         port: "{{ports['backend']}}"
         service_properties:
-          strip: false, private: false
+          strip: false
+          private: false
       tags: [ 'backend' ]
 
 # Place a full RethinkDB on the RethinkDB hosts
