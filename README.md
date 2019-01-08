@@ -157,14 +157,29 @@ The main playbook that deploys or updates a cluster
   become: true
   roles:
     - { role: prometheus, tags: [ 'prometheus' ] }
-    - { role: discovery, parent: 'route_discovery', service: prometheus, port: "{{ports['prometheus']}}", service_properties: {private: true}, tags: [ 'prometheus' ] }
+    - role: discovery 
+      vars:
+        parent: 'route_discovery'
+        service: prometheus
+        port: "{{ports['prometheus']}}"
+        service_properties:
+          private: true
+      tags: [ 'prometheus' ]
  
 # Place Grafana as the frontend on the Prometheus hosts
 - hosts: prometheus
   become: true
   roles:
     - { role: grafana, tags: [ 'grafana' ] }
-    - { role: discovery, parent: 'route_discovery', service: grafana, port: "{{ports['grafana']}}", service_properties: {strip: true, private: true}, tags: [ 'grafana' ] }
+    - role: discovery
+      vars:
+        parent: 'route_discovery'
+        service: grafana
+        port: "{{ports['grafana']}}"
+        service_properties:
+          strip: true
+          private: true
+      tags: [ 'grafana' ] 
 
 # Place prometheus\node_exporter everywhere
 - hosts: all:!localhost
@@ -198,21 +213,35 @@ The main playbook that deploys or updates a cluster
   become: true
   roles:
     - { role: nodejs, identifier: backend, nodejs_port: "{{ports['backend']}}", tags: [ 'backend' ] }
-    - { role: discovery, parent: 'route_discovery', service: backend, port: "{{ports['backend']}}", service_properties: {strip: false, private: false}, tags: [ 'backend' ] }
+    - role: discovery
+      vars:
+        parent: 'route_discovery'
+        service: backend
+        port: "{{ports['backend']}}"
+        service_properties:
+          strip: false, private: false
+      tags: [ 'backend' ]
 
 # Place a full RethinkDB on the RethinkDB hosts
 - hosts: rethinkdb
   become: true
   roles:
     - { role: rethinkdb, proxy_rethinkdb: False }
-    - { role: discovery, parent: 'route_discovery', service: backend, port: "{{ports['backend']}}", service_properties: {strip: false, private: false}, tags: [ 'backend' ] }
+    - role: discovery
+      vars: 
+        parent: 'route_discovery'
+        service: rethinkdb
+        port: "{{ports['rethinkdb']}}"
+        service_properties:
+          strip: true
+          private: true
+      tags: [ 'rethinkdb' ]
 
 # Place a proxy RethinkDB alongside application instances (edit the hosts when there are various types)
 - hosts: backend:!rethinkdb
   become: true
   roles:
     - { role: rethinkdb, proxy_rethinkdb: True }
-    - { role: discovery, parent: 'route_discovery', service: rethinkdb, port: "{{ports['rethinkdb']}}", service_properties: {strip: true, private: true}, tags: [ 'rethinkdb' ] }
 ```
 
 ## status.yml
