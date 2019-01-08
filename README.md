@@ -157,19 +157,21 @@ The main playbook that deploys or updates a cluster
   become: true
   roles:
     - { role: prometheus, tags: [ 'prometheus' ] }
-
+    - { role: discovery, parent: 'route_discovery', service: prometheus, port: "{{ports['prometheus']}}", service_properties: {private: true}}, tags: [ 'prometheus' ] }
+ 
 # Place Grafana as the frontend on the Prometheus hosts
 - hosts: prometheus
   become: true
   roles:
     - { role: grafana, tags: [ 'grafana' ] }
+    - { role: discovery, parent: 'route_discovery', service: grafana, port: "{{ports['grafana']}}", service_properties: {strip: true, private: true}}, tags: [ 'grafana' ] }
 
 # Place prometheus\node_exporter everywhere
 - hosts: all:!localhost
   become: true
   roles:
     - { role: prometheus-node-exporter, tags: [ 'prometheus_node_exporter' ] }
-
+        
 - name: Remove old staging directory
   hosts: localhost
   tasks:
@@ -203,12 +205,14 @@ The main playbook that deploys or updates a cluster
   become: true
   roles:
     - { role: rethinkdb, proxy_rethinkdb: False }
+    - { role: discovery, parent: 'route_discovery', service: backend, port: "{{ports['backend']}}", service_properties: {strip: false, private: false}}, tags: [ 'backend' ] }
 
 # Place a proxy RethinkDB alongside application instances (edit the hosts when there are various types)
 - hosts: backend:!rethinkdb
   become: true
   roles:
     - { role: rethinkdb, proxy_rethinkdb: True }
+    - { role: discovery, parent: 'route_discovery', service: rethinkdb, port: "{{ports['rethinkdb']}}", service_properties: {strip: true, private: true}}, tags: [ 'rethinkdb' ] }
 ```
 
 ## status.yml
@@ -625,20 +629,6 @@ The prometheus playbook templates out the prometheus config and sets up the prom
   when: not ((prometheus_service_template | changed) or (prometheus_config | changed))
 ```
 
-### prometheus role dependencies
-[roles/prometheus/meta/main.yml](dist/ansible/roles/prometheus/meta/main.yml)
-```yaml
----
-dependencies:
-  - role: discovery
-    vars:
-      parent: 'route_discovery'
-      service: 'prometheus'
-      port: "{{ports['prometheus']}}"
-      service_properties: 
-        private: 'true'
-```
-
 ### prometheus config template
 
 [roles/prometheus/templates/prometheus.yml](dist/ansible/roles/prometheus/templates/prometheus.yml)
@@ -777,21 +767,6 @@ The grafana playbook templates out the grafana config and sets up the grafana un
     state: started
     name: grafana.service
   when: not ((grafana_service_template | changed) or (grafana_config | changed) or (grafana_datasource | changed))
-```
-
-### grafana role dependencies
-[roles/grafana/meta/main.yml](dist/ansible/roles/grafana/meta/main.yml)
-```yaml
----
-dependencies:
-  - role: discovery
-    vars:
-      parent: 'route_discovery'
-      service: 'grafana', 
-      port: "{{ports['grafana']}}" 
-      service_properties: 
-        strip: 'true'
-        private: 'true'
 ```
 
 ### grafana datasource template
@@ -1506,22 +1481,6 @@ The RethinkDB role is used to install/update the database and its configurations
     enabled: yes
     state: started
     name: rethinkdb.service
-```
-
-### rethinkdb role dependencies
-[roles/grafana/meta/main.yml](dist/ansible/roles/grafana/meta/main.yml)
-```yaml
----
-dependencies:
-  - role: discovery
-    when: not proxy_rethinkdb
-    vars:
-      parent: 'route_discovery'
-      service: 'rethinkdb'
-      port: "{{ports['rethinkdb_admin']}}"
-      service_properties:
-        strip: 'true'
-        private: 'true'
 ```
 
 ### rethinkd.conf template
