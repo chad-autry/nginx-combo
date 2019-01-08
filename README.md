@@ -507,7 +507,7 @@ It publishes the info into etcd for disocovery by other services
   template:
     src: publishing.service
     dest: /etc/systemd/system/{{service}}_{{parent}}_{{port}}-publishing.service
-  register: "{{service}}_{{parent}}_{{port}}_publishing_template"
+  register: discovery_publishing_service_template
 
 # Start/restart the discovery publisher when discoverable and template changed
 - name: start/restart the discoverable-publishing.service
@@ -516,7 +516,7 @@ It publishes the info into etcd for disocovery by other services
     enabled: yes
     state: restarted
     name: "{{service}}_{{parent}}_{{port}}-publishing.service"
-  when: "{{service}}_{{parent}}_{{port}}_publishing_template | changed"
+  when: discovery_publishing_service_template | changed
   
 # Ensure the discovery publisher is started even if template did not change
 - name: start/restart the route-publishing.service
@@ -525,7 +525,7 @@ It publishes the info into etcd for disocovery by other services
     enabled: yes
     state: started
     name: "{{service}}_{{parent}}_{{port}}-publishing.service"
-  when: not ({{service}}_{{parent}}_{{port}}_publishing_template | changed)
+  when: not (discovery_publishing_service_template | changed)
 ```
 
 ### discovery publishing systemd unit template
