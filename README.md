@@ -216,7 +216,7 @@ The main playbook that deploys or updates a cluster
     - role: discovery
       vars:
         parent: 'route_discovery'
-        service: backend
+        service: backend_nodejs
         port: "{{ports['backend']}}"
         service_properties:
           strip: false
