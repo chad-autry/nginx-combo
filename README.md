@@ -232,7 +232,7 @@ The main playbook that deploys or updates a cluster
       vars: 
         parent: 'route_discovery'
         service: rethinkdb
-        port: "{{ports['rethinkdb']}}"
+        port: "{{ports['rethinkdb_admin']}}"
         service_properties:
           strip: true
           private: true
