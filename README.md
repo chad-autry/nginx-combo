@@ -956,6 +956,12 @@ Nginx hosts static files, routes to instances (backends and databases), and term
 #### nginx task include
 [roles/frontend/tasks/nginx.yml](dist/ansible/roles/frontend/tasks/nginx.yml)
 ```yml
+# template out the systemd nginx-config-templater.service unit
+- name: nginx-config-templater.service template
+  template:
+    src: nginx-config-templater.service
+    dest: /etc/systemd/system/nginx-config-templater.service
+
 # template out the systemd nginx-reload.service unit
 - name: nginx-reload.service template
   template:
@@ -1029,6 +1035,29 @@ WantedBy=multi-user.target
     * Takes server config from local drive
     * Takes html from local drive
     * Takes certs from local drive
+
+#### nginx configuration templater
+A oneshot unit is used to template nginx's config. Prevents conflicts from multiple units executing the action
+
+[roles/frontend/templates/nginx-config-templater.service](dist/ansible/roles/frontend/templates/nginx-config-templater.service)
+```yaml
+[Unit]
+Description=NGINX config templater service
+
+[Service]
+ExecStartPre=-/usr/bin/docker pull chadautry/wac-nginx-config-templater:{{nginx_config_templater_version}}
+ExecStartPre=-/usr/bin/docker rm nginx-templater
+ExecStart=-/usr/bin/docker run --name nginx-templater --net host \
+-v /var/nginx:/usr/var/nginx -v /var/ssl:/etc/nginx/ssl:ro \
+chadautry/wac-nginx-config-templater:{{nginx_config_templater_version}}
+Type=oneshot
+```
+* Removes the previous named docker container
+* Executes the docker container to template out the nginx config
+    * Local volume mapped in for the templated config to be written to
+    * Local ssl volume mapped in for the template container to read
+    * Doesn't error out
+* It is a one shot which expects to be called by other units (safely concurrent)
 
 #### nginx configuration watching
 A pair of units are responsible for watching the nginx configuration and reloading the service
@@ -1108,13 +1137,9 @@ After=etcd.service
 PartOf=etcd.service
 
 [Service]
-ExecStartPre=-/usr/bin/docker pull chadautry/wac-nginx-config-templater:{{nginx_config_templater_version}}
-ExecStartPre=-/usr/bin/docker rm nginx-templater
 ExecStartPre=-/bin/sh -c '/usr/bin/etcdctl mk /route_discovery/watched "$(date +%s%N)"'
 ExecStart=/usr/bin/etcdctl watch /discovery/watched 
-ExecStartPost=-/usr/bin/docker run --name nginx-templater --net host \
--v /var/nginx:/usr/var/nginx -v /var/ssl:/etc/nginx/ssl:ro \
-chadautry/wac-nginx-config-templater:{{nginx_config_templater_version}}
+ExecStartPost=-/usr/bin/systemctl start nginx-config-templater.service
 Restart=always
 
 [Install]
@@ -1122,10 +1147,7 @@ WantedBy=multi-user.target
 ```
 * Restarted if etcd restarts
 * Starts a watch for changes in the backend discovery path
-* Once the watch starts, executes the config templating container
-    * Local volume mapped in for the templated config to be written to
-    * Local ssl volume mapped in for the template container to read
-    * Doesn't error out (TODO move to a secondary unit to be safely concurrent)
+* Once the watch starts, executes the config templating systemd unit
 * If the watch is ever satisfied, the unit will exit
 * Automatically restarted, causing a new watch and templater execution
 
@@ -1268,21 +1290,15 @@ Requires=etcd.service
 After=etcd.service
 
 [Service]
-ExecStartPre=-/usr/bin/docker pull chadautry/wac-nginx-config-templater:{{nginx_config_templater_version}}
-ExecStartPre=-/usr/bin/docker rm nginx-templater
 ExecStart=/usr/bin/etcdctl watch /acme/watched
-ExecStartPost=-/usr/bin/docker run --name nginx-templater --net host \
--v /var/nginx:/usr/var/nginx -v /var/ssl:/etc/nginx/ssl:ro \
-chadautry/wac-nginx-config-templater:{{nginx_config_templater_version}}
+ExecStartPost=-/usr/bin/systemctl start nginx-config-templater.service
 Restart=always
 
 [Install]
 WantedBy=multi-user.target
 ```
 * Starts a watch for changes in the acme challenge response
-* Once the watch starts, executes the config templating container
-    * Local volume mapped in for the templated config to be written to
-    * Doesn't error out (TODO move to a secondary unit to be safely concurrent)
+* Once the watch starts, executes the config templating oneshot
 * If the watch is ever satisfied, the unit will exit
 * Automatically restarted, causing a new watch and templater execution
 
