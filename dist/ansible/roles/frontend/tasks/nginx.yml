@@ -1,3 +1,9 @@
+# template out the systemd nginx-config-templater.service unit
+- name: nginx-config-templater.service template
+  template:
+    src: nginx-config-templater.service
+    dest: /etc/systemd/system/nginx-config-templater.service
+
 # template out the systemd nginx-reload.service unit
 - name: nginx-reload.service template
   template:
