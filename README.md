@@ -1138,7 +1138,7 @@ PartOf=etcd.service
 
 [Service]
 ExecStartPre=-/bin/sh -c '/usr/bin/etcdctl mk /route_discovery/watched "$(date +%s%N)"'
-ExecStart=/usr/bin/etcdctl watch /discovery/watched 
+ExecStart=/usr/bin/etcdctl watch /route_discovery/watched 
 ExecStartPost=-/usr/bin/systemctl start nginx-config-templater.service
 Restart=always
 
@@ -1582,40 +1582,3 @@ WantedBy=multi-user.target
 * Starts a rethinkdb container
   * Conditionally started in proxy mode based on role parameter
 * HTTP shifted to 8081 so it won't conflict with nginx if colocated
-
-### RethinkDB route-publishing systemd unit template
-Publishes the rethinkdb host into etcd at an expected path for the frontend to route to
-
-[roles/rethinkdb/templates/rethinkdb-route-publishing.service](dist/ansible/roles/rethinkdb/templates/rethinkdb-route-publishing.service)
-```yaml
-[Unit]
-Description=RethinkDB Route Publishing
-# Dependencies
-Requires=etcd.service
-Requires=rethinkdb.service
-
-# Ordering
-After=etcd.service
-After=rethinkdb.service
-
-# Restart when dependency restarts
-PartOf=etcd.service
-PartOf=rethinkdb.service
-
-[Service]
-ExecStart=/bin/sh -c "while true; do etcdctl set /discovery/rethinkdb/hosts/%H/host '%H' --ttl 60; \
-                      etcdctl set /discovery/rethinkdb/hosts/%H/port 8081 --ttl 60; \
-                      etcdctl set /discovery/rethinkdb/strip 'true' --ttl 60; \
-                      etcdctl set /discovery/rethinkdb/private 'true' --ttl 60; \
-                      sleep 45; \
-                      done"
-ExecStartPost=-/bin/sh -c '/usr/bin/etcdctl set /discovery/watched "$(date +%s%N)"'
-ExecStop=/usr/bin/etcdctl rm /discovery/rethinkdb/hosts/%H
-
-[Install]
-WantedBy=multi-user.target
-```
-* requires etcd
-* Publishes host into etcd every 45 seconds with a 60 second duration
-* Deletes host from etcd on stop
-* Is restarted if etcd or rethinkdb restarts
