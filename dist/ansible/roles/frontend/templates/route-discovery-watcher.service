@@ -11,7 +11,7 @@ PartOf=etcd.service
 
 [Service]
 ExecStartPre=-/bin/sh -c '/usr/bin/etcdctl mk /route_discovery/watched "$(date +%s%N)"'
-ExecStart=/usr/bin/etcdctl watch /discovery/watched 
+ExecStart=/usr/bin/etcdctl watch /route_discovery/watched 
 ExecStartPost=-/usr/bin/systemctl start nginx-config-templater.service
 Restart=always
 
