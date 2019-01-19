@@ -163,7 +163,7 @@ The main playbook that deploys or updates a cluster
         service: prometheus
         port: "{{ports['prometheus']}}"
         service_properties:
-          private: true
+          private: 'true'
       tags: [ 'prometheus' ]
  
 # Place Grafana as the frontend on the Prometheus hosts
@@ -177,8 +177,8 @@ The main playbook that deploys or updates a cluster
         service: grafana
         port: "{{ports['grafana']}}"
         service_properties:
-          strip: true
-          private: true
+          strip: 'true'
+          private: 'true'
       tags: [ 'grafana' ] 
 
 # Place prometheus\node_exporter everywhere
@@ -219,8 +219,8 @@ The main playbook that deploys or updates a cluster
         service: backend_nodejs
         port: "{{ports['backend']}}"
         service_properties:
-          strip: false
-          private: false
+          strip: 'false'
+          private: 'false'
       tags: [ 'backend' ]
 
 # Place a full RethinkDB on the RethinkDB hosts
@@ -234,8 +234,8 @@ The main playbook that deploys or updates a cluster
         service: rethinkdb
         port: "{{ports['rethinkdb_admin']}}"
         service_properties:
-          strip: true
-          private: true
+          strip: 'true'
+          private: 'true'
       tags: [ 'rethinkdb' ]
 
 # Place a proxy RethinkDB alongside application instances (edit the hosts when there are various types)
