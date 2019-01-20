@@ -582,7 +582,7 @@ PartOf=etcd.service
 PartOf={{service}}.service
 
 [Service]
-ExecStart=/bin/sh -c "while true; do etcdctl set /{{parent}}/{{service}}/services/%H_{{port}}/host '%H' --ttl 60; \
+ExecStart=/bin/sh -c "while true; do etcdctl set /{{parent}}/{{service}}/services/%H_{{port}}/host '{{hostvars[inventory_hostname][internal_ip_name]}}' --ttl 60; \
                       etcdctl set /{{parent}}/{{service}}/services/%H_{{port}}/port '{{port}}' --ttl 60; \
                       {% if service_local_properties is defined %}
                       {% for key in service_local_properties  %}
