@@ -9,6 +9,7 @@ The unit files, scripts, and playbooks in the dist directory have been extracted
 # Assumptions and Opinions
 * Alpine Linux is my prefered containerized OS, and the choice I've made for images
 * CentOS is the chosen host operating system. Originally was CoreOS, but proved incompatible with Python for Ansible
+    * CentOS 7+ is required (Docker installed is incompatible with 6)
 * Ansible is used for orchestration
 
 # Requirements and Features
