@@ -1368,10 +1368,17 @@ This task include takes the static front end application and pushes it across to
     state: directory
   tags: frontend_application
 
-- name: Transfer and unpack webapp to staging
-  unarchive:
+- name: Copy over application
+  copy:
     src: "{{controller_src_staging}}/frontendsrc.tgz"
+    dest: /var/staging/frontendsrc.tgz
+  tags: frontend_application
+
+- name: Unpack webapp to staging
+  unarchive:
+    src: "/var/staging/frontendsrc.tgz"
     dest: /var/staging
+    remote_src: true
   tags: frontend_application
     
 - name: Pull alpine-rsync image
