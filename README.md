@@ -440,13 +440,13 @@ Deploys or redeploys the etcd instance on a host. Etcd is persistent, but if the
   file:
     state: absent
     path: /var/etcd
-  when: etcd_template | changed
+  when: etcd_template is changed
     
 - name: ensure etcd directory is present
   file:
     state: directory
     path: /var/etcd
-  when: etcd_template | changed
+  when: etcd_template is changed
 
 - name: start/restart the etcd.service if template changed
   systemd:
@@ -454,7 +454,7 @@ Deploys or redeploys the etcd instance on a host. Etcd is persistent, but if the
     enabled: yes
     state: restarted
     name: etcd.service
-  when: etcd_template | changed
+  when: etcd_template is changed
   
 - name: Ensure etcd is started, even if the template didn't change
   systemd:
@@ -462,7 +462,7 @@ Deploys or redeploys the etcd instance on a host. Etcd is persistent, but if the
     enabled: yes
     state: started
     name: etcd.service
-  when: not (etcd_template | changed)
+  when: not (etcd_template is changed)
 ```
 
 ### etcd systemd unit template
@@ -515,7 +515,7 @@ This role sets values into etcd from the Ansible config when the etcd cluster ha
 # Condititionally import the populate.yml, so we don't have to see all the individual set tasks excluded in the output
 - include: populate.yml
   static: no
-  when: (etcd_template | changed) or (force_populate_etcd is defined)
+  when: (etcd_template is defined and etcd_template is changed) or (force_populate_etcd is defined)
 ```
 
 [roles/populate_etcd/tasks/populate.yml](dist/ansible/roles/populate_etcd/tasks/populate.yml)
