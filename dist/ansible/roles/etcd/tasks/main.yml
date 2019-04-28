@@ -9,13 +9,13 @@
   file:
     state: absent
     path: /var/etcd
-  when: etcd_template | changed
+  when: etcd_template is changed
     
 - name: ensure etcd directory is present
   file:
     state: directory
     path: /var/etcd
-  when: etcd_template | changed
+  when: etcd_template is changed
 
 - name: start/restart the etcd.service if template changed
   systemd:
@@ -23,7 +23,7 @@
     enabled: yes
     state: restarted
     name: etcd.service
-  when: etcd_template | changed
+  when: etcd_template is changed
   
 - name: Ensure etcd is started, even if the template didn't change
   systemd:
@@ -31,4 +31,4 @@
     enabled: yes
     state: started
     name: etcd.service
-  when: not (etcd_template | changed)
+  when: not (etcd_template is changed)

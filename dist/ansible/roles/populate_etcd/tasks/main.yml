@@ -1,4 +1,4 @@
 # Condititionally import the populate.yml, so we don't have to see all the individual set tasks excluded in the output
 - include: populate.yml
   static: no
-  when: (etcd_template | changed) or (force_populate_etcd is defined)
+  when: (etcd_template is defined and etcd_template is changed) or (force_populate_etcd is defined)
