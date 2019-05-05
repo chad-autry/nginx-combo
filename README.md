@@ -194,6 +194,9 @@ The main playbook that deploys or updates a cluster
     - file:
         path: "{{controller_src_staging}}"
         state: absent
+      tags:
+        - frontend_application
+        - backend
     
 # Recreate localhost staging directory
 - name: Create local staging directory
@@ -202,6 +205,9 @@ The main playbook that deploys or updates a cluster
     - file:
         state: directory
         path: "{{controller_src_staging}}"
+      tags:
+        - frontend_application
+        - backend
 
 # nginx
 - hosts: frontend
