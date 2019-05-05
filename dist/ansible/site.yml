@@ -64,6 +64,9 @@
     - file:
         path: "{{controller_src_staging}}"
         state: absent
+      tags:
+        - frontend_application
+        - backend
     
 # Recreate localhost staging directory
 - name: Create local staging directory
@@ -72,6 +75,9 @@
     - file:
         state: directory
         path: "{{controller_src_staging}}"
+      tags:
+        - frontend_application
+        - backend
 
 # nginx
 - hosts: frontend
