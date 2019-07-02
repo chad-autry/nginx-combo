@@ -100,11 +100,11 @@
           private: 'false'
       tags: [ 'backend' ]
 
-# Default GCP Cloud Function
+# Default GCP Cloud Function. Role can be applied additional times with additional functions
 - hosts: localhost
   become: true
   roles:
-    - { role: gcp_function, function_name: auth, region: {{region}}, tags: [ 'auth' ] }
+    - { role: gcp_function, function_name: auth, tags: [ 'auth' ] }
     - role: discovery
       vars:
         parent: 'route_discovery'

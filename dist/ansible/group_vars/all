@@ -25,9 +25,14 @@ node_src_path:
     backend: /home/backend/src
     
 # Location of the source(s) on the controller for the GCP Cloud Functions
-function_src_path:
+gcp_function_src_path:
     auth: /home/auth/src
 
+# The regions to deploy each function in
+gcp_function_regions:
+    auth:
+        - us-east1
+        
 # The controller machine directory to stage archives at
 controller_src_staging: /home/staging
 
