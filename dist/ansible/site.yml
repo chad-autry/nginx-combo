@@ -105,15 +105,7 @@
   become: true
   roles:
     - { role: gcp_function, function_name: auth, tags: [ 'auth' ] }
-    - role: discovery
-      vars:
-        parent: 'route_discovery'
-        service: backend_nodejs
-        port: "{{ports['backend']}}"
-        service_properties:
-          strip: 'false'
-          private: 'false'
-      tags: [ 'auth' ]
+    - { role: static_discovery, function_name: auth, route: auth, tags: [ 'auth' ] }
 
 # Place a full RethinkDB on the RethinkDB hosts
 - hosts: rethinkdb

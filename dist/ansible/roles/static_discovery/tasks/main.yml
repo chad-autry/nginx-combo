@@ -1,0 +1,13 @@
+- name: Push the function domain for the function route
+  command: "/usr/bin/etcdctl set /route_discovery/{{route}}/services/{{item}}{{function}}/host '{{item}}-{{google_project_id}}/{{function}}'"
+  loop: "{{gcp_function_regions[function_name]}}"
+  
+- name: Push the function port for the function route
+  command: "/usr/bin/etcdctl set /route_discovery/{{route}}/services/{{item}}{{function}}/port '80'"
+  loop: "{{gcp_function_regions[function_name]}}"
+  
+- name: Push private=false for the function route
+  command: "/usr/bin/etcdctl set /route_discovery/{{route}}/private 'false'"
+  
+- name: Push strip=true for the function route
+  command: "/usr/bin/etcdctl set /route_discovery/{{route}}/strip 'true'"
