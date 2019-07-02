@@ -92,6 +92,10 @@ frontend_src_path: /home/frontend/src
 # Location of source(s) on the controller for the nodejs process(es)
 node_src_path: 
     backend: /home/backend/src
+    
+# Location of the source(s) on the controller for the GCP Cloud Functions
+function_src_path:
+    auth: /home/auth/src
 
 # The controller machine directory to stage archives at
 controller_src_staging: /home/staging
@@ -229,6 +233,21 @@ The main playbook that deploys or updates a cluster
           strip: 'false'
           private: 'false'
       tags: [ 'backend' ]
+
+# Default GCP Cloud Function
+- hosts: localhost
+  become: true
+  roles:
+    - { role: gcp_function, function_name: auth, region: {{region}}, tags: [ 'auth' ] }
+    - role: discovery
+      vars:
+        parent: 'route_discovery'
+        service: backend_nodejs
+        port: "{{ports['backend']}}"
+        service_properties:
+          strip: 'false'
+          private: 'false'
+      tags: [ 'auth' ]
 
 # Place a full RethinkDB on the RethinkDB hosts
 - hosts: rethinkdb
@@ -1510,6 +1529,34 @@ WantedBy=multi-user.target
 * requires docker
 * Starts a customized nodejs docker container
     * Takes the app and configuration from local drive
+
+## GoogleCloudFunction
+This role templates out config and deploys a Google Cloud Function
+
+[roles/gcp_function/tasks/main.yml](dist/ansible/roles/gcp_function/tasks/main.yml)
+```yml  
+# Template out the nodejs config
+- name: config.js template
+  template:
+    src: config.js
+    dest: {{source}}/config.js
+    
+# Deploy the process's application source
+- name: Deploy function
+  command: /usr/bin/gcloud functions deploy {{function_name}} --runtime nodejs8 --region={{region}} --trigger-http
+  args:
+    chdir: {{source}}
+
+```
+
+### GoogleCloudFunction config.js template
+The template for the nodejs server's config
+[roles/gcp_function/templates/config.js](dist/ansible/roles/gcp_function/templates/config.js)
+```javascript
+module.exports = {
+  {% for key in node_config[identifier] %}{{key|upper}}: '{{node_config[identifier][key]}}'{% if not loop.last %},{% endif %}{% endfor %}
+};
+```
 
 ## RethinkDB
 The RethinkDB role is used to install/update the database and its configurations
