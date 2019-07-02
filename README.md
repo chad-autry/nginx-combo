@@ -94,9 +94,14 @@ node_src_path:
     backend: /home/backend/src
     
 # Location of the source(s) on the controller for the GCP Cloud Functions
-function_src_path:
+gcp_function_src_path:
     auth: /home/auth/src
 
+# The regions to deploy each function in
+gcp_function_regions:
+    auth:
+        - us-east1
+        
 # The controller machine directory to stage archives at
 controller_src_staging: /home/staging
 
@@ -234,11 +239,11 @@ The main playbook that deploys or updates a cluster
           private: 'false'
       tags: [ 'backend' ]
 
-# Default GCP Cloud Function
+# Default GCP Cloud Function. Role can be applied additional times with additional functions
 - hosts: localhost
   become: true
   roles:
-    - { role: gcp_function, function_name: auth, region: {{region}}, tags: [ 'auth' ] }
+    - { role: gcp_function, function_name: auth, tags: [ 'auth' ] }
     - role: discovery
       vars:
         parent: 'route_discovery'
@@ -1535,17 +1540,18 @@ This role templates out config and deploys a Google Cloud Function
 
 [roles/gcp_function/tasks/main.yml](dist/ansible/roles/gcp_function/tasks/main.yml)
 ```yml  
-# Template out the nodejs config
+# Template out the function's config, should have config.js in the .gitignore
 - name: config.js template
   template:
     src: config.js
-    dest: {{source}}/config.js
+    dest: "{{gcp_function_src_path[function_name]}}/config.js"
     
 # Deploy the process's application source
 - name: Deploy function
-  command: /usr/bin/gcloud functions deploy {{function_name}} --runtime nodejs8 --region={{region}} --trigger-http
+  command: /usr/bin/gcloud functions deploy {{function_name}} --runtime nodejs8 --region={{item}} --trigger-http
   args:
-    chdir: {{source}}
+    chdir: "{{gcp_function_src_path[function_name]}}"
+  loop: "{{gcp_function_regions[function_name]}}"
 
 ```
 
