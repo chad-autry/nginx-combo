@@ -23,6 +23,10 @@ frontend_src_path: /home/frontend/src
 # Location of source(s) on the controller for the nodejs process(es)
 node_src_path: 
     backend: /home/backend/src
+    
+# Location of the source(s) on the controller for the GCP Cloud Functions
+function_src_path:
+    auth: /home/auth/src
 
 # The controller machine directory to stage archives at
 controller_src_staging: /home/staging

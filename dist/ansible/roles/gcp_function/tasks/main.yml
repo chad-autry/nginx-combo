@@ -1,0 +1,12 @@
+# Template out the nodejs config
+- name: config.js template
+  template:
+    src: config.js
+    dest: {{source}}/config.js
+    
+# Deploy the process's application source
+- name: Deploy function
+  command: /usr/bin/gcloud functions deploy {{function_name}} --runtime nodejs8 --region={{region}} --trigger-http
+  args:
+    chdir: {{source}}
+

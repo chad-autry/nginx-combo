@@ -100,6 +100,21 @@
           private: 'false'
       tags: [ 'backend' ]
 
+# Default GCP Cloud Function
+- hosts: localhost
+  become: true
+  roles:
+    - { role: gcp_function, function_name: auth, region: {{region}}, tags: [ 'auth' ] }
+    - role: discovery
+      vars:
+        parent: 'route_discovery'
+        service: backend_nodejs
+        port: "{{ports['backend']}}"
+        service_properties:
+          strip: 'false'
+          private: 'false'
+      tags: [ 'auth' ]
+
 # Place a full RethinkDB on the RethinkDB hosts
 - hosts: rethinkdb
   become: true
