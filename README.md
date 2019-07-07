@@ -93,14 +93,17 @@ frontend_src_path: /home/frontend/src
 node_src_path: 
     backend: /home/backend/src
     
-# Location of the source(s) on the controller for the GCP Cloud Functions
-gcp_function_src_path:
-    auth: /home/auth/src
-
-# The regions to deploy each function in
-gcp_function_regions:
-    auth:
-        - us-east1
+# google cloud functions and their properties
+gcp_functions:
+    - name: auth 
+      src_path: /home/auth/src
+      regions:
+        - us-east-1
+      props:
+        jwt_token_secret: <jwt_token_secret
+        google_client_id: <google_client_id
+        google_redirect_uri: <google_redirect_uri>
+        google_auth_secret: <google_auth_secret>
         
 # The controller machine directory to stage archives at
 controller_src_staging: /home/staging
@@ -239,12 +242,11 @@ The main playbook that deploys or updates a cluster
           private: 'false'
       tags: [ 'backend' ]
 
-# Default GCP Cloud Function. Role can be applied additional times with additional functions
+# Deploy the Google Cloud Functions from localhost
 - hosts: localhost
   become: true
   roles:
-    - { role: gcp_function, function_name: auth, tags: [ 'auth' ] }
-    - { role: static_discovery, function_name: auth, route: auth, tags: [ 'auth' ] }
+    - { role: gcp_functions, tags: [ 'functions' ] }
 
 # Place a full RethinkDB on the RethinkDB hosts
 - hosts: rethinkdb
@@ -550,27 +552,6 @@ This role sets values into etcd from the Ansible config when the etcd cluster ha
   
 - name: /usr/bin/etcdctl set /rethinkdb/pwd <Web Authorization Password>
   command: /usr/bin/etcdctl set /rethinkdb/pwd {{rethinkdb_web_password}}
-```
-
-## static discovery publishing
-The static discovery publishing role is used to publish cloud function routes into etcd
-http://YOUR_REGION-YOUR_PROJECT_ID.cloudfunctions.net/FUNCTION_NAME
-
-[roles/static_discovery/tasks/main.yml](dist/ansible/roles/static_discovery/tasks/main.yml)
-```yml
-- name: Push the function domain for the function route
-  command: "/usr/bin/etcdctl set /route_discovery/{{route}}/services/{{item}}{{function}}/host '{{item}}-{{google_project_id}}/{{function}}'"
-  loop: "{{gcp_function_regions[function_name]}}"
-  
-- name: Push the function port for the function route
-  command: "/usr/bin/etcdctl set /route_discovery/{{route}}/services/{{item}}{{function}}/port '80'"
-  loop: "{{gcp_function_regions[function_name]}}"
-  
-- name: Push private=false for the function route
-  command: "/usr/bin/etcdctl set /route_discovery/{{route}}/private 'false'"
-  
-- name: Push strip=true for the function route
-  command: "/usr/bin/etcdctl set /route_discovery/{{route}}/strip 'true'"
 ```
 
 ## discovery publishing
@@ -1570,13 +1551,35 @@ This role templates out config and deploys a Google Cloud Function
 
 ### GoogleCloudFunction config.js template
 The template for the nodejs server's config
-[roles/gcp_function/templates/config.js](dist/ansible/roles/gcp_function/templates/config.js)
+[roles/gcp_functions/templates/config.js](dist/ansible/roles/gcp_function/templates/config.js)
 ```javascript
 module.exports = {
   {% for key in node_config[identifier] %}{{key|upper}}: '{{node_config[identifier][key]}}'{% if not loop.last %},{% endif %}{% endfor %}
 };
 ```
 
+### static discovery publishing
+The static discovery publishing role is used to publish cloud function routes into etcd
+http://YOUR_REGION-YOUR_PROJECT_ID.cloudfunctions.net/FUNCTION_NAME
+
+[roles/gcp_functions/tasks/main.yml](dist/ansible/roles/static_discovery/tasks/main.yml)
+```yml
+- name: Push the function domain for the function route
+  command: "/usr/bin/etcdctl set /route_discovery/{{item.0.route}}/services/{{item}}{{function}}/host '{{item}}-{{google_project_id}}/{{function}}'"
+  loop: "{{ gcp_functions|subelements('regions') }}"
+  
+- name: Push the function port for the function route
+  command: "/usr/bin/etcdctl set /route_discovery/{{item.0.route}}/services/{{item.1}}{{item.0.route}}/port '80'"
+  loop: "{{ gcp_functions|subelements('regions') }}"
+  
+- name: Push private=false for the function route
+  command: "/usr/bin/etcdctl set /route_discovery/{{item.route}}/private 'false'"
+  loop: "{{ gcp_functions }}"
+  
+- name: Push strip=true for the function route
+  command: "/usr/bin/etcdctl set /route_discovery/{{item.route}}/strip 'true'"
+  loop: "{{ gcp_functions }}"
+```
 ## RethinkDB
 The RethinkDB role is used to install/update the database and its configurations
 
