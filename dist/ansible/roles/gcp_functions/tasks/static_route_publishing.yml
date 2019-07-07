@@ -1,5 +1,5 @@
 - name: Push the function domain for the function route
-  command: "/usr/bin/etcdctl set /route_discovery/{{item.0.route}}/services/{{item}}{{function}}/host '{{item}}-{{google_project_id}}/{{function}}'"
+  command: "/usr/bin/etcdctl set /route_discovery/{{item.0.route}}/services/{{item.1}}{{item.0.route}}/host '{{item}}-{{google_project_id}}.cloudfunctions.net/{{item.0.route}}'"
   loop: "{{ gcp_functions|subelements('regions') }}"
   
 - name: Push the function port for the function route

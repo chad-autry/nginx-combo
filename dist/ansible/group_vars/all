@@ -23,7 +23,8 @@ frontend_src_path: /home/frontend/src
 # Location of source(s) on the controller for the nodejs process(es)
 node_src_path: 
     backend: /home/backend/src
-    
+
+google_project_id: 
 # google cloud functions and their properties
 gcp_functions:
     - name: auth 
