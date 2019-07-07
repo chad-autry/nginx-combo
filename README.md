@@ -1570,19 +1570,19 @@ http://YOUR_REGION-YOUR_PROJECT_ID.cloudfunctions.net/FUNCTION_NAME
 [roles/gcp_functions/tasks/static_route_publishing.yml](dist/ansible/roles/gcp_functions/tasks/static_route_publishing.yml)
 ```yml
 - name: Push the function domain for the function route
-  command: "/usr/bin/etcdctl set /route_discovery/{{item.0.route}}/services/{{item.1}}{{item.0.route}}/host '{{item}}-{{google_project_id}}.cloudfunctions.net/{{item.0.route}}'"
+  command: "/usr/bin/etcdctl --endpoints http://{{hostvars[groups['etcd'][0]][internal_ip_name]}}:2379 set /route_discovery/{{item.0.route}}/services/{{item.1}}{{item.0.route}}/host '{{item}}-{{google_project_id}}.cloudfunctions.net/{{item.0.route}}'"
   loop: "{{ gcp_functions|subelements('regions') }}"
   
 - name: Push the function port for the function route
-  command: "/usr/bin/etcdctl set /route_discovery/{{item.0.route}}/services/{{item.1}}{{item.0.route}}/port '80'"
+  command: "/usr/bin/etcdctl --endpoints http://{{hostvars[groups['etcd'][0]][internal_ip_name]}}:2379 set /route_discovery/{{item.0.route}}/services/{{item.1}}{{item.0.route}}/port '80'"
   loop: "{{ gcp_functions|subelements('regions') }}"
   
 - name: Push private=false for the function route
-  command: "/usr/bin/etcdctl set /route_discovery/{{item.route}}/private 'false'"
+  command: "/usr/bin/etcdctl --endpoints http://{{hostvars[groups['etcd'][0]][internal_ip_name]}}:2379 set /route_discovery/{{item.route}}/private 'false'"
   loop: "{{ gcp_functions }}"
   
 - name: Push strip=true for the function route
-  command: "/usr/bin/etcdctl set /route_discovery/{{item.route}}/strip 'true'"
+  command: "/usr/bin/etcdctl --endpoints http://{{hostvars[groups['etcd'][0]][internal_ip_name]}}:2379 set /route_discovery/{{item.route}}/strip 'true'"
   loop: "{{ gcp_functions }}"
 ```
 ## RethinkDB
