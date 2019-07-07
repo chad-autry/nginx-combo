@@ -92,7 +92,8 @@ frontend_src_path: /home/frontend/src
 # Location of source(s) on the controller for the nodejs process(es)
 node_src_path: 
     backend: /home/backend/src
-    
+
+google_project_id: 
 # google cloud functions and their properties
 gcp_functions:
     - name: auth 
@@ -1569,7 +1570,7 @@ http://YOUR_REGION-YOUR_PROJECT_ID.cloudfunctions.net/FUNCTION_NAME
 [roles/gcp_functions/tasks/static_route_publishing.yml](dist/ansible/roles/gcp_functions/tasks/static_route_publishing.yml)
 ```yml
 - name: Push the function domain for the function route
-  command: "/usr/bin/etcdctl set /route_discovery/{{item.0.route}}/services/{{item}}{{function}}/host '{{item}}-{{google_project_id}}/{{function}}'"
+  command: "/usr/bin/etcdctl set /route_discovery/{{item.0.route}}/services/{{item.1}}{{item.0.route}}/host '{{item}}-{{google_project_id}}.cloudfunctions.net/{{item.0.route}}'"
   loop: "{{ gcp_functions|subelements('regions') }}"
   
 - name: Push the function port for the function route
