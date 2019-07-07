@@ -2,7 +2,7 @@
 - name: config.js template
   template:
     src: config.js
-    dest: "{{item.src_path/config.js}}"
+    dest: "{{item.src_path}}/config.js"
   loop: "{{ gcp_functions }}"
     
 # Deploy the process's application source

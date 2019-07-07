@@ -1,3 +1,3 @@
 module.exports = {
-  {% for key in gcp_functions[item][props] %}{{key|upper}}: '{{gcp_functions[item][props][key]}}'{% if not loop.last %},{% endif %}{% endfor %}
+  {% for key in item.props %}{{key|upper}}: '{{item.props[key]}}'{% if not loop.last %},{% endif %}{% endfor %}
 };
