@@ -1532,29 +1532,33 @@ WantedBy=multi-user.target
 ## GoogleCloudFunction
 This role templates out config and deploys a Google Cloud Function
 
-[roles/gcp_function/tasks/main.yml](dist/ansible/roles/gcp_function/tasks/main.yml)
+[roles/gcp_functions/tasks/main.yml](dist/ansible/roles/gcp_functions/tasks/main.yml)
 ```yml  
 # Template out the function's config, should have config.js in the .gitignore
 - name: config.js template
   template:
     src: config.js
-    dest: "{{gcp_function_src_path[function_name]}}/config.js"
+    dest: "{{item.src_path/config.js"
+  loop: "{{ gcp_functions }}"
     
 # Deploy the process's application source
 - name: Deploy function
-  command: /usr/bin/gcloud functions deploy {{function_name}} --runtime nodejs8 --region={{item}} --trigger-http
+  command: /usr/bin/gcloud functions deploy {{item.0.name}} --runtime nodejs8 --region={{item.1}} --trigger-http
   args:
-    chdir: "{{gcp_function_src_path[function_name]}}"
-  loop: "{{gcp_function_regions[function_name]}}"
+    chdir: "{{itme.0.src_path}}"
+  loop: "{{ gcp_functions|subelements('regions') }}"
+  
+# Statically publish the route of each function into etcd
+- include: static_route_publishing.yml
 
 ```
 
 ### GoogleCloudFunction config.js template
 The template for the nodejs server's config
-[roles/gcp_functions/templates/config.js](dist/ansible/roles/gcp_function/templates/config.js)
+[roles/gcp_functions/templates/config.js](dist/ansible/roles/gcp_functions/templates/config.js)
 ```javascript
 module.exports = {
-  {% for key in node_config[identifier] %}{{key|upper}}: '{{node_config[identifier][key]}}'{% if not loop.last %},{% endif %}{% endfor %}
+  {% for key in gcp_functions[item][props] %}{{key|upper}}: '{{gcp_functions[item][props][key]}}'{% if not loop.last %},{% endif %}{% endfor %}
 };
 ```
 
@@ -1562,7 +1566,7 @@ module.exports = {
 The static discovery publishing role is used to publish cloud function routes into etcd
 http://YOUR_REGION-YOUR_PROJECT_ID.cloudfunctions.net/FUNCTION_NAME
 
-[roles/gcp_functions/tasks/main.yml](dist/ansible/roles/static_discovery/tasks/main.yml)
+[roles/gcp_functions/tasks/static_route_publishing.yml](dist/ansible/roles/gcp_functions/tasks/static_route_publishing.yml)
 ```yml
 - name: Push the function domain for the function route
   command: "/usr/bin/etcdctl set /route_discovery/{{item.0.route}}/services/{{item}}{{function}}/host '{{item}}-{{google_project_id}}/{{function}}'"
