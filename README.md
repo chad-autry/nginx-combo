@@ -1538,14 +1538,14 @@ This role templates out config and deploys a Google Cloud Function
 - name: config.js template
   template:
     src: config.js
-    dest: "{{item.src_path/config.js"
+    dest: "{{item.src_path/config.js}}"
   loop: "{{ gcp_functions }}"
     
 # Deploy the process's application source
 - name: Deploy function
   command: /usr/bin/gcloud functions deploy {{item.0.name}} --runtime nodejs8 --region={{item.1}} --trigger-http
   args:
-    chdir: "{{itme.0.src_path}}"
+    chdir: "{{item.0.src_path}}"
   loop: "{{ gcp_functions|subelements('regions') }}"
   
 # Statically publish the route of each function into etcd
