@@ -29,10 +29,10 @@ gcp_functions:
     - name: auth 
       src_path: /home/auth/src
       regions:
-        - us-east-1
+        - us-east1
       props:
-        jwt_token_secret: <jwt_token_secret
-        google_client_id: <google_client_id
+        jwt_token_secret: <jwt_token_secret>
+        google_client_id: <google_client_id>
         google_redirect_uri: <google_redirect_uri>
         google_auth_secret: <google_auth_secret>
         
