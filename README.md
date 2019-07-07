@@ -1538,7 +1538,7 @@ This role templates out config and deploys a Google Cloud Function
 - name: config.js template
   template:
     src: config.js
-    dest: "{{item.src_path/config.js}}"
+    dest: "{{item.src_path}}/config.js"
   loop: "{{ gcp_functions }}"
     
 # Deploy the process's application source
@@ -1558,7 +1558,7 @@ The template for the nodejs server's config
 [roles/gcp_functions/templates/config.js](dist/ansible/roles/gcp_functions/templates/config.js)
 ```javascript
 module.exports = {
-  {% for key in gcp_functions[item][props] %}{{key|upper}}: '{{gcp_functions[item][props][key]}}'{% if not loop.last %},{% endif %}{% endfor %}
+  {% for key in item.props %}{{key|upper}}: '{{item.props[key]}}'{% if not loop.last %},{% endif %}{% endfor %}
 };
 ```
 
