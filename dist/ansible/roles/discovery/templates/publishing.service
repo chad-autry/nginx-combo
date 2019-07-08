@@ -28,6 +28,7 @@ ExecStart=/bin/sh -c "while true; do etcdctl set /{{parent}}/{{service}}/service
                       sleep 45; \
                       done"
 ExecStartPost=-/bin/sh -c '/usr/bin/etcdctl set /{{parent}}/watched "$(date +%s%N)"'
+ExecStartPost=-/bin/sh -c '/usr/bin/etcdctl set /route_discovery/watched "$(date +%s%N)"'
 ExecStop=/usr/bin/etcdctl rm /{{parent}}/{{service}}/services/%H_{{port}}
 
 [Install]

@@ -13,3 +13,6 @@
 - name: Push strip=true for the function route
   command: "/usr/bin/etcdctl set /route_discovery/{{item.route}}/strip 'true'"
   loop: "{{ gcp_functions }}"
+  
+- name: Push timestamp to watched entry so nginx config is refreshed
+  command: "/usr/bin/etcdctl set /route_discovery/watched '$(date +%s%N)'"
