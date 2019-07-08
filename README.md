@@ -629,6 +629,7 @@ ExecStart=/bin/sh -c "while true; do etcdctl set /{{parent}}/{{service}}/service
                       sleep 45; \
                       done"
 ExecStartPost=-/bin/sh -c '/usr/bin/etcdctl set /{{parent}}/watched "$(date +%s%N)"'
+ExecStartPost=-/bin/sh -c '/usr/bin/etcdctl set /route_discovery/watched "$(date +%s%N)"'
 ExecStop=/usr/bin/etcdctl rm /{{parent}}/{{service}}/services/%H_{{port}}
 
 [Install]
@@ -1587,6 +1588,9 @@ Cloud function URL is like http://YOUR_REGION-YOUR_PROJECT_ID.cloudfunctions.net
 - name: Push strip=true for the function route
   command: "/usr/bin/etcdctl set /route_discovery/{{item.route}}/strip 'true'"
   loop: "{{ gcp_functions }}"
+  
+- name: Push timestamp to watched entry so nginx config is refreshed
+  command: "/usr/bin/etcdctl set /route_discovery/watched '$(date +%s%N)'"
 ```
 ## RethinkDB
 The RethinkDB role is used to install/update the database and its configurations
