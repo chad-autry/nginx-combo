@@ -105,6 +105,12 @@
   become: true
   roles:
     - { role: gcp_functions, tags: [ 'functions' ] }
+    
+# Publish the Google Cloud Functions into etcd
+- hosts: etcd[0]
+  become: true
+  roles:
+    - { role: gcp_functions_deploy, tags: [ 'functions' ] }
 
 # Place a full RethinkDB on the RethinkDB hosts
 - hosts: rethinkdb

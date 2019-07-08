@@ -11,7 +11,4 @@
   args:
     chdir: "{{item.0.src_path}}"
   loop: "{{ gcp_functions|subelements('regions') }}"
-  
-# Statically publish the route of each function into etcd
-- include: static_route_publishing.yml
 
