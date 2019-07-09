@@ -48,7 +48,7 @@
         service: grafana
         port: "{{ports['grafana']}}"
         service_properties:
-          strip: 'true'
+          upstreamRoute: '/'
           private: 'true'
       tags: [ 'grafana' ] 
 
@@ -96,7 +96,6 @@
         service: backend_nodejs
         port: "{{ports['backend']}}"
         service_properties:
-          strip: 'false'
           private: 'false'
       tags: [ 'backend' ]
 
@@ -123,7 +122,7 @@
         service: rethinkdb
         port: "{{ports['rethinkdb_admin']}}"
         service_properties:
-          strip: 'true'
+          upstreamRoute: '/'
           private: 'true'
       tags: [ 'rethinkdb' ]
 
