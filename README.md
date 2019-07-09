@@ -97,6 +97,7 @@ google_project_id:
 # google cloud functions and their properties
 gcp_functions:
     - name: auth 
+      route: auth
       src_path: /home/auth/src
       regions:
         - us-east1
@@ -252,7 +253,7 @@ The main playbook that deploys or updates a cluster
 - hosts: etcd[0]
   become: true
   roles:
-    - { role: gcp_functions_deploy, tags: [ 'functions' ] }
+    - { role: gcp_functions_publishing, tags: [ 'functions' ] }
 
 # Place a full RethinkDB on the RethinkDB hosts
 - hosts: rethinkdb
@@ -1585,7 +1586,7 @@ Cloud function URL is like http://YOUR_REGION-YOUR_PROJECT_ID.cloudfunctions.net
   loop: "{{ gcp_functions }}"
   
 - name: Push upstreamRoute
-  command: "/usr/bin/etcdctl set /route_discovery/{{item.route}}/upstreamRoute '{{item.0.name}}'"
+  command: "/usr/bin/etcdctl set /route_discovery/{{item.route}}/upstreamRoute '{{item.name}}'"
   loop: "{{ gcp_functions }}"
   
 - name: Push timestamp to watched entry so nginx config is refreshed
