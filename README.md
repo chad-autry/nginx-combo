@@ -191,7 +191,7 @@ The main playbook that deploys or updates a cluster
         service: grafana
         port: "{{ports['grafana']}}"
         service_properties:
-          strip: 'true'
+          upstreamRoute: '/'
           private: 'true'
       tags: [ 'grafana' ] 
 
@@ -239,7 +239,6 @@ The main playbook that deploys or updates a cluster
         service: backend_nodejs
         port: "{{ports['backend']}}"
         service_properties:
-          strip: 'false'
           private: 'false'
       tags: [ 'backend' ]
 
@@ -266,7 +265,7 @@ The main playbook that deploys or updates a cluster
         service: rethinkdb
         port: "{{ports['rethinkdb_admin']}}"
         service_properties:
-          strip: 'true'
+          upstreamRoute: '/'
           private: 'true'
       tags: [ 'rethinkdb' ]
 
@@ -1574,7 +1573,7 @@ Cloud function URL is like http://YOUR_REGION-YOUR_PROJECT_ID.cloudfunctions.net
 [roles/gcp_functions_publishing/tasks/main.yml](dist/ansible/roles/gcp_functions_publishing/tasks/main.yml)
 ```yml
 - name: Push the function domain for the function route
-  command: "/usr/bin/etcdctl set /route_discovery/{{item.0.route}}/services/{{item.1}}{{item.0.route}}/host '{{item}}-{{google_project_id}}.cloudfunctions.net/{{item.0.route}}'"
+  command: "/usr/bin/etcdctl set /route_discovery/{{item.0.route}}/services/{{item.1}}{{item.0.route}}/host '{{item}}-{{google_project_id}}.cloudfunctions.net'"
   loop: "{{ gcp_functions|subelements('regions') }}"
   
 - name: Push the function port for the function route
@@ -1585,8 +1584,8 @@ Cloud function URL is like http://YOUR_REGION-YOUR_PROJECT_ID.cloudfunctions.net
   command: "/usr/bin/etcdctl set /route_discovery/{{item.route}}/private 'false'"
   loop: "{{ gcp_functions }}"
   
-- name: Push strip=true for the function route
-  command: "/usr/bin/etcdctl set /route_discovery/{{item.route}}/strip 'true'"
+- name: Push upstreamRoute
+  command: "/usr/bin/etcdctl set /route_discovery/{{item.route}}/upstreamRoute '{{item.0.name}}'"
   loop: "{{ gcp_functions }}"
   
 - name: Push timestamp to watched entry so nginx config is refreshed
