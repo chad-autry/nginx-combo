@@ -1586,7 +1586,7 @@ Cloud function URL is like http://YOUR_REGION-YOUR_PROJECT_ID.cloudfunctions.net
   loop: "{{ gcp_functions }}"
   
 - name: Push upstreamRoute
-  command: "/usr/bin/etcdctl set /route_discovery/{{item.route}}/upstreamRoute '{{item.name}}'"
+  command: "/usr/bin/etcdctl set /route_discovery/{{item.route}}/upstreamRoute '/{{item.name}}'"
   loop: "{{ gcp_functions }}"
   
 - name: Push timestamp to watched entry so nginx config is refreshed
