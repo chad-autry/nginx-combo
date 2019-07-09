@@ -109,7 +109,7 @@
 - hosts: etcd[0]
   become: true
   roles:
-    - { role: gcp_functions_deploy, tags: [ 'functions' ] }
+    - { role: gcp_functions_publishing, tags: [ 'functions' ] }
 
 # Place a full RethinkDB on the RethinkDB hosts
 - hosts: rethinkdb

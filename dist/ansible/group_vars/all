@@ -28,6 +28,7 @@ google_project_id:
 # google cloud functions and their properties
 gcp_functions:
     - name: auth 
+      route: auth
       src_path: /home/auth/src
       regions:
         - us-east1
