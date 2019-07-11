@@ -1580,11 +1580,19 @@ Cloud function URL is like http://YOUR_REGION-YOUR_PROJECT_ID.cloudfunctions.net
 - name: Push the function port for the function route
   command: "/usr/bin/etcdctl set /route_discovery/{{item.0.route}}/services/{{item.1}}{{item.0.route}}/port '80'"
   loop: "{{ gcp_functions|subelements('regions') }}"
-  
+
+- name: Push single upstream host as the host header #TODO really allow multi region
+  command: "/usr/bin/etcdctl set /route_discovery/{{item.0.route}}/proxyHostHeader '{{item}}-{{google_project_id}}.cloudfunctions.net'"
+  loop: "{{ gcp_functions|subelements('regions') }}"
+
 - name: Push private=false for the function route
   command: "/usr/bin/etcdctl set /route_discovery/{{item.route}}/private 'false'"
   loop: "{{ gcp_functions }}"
   
+- name: Push https protocol
+  command: "/usr/bin/etcdctl set /route_discovery/{{item.route}}/https 'false'"
+  loop: "{{ gcp_functions }}"
+
 - name: Push upstreamRoute
   command: "/usr/bin/etcdctl set /route_discovery/{{item.route}}/upstreamRoute '/{{item.name}}'"
   loop: "{{ gcp_functions }}"
