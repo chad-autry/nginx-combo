@@ -1551,7 +1551,7 @@ This role templates out config and deploys a Google Cloud Function
     
 # Deploy the process's application source
 - name: Deploy function
-  command: /usr/bin/gcloud functions deploy {{item.0.name}} --runtime nodejs8 --region={{item.1}} --trigger-http
+  command: gcloud functions deploy {{item.0.name}} --runtime nodejs8 --region={{item.1}} --trigger-http
   args:
     chdir: "{{item.0.src_path}}"
   loop: "{{ gcp_functions|subelements('regions') }}"
