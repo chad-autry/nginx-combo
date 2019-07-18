@@ -1574,29 +1574,29 @@ Cloud function URL is like http://YOUR_REGION-YOUR_PROJECT_ID.cloudfunctions.net
 [roles/gcp_functions_publishing/tasks/main.yml](dist/ansible/roles/gcp_functions_publishing/tasks/main.yml)
 ```yml
 - name: Push the function domain for the function route
-  command: "/usr/bin/etcdctl set /route_discovery/{{item.0.route}}/services/{{item.1}}{{item.0.route}}/host '{{item}}-{{google_project_id}}.cloudfunctions.net'"
+  command: "/usr/bin/etcdctl set /route_discovery/{{item.0.route}}/services/{{item.1}}{{item.0.route}}/host '{{item.1}}-{{google_project_id}}.cloudfunctions.net'"
   loop: "{{ gcp_functions|subelements('regions') }}"
-  
+
 - name: Push the function port for the function route
-  command: "/usr/bin/etcdctl set /route_discovery/{{item.0.route}}/services/{{item.1}}{{item.0.route}}/port '80'"
+  command: "/usr/bin/etcdctl set /route_discovery/{{item.0.route}}/services/{{item.1}}{{item.0.route}}/port '443'"
   loop: "{{ gcp_functions|subelements('regions') }}"
 
 - name: Push single upstream host as the host header #TODO really allow multi region
-  command: "/usr/bin/etcdctl set /route_discovery/{{item.0.route}}/proxyHostHeader '{{item}}-{{google_project_id}}.cloudfunctions.net'"
+  command: "/usr/bin/etcdctl set /route_discovery/{{item.0.route}}/proxyHostHeader '{{item.1}}-{{google_project_id}}.cloudfunctions.net'"
   loop: "{{ gcp_functions|subelements('regions') }}"
 
 - name: Push private=false for the function route
   command: "/usr/bin/etcdctl set /route_discovery/{{item.route}}/private 'false'"
   loop: "{{ gcp_functions }}"
-  
+
 - name: Push https protocol
-  command: "/usr/bin/etcdctl set /route_discovery/{{item.route}}/https 'false'"
+  command: "/usr/bin/etcdctl set /route_discovery/{{item.route}}/protocol 'https'"
   loop: "{{ gcp_functions }}"
 
 - name: Push upstreamRoute
   command: "/usr/bin/etcdctl set /route_discovery/{{item.route}}/upstreamRoute '/{{item.name}}'"
   loop: "{{ gcp_functions }}"
-  
+
 - name: Push timestamp to watched entry so nginx config is refreshed
   command: "/usr/bin/etcdctl set /route_discovery/watched '$(date +%s%N)'"
 ```
