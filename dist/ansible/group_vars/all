@@ -50,9 +50,6 @@ ports:
     grafana: 3000
     node_exporter: 9100
     nginx_prometheus_endpoint: 9145
-    rethinkdb_peer: 29015
-    rethinkdb_client: 28015
-    rethinkdb_admin: 8081
 
 # The container versions to use
 rsync_version: latest
@@ -61,7 +58,6 @@ nginx_version: latest
 nginx_config_templater_version: latest
 wac_acme_version: latest
 nodejs_version: latest
-rethinkdb_version: latest
 prometheus_version: latest
 node_exporter_version: latest
 grafana_version: latest
