@@ -119,9 +119,6 @@ ports:
     grafana: 3000
     node_exporter: 9100
     nginx_prometheus_endpoint: 9145
-    rethinkdb_peer: 29015
-    rethinkdb_client: 28015
-    rethinkdb_admin: 8081
 
 # The container versions to use
 rsync_version: latest
@@ -130,7 +127,6 @@ nginx_version: latest
 nginx_config_templater_version: latest
 wac_acme_version: latest
 nodejs_version: latest
-rethinkdb_version: latest
 prometheus_version: latest
 node_exporter_version: latest
 grafana_version: latest
@@ -254,27 +250,6 @@ The main playbook that deploys or updates a cluster
   become: true
   roles:
     - { role: gcp_functions_publishing, tags: [ 'functions' ] }
-
-# Place a full RethinkDB on the RethinkDB hosts
-- hosts: rethinkdb
-  become: true
-  roles:
-    - { role: rethinkdb, proxy_rethinkdb: False }
-    - role: discovery
-      vars: 
-        parent: 'route_discovery'
-        service: rethinkdb
-        port: "{{ports['rethinkdb_admin']}}"
-        service_properties:
-          upstreamRoute: '/'
-          private: 'true'
-      tags: [ 'rethinkdb' ]
-
-# Place a proxy RethinkDB alongside application instances (edit the hosts when there are various types)
-- hosts: backend:!rethinkdb
-  become: true
-  roles:
-    - { role: rethinkdb, proxy_rethinkdb: True }
 ```
 
 ## status.yml
@@ -1600,88 +1575,3 @@ Cloud function URL is like http://YOUR_REGION-YOUR_PROJECT_ID.cloudfunctions.net
 - name: Push timestamp to watched entry so nginx config is refreshed
   command: "/usr/bin/etcdctl set /route_discovery/watched '$(date +%s%N)'"
 ```
-## RethinkDB
-The RethinkDB role is used to install/update the database and its configurations
-
-[roles/rethinkdb/tasks/main.yml](dist/ansible/roles/rethinkdb/tasks/main.yml)
-```yml  
-# Ensure the database directory is present
-- name: ensure database directory is present
-  file:
-    state: directory
-    path: /var/rethinkdb
-
-# Template out the database config
-- name: rethinkdb.conf template
-  template:
-    src: rethinkdb.conf
-    dest: /var/rethinkdb/rethinkdb.conf
-
-# Template out the rethinkdb systemd unit
-- name: rethinkdb.service template
-  template:
-    src: rethinkdb.service
-    dest: /etc/systemd/system/rethinkdb.service
-
-# Start the RethinkDB server, note doesn't need to be restarted even if config changed (new instances will connect to old)
-- name: Ensure RethinkDB is started
-  systemd:
-    daemon_reload: yes
-    enabled: yes
-    state: started
-    name: rethinkdb.service
-```
-
-### rethinkd.conf template
-The template for the configuration file. Contains the list of other hosts to connect to. If not a proxy, contains the hosts cannonical address other instances connect to it at
-[roles/rethinkdb/templates/rethinkdb.conf](dist/ansible/roles/rethinkdb/templates/rethinkdb.conf)
-```
-runuser=root
-rungroup=root
-pid-file=/usr/var/rethinkdb/pid_file
-directory=/usr/var/rethinkdb/data
-bind=all
-
-{% if not proxy_rethinkdb %}
-canonical-address={{hostvars[inventory_hostname][internal_ip_name]}}:29015
-{% endif %}
-
-{% for host in groups['rethinkdb']  %}
-{% if hostvars[host][internal_ip_name] != hostvars[inventory_hostname][internal_ip_name] %}
-join={{hostvars[host][internal_ip_name]}}:29015
-{% endif %}
-{% endfor %}
-```
-
-### RethinkDB systemd unit template
-[roles/rethinkdb/templates/rethinkdb.service](dist/ansible/roles/rethinkdb/templates/rethinkdb.service)
-```yaml
-[Unit]
-Description=RethinkDB
-# Dependencies
-Requires=docker.service
-
-# Ordering
-After=docker.service
-After=etcd2.service
-
-[Service]
-ExecStartPre=-/usr/bin/docker pull chadautry/wac-rethinkdb:{{rethinkdb_version}}
-ExecStartPre=-/usr/bin/docker rm -f rethinkdb
-ExecStartPre=-/usr/bin/rm /var/rethinkdb/pid_file
-ExecStart=/usr/bin/docker run --name rethinkdb \
--v /var/rethinkdb:/usr/var/rethinkdb \
--p 29015:29015 -p28015:28015 -p 8081:8080 \
-chadautry/wac-rethinkdb:{{rethinkdb_version}} {% if proxy_rethinkdb %}proxy{% endif %} --config-file /usr/var/rethinkdb/rethinkdb.conf
-Restart=always
-
-[Install]
-WantedBy=multi-user.target
-```
-
-* requires docker
-* Pulls the image
-* Removes the container
-* Starts a rethinkdb container
-  * Conditionally started in proxy mode based on role parameter
-* HTTP shifted to 8081 so it won't conflict with nginx if colocated
