@@ -4,9 +4,8 @@ node_js:
 env:
   global:
   - GH_REF: github.com/chad-autry/wac-bp
-before_install:
-- export DISPLAY=:99.0
-- sh -e /etc/init.d/xvfb start
+services:
+  - xvfb
 script:
 - npm run clean
 - npm run build
