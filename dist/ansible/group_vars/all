@@ -24,19 +24,68 @@ frontend_src_path: /home/frontend/src
 node_src_path: 
     backend: /home/backend/src
 
-google_project_id: 
+google_project_id: <Google PRoject Id>
+jwt_token_secret: <GeneratedSEcret>
+google_client_id: <Google Client Id>
+google_redirect_uri: <Redirect URI>
+google_auth_secret: <Google Auth Secret>
 # google cloud functions and their properties
 gcp_functions:
     - name: auth 
       route: auth
-      src_path: /home/auth/src
+      src_path: /srcs/gcp-functional-auth
       regions:
         - us-east1
       props:
-        jwt_token_secret: <jwt_token_secret>
-        google_client_id: <google_client_id>
-        google_redirect_uri: <google_redirect_uri>
-        google_auth_secret: <google_auth_secret>
+        jwt_token_secret: {{jwt_token_secret}}
+        google_client_id: {{google_client_id}}
+        google_redirect_uri: {{google_redirect_uri}}
+        google_auth_secret: {{google_auth_secret}}
+        projectid: {{google_project_id}}
+    - name: createUser
+      route: newUser
+      src_path: /srcs/gcp-functional-auth
+      regions:
+        - us-east1
+      props:
+        jwt_token_secret: {{jwt_token_secret}}
+        google_client_id: {{google_client_id}}
+        google_redirect_uri: {{google_redirect_uri}}
+        google_auth_secret: {{google_auth_secret}}
+        projectid: {{google_project_id}}
+    - name: deleteUser
+      route: deleteUser
+      src_path: /srcs/gcp-functional-auth
+      regions:
+        - us-east1
+      props:
+        jwt_token_secret: {{jwt_token_secret}}
+        google_client_id: {{google_client_id}}
+        google_redirect_uri: {{google_redirect_uri}}
+        google_auth_secret: {{google_auth_secret}}
+        projectid: {{google_project_id}}
+    - name: getUser
+      route: getUser
+      src_path: /srcs/gcp-functional-auth
+      regions:
+        - us-east1
+      props:
+        jwt_token_secret: {{jwt_token_secret}}
+        google_client_id: {{google_client_id}}
+        google_redirect_uri: {{google_redirect_uri}}
+        google_auth_secret: {{google_auth_secret}}
+        projectid: {{google_project_id}}
+    - name: deleteUser
+      route: deleteUser
+      src_path: /srcs/gcp-functional-auth
+      regions:
+        - us-east1
+      props:
+        jwt_token_secret: {{jwt_token_secret}}
+        google_client_id: {{google_client_id}}
+        google_redirect_uri: {{google_redirect_uri}}
+        google_auth_secret: {{google_auth_secret}}
+        projectid: {{google_project_id}}
         
 # The controller machine directory to stage archives at
 controller_src_staging: /home/staging
