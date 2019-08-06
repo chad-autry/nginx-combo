@@ -1572,13 +1572,15 @@ This role templates out config and deploys a Google Cloud Function
     src: config.js
     dest: "{{item.src_path}}/config.js"
   loop: "{{ gcp_functions }}"
-    
+  when: "single_function is not defined or single_function == item.name"
+
 # Deploy the process's application source
 - name: Deploy function
   command: gcloud functions deploy {{item.0.name}} --runtime nodejs8 --region={{item.1}} --trigger-http
   args:
     chdir: "{{item.0.src_path}}"
   loop: "{{ gcp_functions|subelements('regions') }}"
+  when: "single_function is not defined or single_function == item.0.name"
 
 ```
 
@@ -1600,26 +1602,32 @@ Cloud function URL is like http://YOUR_REGION-YOUR_PROJECT_ID.cloudfunctions.net
 - name: Push the function domain for the function route
   command: "/usr/bin/etcdctl set /route_discovery/{{item.0.route}}/services/{{item.1}}{{item.0.route}}/host '{{item.1}}-{{google_project_id}}.cloudfunctions.net'"
   loop: "{{ gcp_functions|subelements('regions') }}"
+  when: "single_function is not defined or single_function == item.0.name"
 
 - name: Push the function port for the function route
   command: "/usr/bin/etcdctl set /route_discovery/{{item.0.route}}/services/{{item.1}}{{item.0.route}}/port '443'"
   loop: "{{ gcp_functions|subelements('regions') }}"
+  when: "single_function is not defined or single_function == item.0.name"
 
 - name: Push single upstream host as the host header #TODO really allow multi region
   command: "/usr/bin/etcdctl set /route_discovery/{{item.0.route}}/proxyHostHeader '{{item.1}}-{{google_project_id}}.cloudfunctions.net'"
   loop: "{{ gcp_functions|subelements('regions') }}"
+  when: "single_function is not defined or single_function == item.0.name"
 
 - name: Push private=false for the function route
   command: "/usr/bin/etcdctl set /route_discovery/{{item.route}}/private 'false'"
   loop: "{{ gcp_functions }}"
+  when: "single_function is not defined or single_function == item.name"
 
 - name: Push https protocol
   command: "/usr/bin/etcdctl set /route_discovery/{{item.route}}/protocol 'https'"
   loop: "{{ gcp_functions }}"
+  when: "single_function is not defined or single_function == item.name"
 
 - name: Push upstreamRoute
   command: "/usr/bin/etcdctl set /route_discovery/{{item.route}}/upstreamRoute '/{{item.name}}'"
   loop: "{{ gcp_functions }}"
+  when: "single_function is not defined or single_function == item.name"
 
 - name: Push timestamp to watched entry so nginx config is refreshed
   command: "/usr/bin/etcdctl set /route_discovery/watched '$(date +%s%N)'"
