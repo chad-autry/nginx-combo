@@ -4,11 +4,13 @@
     src: config.js
     dest: "{{item.src_path}}/config.js"
   loop: "{{ gcp_functions }}"
-    
+  when: "single_function is not defined or single_function == item.name"
+
 # Deploy the process's application source
 - name: Deploy function
   command: gcloud functions deploy {{item.0.name}} --runtime nodejs8 --region={{item.1}} --trigger-http
   args:
     chdir: "{{item.0.src_path}}"
   loop: "{{ gcp_functions|subelements('regions') }}"
+  when: "single_function is not defined or single_function == item.0.name"
 
